@@ -1,0 +1,56 @@
+THE NEW COMMAND LINE PARSING SYSTEM
+⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻
+DIRECTIVES conform to the usual rules of MonoMaths assignments. Notionally the LHS variables given below have all
+	been predefined as scalar or array. (While LHS names not on the list won't crash anything, they will simply be ignored.)
+	As for MM assignments, assignments must be terminated by ';' (though as with MM, the semicolon may be omitted after the last one).
+	Also, spaces are ignored unless they are inside quotes.
+
+	Quote mark: Although all 3 are usable from the point of view of MM code, you should always use [`] as (a) with 'exec()' you have
+	to use [`], as the underlying C# routine helpfully removes the other two types of quote; and (b) with Xfce Launchers the same is true.
+
+	As with MM, don't use quote marks for scalars (e.g. not "left = `20`;", as 'left' has been notionally predefined as a scalar).
+
+	As usual for MM, directives are case-sensitive. Note that all abbreviated alternative forms are in capitals,
+	while their expansions are always in small letters.
+The program name itself does not take a semicolon; there is a space after it, and all after that space is parsed as mentioned above.
+
+First Set  (scalar LHS variables)
+⁻⁻⁻⁻⁻⁻⁻⁻
+  ('XX' for a real number; 'TXT' for text)
+	left = XX;     -- OR --    L = XX;
+	top = XX;     -- OR --    T = XX;
+	width = XX;     -- OR --    W = XX;
+	height = XX;     -- OR --    H = XX;
+	topwindowheight = XX;     -- OR --    TWH = XX;  (NB -- unlike the above four, values below 1 are not taken as ratios. Use pixel size.)
+	formatted;    [No '=', as stands alone; if present, MonoMaths opens in formatted-text mode. Also, no abbreviated form.] 
+		Won't have any effect if there is no text, and consequently if not used in combination with 'load'.
+
+Second Set (array LHS variables). One only of these should be supplied. Note that quote marks are essential.
+⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻
+	load = `TXT`; Path must be complete. Any later args. simply ignored.
+	run = `TXT`;  Path must be complete. Any parameters to be passed to the new program must be enclosed  by the same quotes
+	 as the file name. E.g.:
+				run = `/home/jon/Foo/foo and bar.txt TWH = 23; formatted;`; (Any text between the inner " pair would be ignored;
+							you could stick a comma there, if it made you feel better; or you could even do this, for full MM assmt compatibility:)
+				run = text("/home/jon/Foo/foo and bar.txt", "TWH = 23; formatted;");
+	NB - these parameters will be placed as the unicode representation of a string in the internal buffer which is accessed by 
+			function "persistent_array()".
+
+ERRORS
+Any directive not conforming to one of the above will be ignored without raising an error or interrupting parsing of the rest of the line.⁻
+
+TESTED EXAMPLES
+⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻
+1. USING 'EXEC':
+exec("/home/jon/MonoMaths/MonoMaths.exe", "left = 0.05; top = 0.05; width = 0.9;  height = 0.9; topwindowheight = 600; formatted; load = `/home/jon/MonoMaths/Hints.txt`"); // Warning - takes around 10 seconds because of the 'formatted'.
+
+2. COMMAND FOR XFCE LAUNCHER
+This one is now installed in Panel 2 (the right-hand icon for MonoMaths):
+mono /home/jon/MonoMaths/MonoMaths.exe L=0.085; T=0; W=0.8; H=0.94; TWH=650
+
+3. THUNAR
+In the directory "/home/jon/.local/share/applications/" should be something like "userapp-mono-UESCQX.desktop" to run MonoMaths.
+The following works fine there: 
+	Exec=mono /home/jon/MonoMaths/MonoMaths.exe L=0.115; T=0; W=0.75; H=0.94; load=`%f`
+
+

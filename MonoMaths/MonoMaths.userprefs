@@ -1,0 +1,22 @@
+﻿<Properties VersionControlDisabled="True" StartupItem="MonoMaths.csproj">
+  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug|x86" />
+  <MonoDevelop.Ide.Workbench ActiveDocument="Runner.cs">
+    <Files>
+      <File FileName="MainWindow.cs" Line="1" Column="1" />
+      <File FileName="SysFns1.cs" Line="1" Column="1" />
+      <File FileName="SysFns2.cs" Line="1" Column="1" />
+      <File FileName="../JonoLib/JGeneral.cs" Line="1" Column="1" />
+      <File FileName="../JonoLib/JExtensions.cs" Line="1" Column="1" />
+      <File FileName="../JonoLib/JDialogs.cs" Line="1" Column="1" />
+      <File FileName="Conformer.cs" Line="1" Column="1" />
+      <File FileName="Parser.cs" Line="1" Column="1" />
+      <File FileName="Runner.cs" Line="1583" Column="1" />
+    </Files>
+  </MonoDevelop.Ide.Workbench>
+  <MonoDevelop.Ide.DebuggingService.Breakpoints>
+    <BreakpointStore />
+  </MonoDevelop.Ide.DebuggingService.Breakpoints>
+  <MonoDevelop.Ide.DebuggingService.PinnedWatches>
+    <Watch file="MainWindow.cs" line="2252" offsetX="558" offsetY="36016" expression="mint" liveUpdate="False" />
+  </MonoDevelop.Ide.DebuggingService.PinnedWatches>
+</Properties>

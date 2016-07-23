@@ -1,0 +1,1365 @@
+FUNCTION ARGUMENT HINTS FOR MonoMaths
+
+This file must be saved as the file 'FnArgs.txt', in the same directory as the program itself.
+*** View this introduction outside of a text editor mode which processes tags. It is meant to be viewed exactly as written. ***
+
+Each section must begin with an identifier line, e.g.: '//CATS AND DOGS//' (to identify the section entitled 'Care of your cats and dogs'). Note the introductory and final '//', with nothing else on the line (blanks before and after the '//' are significant).
+
+Sections can begin with multiple lines beginning with '//', or even have such lines in the middle somewhere. Such lines will be searched for as above (but to be detected must be in capitals), and any further such lines will simply be ignored.
+
+Each section must end with a line starting with '=======' (initial blanks ignored; at least 4 '=' needed).
+
+Formatting instructions may be inserted, using a markup language not unlike HTML. The rules are given at the end of the file.
+Example: 'aaa <U>bbb</U>  ccc' underlines bbb.
+
+The only restriction on the use of characters is not to use valid tags in text that you want displayed. If you write '<hello>' the display will literally show this; but if you write '<U>', this will not be shown, but will cause underlining of the ensuing text.
+It is best practice to use '\<' and '\>' whenever you want to display literal '<' and '>'; if you don't, sometimes you will get repetition of segments of text overlaying each other, even though the actual '<' and '>' will be displayed correctly. (This is most likely to occur where you double them - e.g. you want to display ">>".)
+
+Special symbols: Use '{..}' around variable names - at least at their first mention; "{word}" will be replaced by MonoMaths with: "<# black><B>word</B><# blue>" (or similar highlighting, if later revised). As a result, if you want to insert literal braces, to override this you have to double each brace: "{{..}}".
+
+Note also that '%' is removed by MonoMaths after all other substitutions and before calling the RichEdit unit's display function. (No override at this time for literal '%'. Try writing it - 'per cent sign' - perhaps?)
+
+There is no need to prefix remarks with the name of the function; MonoMaths automatically does this. Also, note that MonoMaths automatically puts these in magenta: "scalar", "scalars", "array", "arrays", "matrix", "bool". (To override this you would have to use an internal '%' like this: "arr%ay". To make something else magenta, you have to use: "<# magenta>foo<# blue>".)
+
+Functions are dealt with more or less in the order of function number, which follows the second '//'; but where semantically indicated, they will be dealt with out of this order. If the order is flagrantly different, a bookmark will be inserted: "//foodle 234 -- see boodle 35" (format unimportant; just start the line with '//', and don't use any second '//').
+___________________________________
+
+//dim//  1
+{Name1}, {Name2}, {Name3}, ....  scalar {Dimension1} [, scalar {Dimension2} [, scalar {Dimension3} ]]. --  {Namex} must be either a hitherto unused identifier or a previously defined array. Dimensions start from highest dimension (e.g. no. of rows, for a matrix).
+===============================================================
+//inc//  2
+//dec//  3
+scalar or array {Value}. Output rounded. Both alters {Value} and returns its altered value.
+===============================================================
+//rotate//  4
+VOID. <u>Version1:</u>(2+ variables of same type and size) - rotate whole contents of each to the one on right, with wraparound.  <u>Version 2:</u>  array {Array} [, scalar {NoTimes} ] - contents of Array[i] --> Array[i + NoTimes], with wraparound. {NoTimes} - modulo taken, can be any size; negative for opposite direction. <u>Version 3:</u>  matrix {Mx}, bool {IsRows},  scalar {NoTimes} [, {Replacement} ] -- rows or columns rotated. If no {Replacement}, all rows conserved. If present, replaces contents of the row / column last rotated from.
+===============================================================
+//sqr//  5
+scalar or array {Value}. Returns the square of Value.
+===============================================================
+//deg//  6
+scalar or array {Value}.    Converts radians to degrees. No adjustment of angle.
+===============================================================
+//rad//  7
+scalar or array {Value}.    Converts degrees to radians. No adjustment of angle.
+===============================================================
+//sin// 8
+scalar or array {Angle}  (radians).
+===============================================================
+//cos// 9
+scalar or array {Angle}  (radians).
+===============================================================
+//tan// 10
+scalar or array {Angle}  (radians).
+===============================================================
+//arcsin// 11
+scalar or array {Value} [, bool {TrimIfOver} ]. Values > 1 or < -1 raise errors, unless bool true, in which case they are trimmed to these limits. Returned angle range:  -PI/2 to PI/2.
+===============================================================
+//arccos// 12
+scalar or array {Value} [, bool {TrimIfOver} ]. Values > 1 or < -1 raise errors, unless bool true, in which case they are trimmed to these limits. Returned angle range:  0 to PI.
+===============================================================
+//arctan// 13
+scalar(s) or array(s) {Numerator} [, {Denominator} ].  One arg: Returned angle range:  -PI/2 to PI/2. Two args: angle range -PI to PI. Both versions correctly handle either argument being 0, POSINF or NEGINF; but indeterminate fraction (Numerator / Denominator) returns NAN.
+===============================================================
+//abs//  14
+scalar or array {Value}
+===============================================================
+//sqrt//  15
+scalar or array {Value}.  Negative values not allowed.
+===============================================================
+//fact//  16
+scalar or array {Value} [,  scalar {Denominator} ].  All must lie between 0 and 169 inclusive (0! --> 1). If {Denominator} supplied, returns <# black>fact(Value)<# blue> divided by <# black>fact(Denominator)<# blue>. ({Denominator } must be < any values in {Value}.)
+===============================================================
+//logfact//  17
+scalar or array {Value} [,  scalar {Denominator} ].  All must lie between 1 and 2,147,483,647 inclusive. If {Denominator} supplied, returns <# black>fact(Value)<# blue> divided by <# black>fact(Denominator)<# blue>. ({Denominator } must be < any values in {Value}.)
+===============================================================
+//exp//  18
+scalar or array {Value}.  Returns the exponential constant  2.71828... raised to {Value}.
+===============================================================
+//ln//  19
+scalar or array {Value}. Negative or zero values not allowed.
+===============================================================
+//log//  20
+scalar or array {Value}  [,  scalar {Base} ].  If {Base} not supplied, base is taken as 10. Values in {Value} must be positive non-zero. {Base} must be non-negative.
+===============================================================
+//round//  21
+scalar or array {Value}  [,  scalar {Precision} ].  Halfway values are rounded upwards. {Precision}: If positive, the number of decimal places allowed (default = 0). If negative, replaces |Precision| nondecimals with zero.
+===============================================================
+//frac//  22
+scalar or array {Value}.
+===============================================================
+//floor//  23
+scalar or array {Value}  [,  scalar {Precision} ].  {Precision}: If positive, the number of decimal places allowed (default = 0). If negative, the number of numerals to the left of the decimal point which must be zero.
+===============================================================
+//ceiling//  24
+scalar or array {Value}  [,  scalar {Precision} ].  {Precision}: If positive, the number of decimal places allowed (default = 0). If negative, the number of numerals to the left of the decimal point which must be zero.
+===============================================================
+//mod//  25
+scalar or array {Value},  scalar {Divisor}.  Computes |Value| mod |Divisor|, then applies the original sign of values in {Value} to the result. Args. rounded ('banker's rounding'); if {Divisor} is then zero, will crash.
+===============================================================
+//div//  26
+scalar or array {Value},  scalar {Divisor}.  Signs remain valid. Args. rounded ('banker's rounding'); if {Divisor} is then zero, will crash.
+===============================================================
+//isintegral//  27
+scalar or array {Value} [,  scalar {MaxDeviation} ].  If {Value} is further from its nearest integer than {MaxDeviation}, returns FALSE; otherwise TRUE. No 2nd. arg., or 2nd. arg. ≤ 0, invokes the default value of 1e-10. Returned data has structure of {Value}. If {Value} is an array, the return is an array of booleans.
+===============================================================
+//rand//  28
+(Version 1:)  scalar {Limiter}.  NONVOID. {Limiter} is rounded; if then <= 1, returns double 0 <= x < 1; otherwise returns integer 0 to Limiter-1.  (Version 2: )  scalar {Size}, scalar {Limiter} [, bool {NoDuplications} ]. NONVOID; returns array of given size. 3rd. arg. applies for integers only (N>= 2). (Version 3: )  array {NamedArray}, scalar {Limiter} [, bool {NoDuplications} ]. VOID; fills the array.
+===============================================================
+//seed//  29
+scalar {SeedValue}.  Valid if {SeedValue} is in the range 1 to 2,147,483,647. {SeedValue} <= 0 forces unpredictable internal .NET automatic seeding.
+===============================================================
+//data//  30
+any number of literals, scalar variables or arrays. The character status of arr%ays is not recognized; the output is always a non-char. list array. 
+===============================================================
+//show//  31
+any number of <# magenta>literals<# blue>, scalar variables or arrays.  Scalar literals (e.g. '10') are taken as unicode char. values; other scala%rs ('x', '2+3'): value converted to string form. Arrays: treated according to char. rating of arr%ay; non-char. ar%rays show as e.g. "1, 3, 45, -4.7". Box size and position: set with a prior call to fn. 'setbox'. Formatting: standard tags are valid (which means also that to display "<" safely you must use "\\\<"). <u>RETURNS</u> an array: whatever is highlighted, or just ' ' if no highlighting. <u>MAKE EDITABLE</u> by starting the argument values with exactly: "[EDITABLE]".
+===============================================================
+32 ("__segmt") and 33 ("__assign") are for internal use, not available to users.
+===============================================================
+//label//  34
+Args. aggregated to a single text. Nonvoid fn. The first character must be one of 'A'(ssignments Window label), 'R'(esults Window label), 'C'(omments label), 'T'(title of main window). The remaining text is handled as exactly for args. of fn. "write(.)". Modes: (a) "ss = label('C');" (no remaining text): current text placed in 'ss', and no changes made. (b) "label('C', 'yak')" --> label text replaced "yak". (c) "label('C', '_DEFAULT_yak')" --> startup text to label, followed by 'yak' (or nothing, if no 'yak') (Does not apply for 'T'). Return for (b), (c), error: " ".
+===============================================================
+//redim//  35
+arrays {VictimArrays}, scalar {Dimension1}, scalar {Dimension2} ...  Non-void. {VictimArrays} must all be previously defined arrays. Dimensions start from highest dimension. Existing data preserved, with truncation or zero-padding. (Client list, chars. rating not altered.)  RETURNS scalar or array: New size(s) minus old size(s).
+===============================================================
+//redimlike//  36
+arrays {VictimArrays},   array {ModelArray}.  Non-void. All arrays must be previously defined. The structure of {ModelArray} will be imposed on all of {VictimArrays}. Data of {VictimArrays} is conserved as possible (truncated or padded).  RETURNS scalar or array: New size(s) minus old size(s).
+===============================================================
+//fill//  37
+(Version 1:)  scalar {ArraySize},  scalars {Coefficients}. Returns an ar%ray of this size. (Version 2:) array {NamedArray}, scalars {Coefficients}. Void; fills {NamedArray} a/c to its size. (Won't work with segments, as in 'fill(Mx[0], ...)'). {Coefficients}: c0, [c1, [c2, ... ] for polynomial  c0 + c1.x + c2.x^2...
+===============================================================
+// 38 not for users ('__quote')
+===============================================================
+//polystring//  39
+array {Polynomial}, [, scalar {Precision} [, array or scalar {PowersAsSuperscripts} [, char array IndepVariable ] ].   {Polynomial} is an array of coeffs.; {Precision} is how many decimal values to show; {P.A.S.} - TRUE --> powers get superscript tags. {I.V.} - default text is "X".
+===============================================================
+//gridx//  40
+scalar {GraphID},  <# magenta>values<# blue> {LowEnd},  {HighEnd}, {NoSegmts}. The three values can be packed into an array (or any scalar / array combination). RETURNS the axis args. as a list array, size 3.
+===============================================================
+//gridy//  41
+scalar {GraphID},  <# magenta>values<# blue> {LowEnd},  {HighEnd}, {NoSegmts}. The three values can be packed into an array (or any scalar / array combination). RETURNS the axis args. as a list array, size 3.
+===============================================================
+//gridz//  42
+scalar {GraphID},  <# magenta>values<# blue> {LowEnd},  {HighEnd}, {NoSegmts}. The three values can be packed into an array (or any scalar / array combination). RETURNS the axis args. as a list array, size 3.
+===============================================================
+//killplot//  43
+Any no. of values as scalars or arrays; no error raised; identifiable plots are removed from everywhere. 
+===============================================================
+//killgraphs//  44
+scalar/array {GraphID},  array  {DoWhatWithPlots} ].  Destroys listed graphing boards; if is exactly "all", kills all graphs. {DoWhatWithPlots}: '!' = kill indiscriminately; '?' = kill only if in no other graphs (is slow); '-' (or anything else) = don't kill any plots. Note that 'lastclosed()' returns 0 after all calls to this fn.
+===============================================================
+//addplot//  45
+scalar {GraphID}, Any no. of values as scalars or arrays. Void. Identifiable plots are added to the graph. No errors raised.
+===============================================================
+//save//  46
+<u><# black>AS TEXT</u>:  <# blue><b>'T'</b>, array <b>Data</b>, array <b>FileName</b>, array <b>WhatIfFileExists</b> [,  <# darkgreen>dummy,  dummy,  <# blue><b>DefaultExtension</b> ]<# black>
+<u>AS CODED ARRAY</u>:  <# blue><b>'A'</b>, array <b>Data</b>, array <b>FileName</b>, array <b>WhatIfFileExists</b> [,  bool <b>ApplyPrefix</b> [, array <b>Description</b> [, array <b>DefaultExtension</b> ] ]<# black>
+<u>AS TEXT-FORMATTED</u>:  <# blue><b>'F'</b>, array/scalar <b>Data</b>, array <b>FileName</b>, array <b>WhatIfFileExists</b>,  array <b>VarNameInFile</b> [,  <# darkgreen>dummy,  <# blue>array <b>DefaultExtension</b> ]<# black>
+<u>AS BYTES</u>:  <# blue><b>'B'</b>, array <b>Data</b>, array <b>FileName</b>, array <b>WhatIfFileExists</b> [,  <# darkgreen>dummy,  dummy,<# blue>  array <b>DefaultExtension</b> ]<# black>. Values must be in range 0 to 255, or crasho.
+RETURN: true / false for all forms.  Errors and information reflected in iok() and iomessage().
+===============================================================
+//datastrip//  47
+array {Array},  scalar {OffsetAddress} [, scalar {NewValue} ].  Ignores structure of {Array} and directly reads from / writes to its data strip at the given {OffsetAddress}. The 'write' form (3 argument version) is VOID.
+===============================================================
+//defrac//  48
+array or scalar {Value(s)}. Fraction part removed. (Sign alters for values in range 0 to -0.999..., otherwise is same as input sign.)
+===============================================================
+//chars//  49
+any no. of {Arrays}.   Void.  Each {Array} has its chars. rating changed to TRUE. Scalars are ignored.
+===============================================================
+//unchars//  50
+any no. of {Arrays}.   Void.  Each {Array} has its chars. rating changed to FALSE. Scalars are ignored.
+===============================================================
+//write//  51
+//writeln//  56
+any number of <# magenta>literals<# blue>, scalar variables or arrays.  Literals ('10'): taken as unicode char. value; other scala%rs ('x', '2+3'): value converted to string form. Arrays: treated according to char. rating of arr%ay; non-char. ar%rays show as e.g. "1, 3, 45, -4.7".
+===============================================================
+//hex//  52
+scalar / array {Values} [, scalar {NoForcedDigits} ].  NoForcedDigits can be up to 16. {Values} an array: values concatenated (each separately a/c NoForcedDigits, if present).  E.g. "hex( data(1,2,3), 2)" returns "010203". 
+===============================================================
+//unhex//  53
+array {HexString} [, bool {isInt16} ].  Normally takes up to 16 chars; beyond "7FFF FFFF FFFF FFFF" returns negative no. If {isInt16} present and TRUE, only takes up to 8 chars, and beyond "7FFF FFFF" returns negative number. In both cases, if {HexString} is longer than 16 (or 8) chars, only the rightmost 16 (or 8) chars are read, rest ignored. Spaces and tabs allowed, nil else.
+===============================================================
+//ladder//  54
+<# red><b>Version 1:</b>  scalar {Size},  scalar {StartVal}, scalar {EndVal}. Returns an array of size {Size} with evenly ascending or descending values.  <# red><b>Version 2:</b>  array {NamedArray},  scalar {StartVal}, scalar {EndVal}. NamedArray stays the same size and structure, and is refilled with the calculated values. <# red><b>Version 3:</b> scalar {Interval}, scalar {StartVal}, scalar {EndVal}, bool {ConformInterval}. If last TRUE: rounds interval to exactly fit; if FALSE, includes values up to the last not greater than {EndVal} (or, if {Interval} negative, not less than it).
+===============================================================
+//bin//  55
+scalar {Value} [, scalar {GroupSize} [, char. array {Delimiter} ] ] . Value is rounded. Range allowed: 1 to 2,147,483,647. GroupSize >= 1 -->: (1) string length a multiple of it (left-padded if nec. with zeroes); (2) if Delimiter supplied, delimits packets of GroupSize bits.
+===============================================================
+//writeln   56 -- see write 51
+===============================================================
+//size//  57
+(Version 1:)  {Variable}. Scalar  Variable returns 0; arr%ay Variable returns data size.  (Version 2:)  array {Array},  scalar {Dimension}. Returns size of given dimension (0 to 4); silly arg. --> -1.
+===============================================================
+//dims//  58
+array {Array }  [, bool {ReturnAllDims} ].  Returns dimensions of Array; length = no. dims., unless bool is present and true, in which case returned length is 5, with unused dimensions 0.
+===============================================================
+//neat//  59
+variable {DisplayObject} [,  variable {Formatting} [, {Tabbing} ] ] . {Formatting}: scalar (max. no. decimals) or a NET fmt string. {Tabbing}: 'C','c' forces chars.; 'T','t' forces tab delim (50 pixels x no t's); scalar < 10 --> tab delim = 50 pixels * that no.; scalar >= 10: tab delim = that no. of pixels. (Repeating 't' has same effect: 'ttt' is equivalent to scalar 3.)
+===============================================================
+//copy//  60
+array {Source},  scalar {StartPtr} [, {Extent} ].  If no Extent, copies to end of array. Silly args. adjusted without error. Returns a list array. If logically should have length 0, instead has length 1 and value NaN, and call to 'empty(.)' would return 'true'.
+===============================================================
+//copyto//  61
+array {Source},  scalar {StartPtr}, scalar {EndPtr}.  Silly args. adjusted without error. Returns a list array. If logically should have length 0, instead has length 1 and value NaN, and call to 'empty(.)' would return 'true'.
+===============================================================
+//boolstr//  62
+any no. of scalars and arrays {TestValues} [, <# magenta>chars. array {TrueFalseStrings} ].  {T.F.S.}: default 'true','false'. "T"--> all caps, "t" --> all small. "Tr", "tR" obv. (rest of array ignored.) "/yak/ z a k " --> 'yak' for true, ' z a k ' for false. Returns: unpadded list array for single scalar; otherwise jagged matrix, padded to longer string length, filler = space.
+===============================================================
+//findall//  63
+\nVersion 1:  array {ArrayToSearch},  scalar {StartPtr},  scalar {Value}. Searches for all instances of scalar {Value} in {ArrayToSearch}.
+Version 2:  array {ArrayToSearch},  scalar {StartPtr},  scalar {LoValue}, scalar {HiValue}. Searches for all values lying between or at the given limits. 
+Version 3:  array {ArrayToSearch},  scalar {StartPtr},  array {SoughtArray}. Searches for all instances of {SoughtArray} in {ArrayToSearch}.
+ALL RETURN an array. If there are find(s), the array has their absolute addresses. If none, the array is [-1].
+===============================================================
+//reverse//  64
+single array.  VOID; reverses the contents of the array, without interfering with its structure or characters rating.
+===============================================================
+//transpose//  65
+array {Arr}. List array taken as row vector. Returns transposed vector or ma%trix. 
+===============================================================
+//dot//  66
+array {Arr1}, array {Arr2}. Arrays must have same length, but structure is ignored. Returns scalar sum of term-by-term products.
+===============================================================
+//mxmult//  67
+array {Arr1}, array {Arr2}. Matrix multiplication, requiring compatible matrices / vectors. List arrays are taken as row  vectors.
+===============================================================
+//max//  68
+any number of scalar or array values.  Returns highest value in all arr%ays and sc%alars.
+===============================================================
+//maxat//  69
+any number of scalar or array values.  Detects highest value in all ar%rays and sc%alars. Returns array, size 3: [0] = max. value, [1] = no. of argument holding it (to base 0), [2]  = position inside that argument (to base 0).
+===============================================================
+//maxabs//  70
+any number of scalar or array values.  Returns that value which, when unsigned, is the highest value in all arr%ays and sc%alars. NB: the returned value retains its original sign, so may be negative.
+===============================================================
+//maxabsat//  71
+any number of scalar or array values.  Detects that value which, when unsigned, is the highest value in all ar%rays and sc%alars. Returns array, size 3: [0] = max. value, [1] = no. of argument holding it (to base 0), [2]  = position inside that argument (to base 0). NB: the returned value retains its original sign, so may be negative.
+===============================================================
+//sort//  72
+array {Arr} [, scalar {WhichWay} [, scalar {StartAt} [, scalar {EndAt} ] ] ]. Void; structure of Arr unchanged.  {WhichWay}: >= 0 / omitted --> ascending sort; < 0 --> descending. Out of range values of pointers corrected, but they must not cross.
+===============================================================
+//sortbykey//  73
+array {DataArr1}, [ array {DataArr2} [, ... ]],  array {KeyArr} [, scalar {WhichWay} [, scalar {StartAt} [, scalar {EndAt} ] ] ]. VOID; sorts one or more data arrays by {KeyArr} (which also returns sorted). All arrays must have same length, irrespective of pointers. Structure, chars. rating not accessed. {WhichWay}: < 0 --> descending. Silly pointers corrected, but they must not cross. Subrange: rest of KeyArr ignored.
+===============================================================
+//grid//  74
+scalar [ {GraphID}, ] <# magenta>values<# blue> {LowX},  {HighX}, {NoXSegmts}, {LowY},  {HighY}, {NoYSegmts}, {LowZ},  {HighZ}, {NoZSegmts} (last 3 for 3D graphs only). Values after GraphID can be packed into any scalar / array combination. RETURNS the axis args. as a list array (error: size 1, value NaN, 'empty(.)' returns TRUE). If no {GraphID}, settings apply to the next graph created.
+===============================================================
+//removeplot//  75
+scalar {GraphID}, any no. of scalars or arrays containing {PlotIDs}. Removes identifiable plots from this graph (2D or 3D) but <I>not</I> from other graphs or from internal list of current plots.
+===============================================================
+//request//  76
+NAMED scalar {Btn}, array {Heading}, array {BodyText}, array/scalar {Label1}, array/scalar {Content1}, [ {Label2}, {Content2}, ... , ]  array {ButtonsEtc}. If {Content} or {Label} is scalar, --> no corresponding text. <u>Special case:</u> single pair, all labels in Label1, delimited by '{{|}}'; ditto, Content1.  {ButtonsEtc}: delimiter '|'. If <i>last</i> string is "#:", followed by integer(s) delimited by commas, the integers code action when ENTER keyed in the box: -1 = close, return 100 + box no. (base  0); 0 = do nothing; N = focus button N; 100+N = focus text box N (base 0).
+RETURNED: REF arg. {Btn} returns as 0 for icon closure, 1+ for named buttons (left to right). RETURNED ARRAY: (a) one text box: trimmed list array (just one space, if was empty string). (b) > 1 box: jagged array, rows trimmed at front (if all boxes were empty, all rows are a single space.)  NO PARSING. 
+===============================================================
+//clip//  77
+scalar {LowerLimit},  scalar {UpperLimit}, scalar or array {Values}.  RETURNS an identically structured copy of Values with all values confined to limits. To not have one of the limits, replace it with <I>any</I> array (e.g. "none").
+===============================================================
+//clipabs// 78
+scalar {LowerLimit},  scalar {UpperLimit}, scalar or array {Values}.  RETURNS a copy of Values with all values confined to absolute limits. (Limits : sign ignored, |Limit| used.) To not have one of the limits, replace it with <I>any</I> array (e.g. "none").
+===============================================================
+//evalpoly//  79
+(Version 1:) array {Poly},  scalar or list array {IndepVar}. {Poly}[i] is coeff. of x^i. Returns evaluation(s) as scalar or array.  (Version 2:) array {Poly},  Nx2 matrix {IndepVar}. {IndepVar}[i] is rect. complex: [i][0] real part, [i][1] imag part. Returns Nx2 mx.
+===============================================================
+//solvesim//  80
+matrix {LHSCoeffs}, array {RHS}.  {LHSCoeffs} must be a square matrix, at least 2x2. Returned: list array of solutions. If no solutions, --> array of size 1: [0] = 1 for homogeneous eqns, 2 for indeterminate eqns.
+===============================================================
+//determinant//  81
+matrix {Mx} [, scalar {VirtualZero} ].  Values in the returned determinant which are < = VirtualZero are adjusted to exactly zero.
+===============================================================
+//solvepoly//  82
+array {Poly} [, scalar {VirtualZero} [, array {PolarRect} ] ].  Output values < = {VirtualZero} are adjusted to 0. Default output is rectangular; if {PolarRect}[0] is 'P' or 'p',output is polar. (Only allowed values: 'R','r','P','p'). Output is an Nx2 array: [i][0] real, [i][1] imag. Unsolvable poly. --> list array, size 1, value 0.
+===============================================================
+//rootstopoly//  83
+array {Roots}. If {Roots} is a list array or vector, taken as real roots. If an Nx2 matrix, taken as rectangular complex roots ([i][0] real, [i][1] imag). All errors crash, so returned array is always valid ([i] is coeff. of x^i).
+===============================================================
+//compare//  84
+array {Arr1}, array {Arr2} [, scalar VirtZero [, scalar FromPtr [, scalar Extent ] ] ].  If subrange, must be present in both arrays. Returned: array, size 9: [0] = Arr1 length - Arr2 length; [1] ptr. to first |diff| > VirtZero; [2] = last such; [3] = max pos. diff; [4] = max neg. diff; [5] = max. |diff|; [6] = av. diff; [7] = av. |diff|; [8] = RMS diff.
+===============================================================
+//interpolate//  85
+scalar / array {PseudoIndexes},  array {BaseArray} -- Interpolates / extrapolates on the basis of the nearest two indices in {BaseArray}. E.g. for a pseudo-index 1.25, the result differs from BaseArray[1] by 0.25 * (BaseArray[2] ‒ BaseArray[1]). RETURNED value takes the same form as {PseudoIndexes}. Both arrays: no ordering restrictions.
+===============================================================
+//even//  86
+scalar or array {TestValue} [, scalar {Divisor}]. Args. rounded.  {Divisor} must be >= 2; the default is 2. Returns scalar / array of 'true' (1) for each exact division, or 'false' (0).
+===============================================================
+//diffpoly//  87
+array {Poly}. Returns a polynomial array.
+===============================================================
+//load//  88
+array {Mode}, array {FileName}...  where {Mode} starts with 'A'(rray), 'B'(ytes), 'T'(ext), 'F'(ormatted), 'D'(irectory only).  {FileName}: Trimmed, and chars. 0, 32 purged. Can use "~/".  {Mode} = 'A': optional 3rd. argument bool {ExpectPrefix}. {Mode} = 'F': obligatory 3rd. argument: array {VarNameInFile}.
+RETURN is the file data (if success).  Errors and information reflected in iok() and iomessage().
+===============================================================
+//between//  89
+array {Source},  scalar {StartPtr}, scalar {EndPtr}.  Returns a list array, the subarray between {StartPtr} and {EndPtr} EXCLUSIVE. {StartPtr} negative --> Source[0] included; {EndPtr} beyond end --> end of Source included. If args. decree that length <= 0, returns the empty array (length 1, value NaN).
+===============================================================
+//sign//  90
+scalar / array {Values} [, scalar {ReturnForZero} [, scalar {ReturnForPositive} [, scalar {ReturnForNegative} [, scalar {VirtualZero} ] ] ] ].  Returns entity of same structure as Values, but replacing Values[i] with one of the three 'ReturnFor...'  values (defaults: 0, +1, -1). If {VirtualZero} supplied, values ≤ VirtualZero are regarded as 0.
+===============================================================
+//integral//  91
+array {Integrand},  scalar {LowX},  scalar {HighX}.  Returns scalar value, the definite integral. {Integrand} <I>must</I> have an odd no. values, at least 3.
+===============================================================
+//intcurve//  92
+array {Integrand},  scalar {LowX},  scalar {HighX} [, scalar {Constant} ].  {Integrand} <I>must</I> have an odd no. values, at least 3.  Returns a matrix {Mx} holding curve plot points: ith. point is (Mx[i][0], Mx[i][1]). {Constant} has been added to every Y value.
+===============================================================
+//gauss//  93
+scalar / array: {Value},  scalars {Mean}, {StandardDevn}, {CurvePeak}, bool {IsInverse}.  If CurvePeak < = 0, the classical curve peak (for area under curve = 1) is used: 1 / [ sqrt(2*<| p>) * SD]. Errors do not crash, but return  -1e100. Returned scalar / array has same structure as {Value}.
+===============================================================
+//randgauss//  94
+(Version 1:)  scalars {Mean}, {SD} [, {LowVal}, {HiVal } ]. Last two:both or neither. If neither, LowVal and HiVal are 5.476.. SDs from the mean. (If both: out-of-range value(s) ignored.) Returns scalar. (Version 2:) array (or scalar) {VarToFill}, .. (other args. as before). Void; fills VarToFill with values. NB - Window must be wider than SD/10; and window must not be further from mean than 4 SD's.
+===============================================================
+//graphcopy//   95
+scalar {OriginalGraphID}, bool {UseStartupDimensions}.  Copies the graph, but without any plots. Returns new graph ID (or 0, if original graph not identified). If {NOT UseStartupDimensions}, effects of margin-dragging and of fn. 'graphresize(.)' on the old graph since its creation are copied to the new graph. (3D: also copies any changes to cage orientation.) (Allow ~  0.1 seconds between 'graphresize(.)' and this function call.)
+===============================================================
+//curvefit//  96
+array {XPoints},  array {YPoints},  scalar {PolyDegree}.  XPoints <I>must</I> be in ascending order, with <I>no</I> duplications. PolyDegree must be >= 1, and no. points at least (PolyDegree+1).
+===============================================================
+//upsample//  97
+array {Values}, scalar {UpRate}, array {Method} [, scalar {StartPtr} [, scalar {EndPtr} [, scalar {LopCount} ] ] ].  {Method} for new values: 'Z'(eroes), 'L'(inear), 'S'(tep), 'C'(ubic spline). {Ptrs}: -1 for defaults ( = array start / end). {LopCount} - no. end values of output to remove (tip: use 1 for 'S' case). {Values} must have at least 3 elements; structure irrelevant. If {UpRate} rounds to ≤ 1, fn. simply returns {Values} (as list array).
+===============================================================
+//downsample//  98
+array {Values}, scalar {DownRate} [, scalar {StartPtr} [, scalar {EndPtr} ] ]. Returns all before {StartPtr}, plus {StartPtr} and every 'DownRate'th. value thereafter to {EndPtr}; + all after {EndPtr}. To start downsampling from Values[p] (where 0 \< p \< DownRate), set StartPtr to (p - DownRate).
+===============================================================
+//odometer//  99
+array {NamedArray}, scalar {NumberBase} [, scalar {Direction} ]. {Direction} > = 0 --> increments by 1; < 0 --> decrements by 1.  NOT void: returns a/c to final {NamedArray} state: 0 (all digits 0), 2 (all digits maximal)  or 1 (neither true).
+===============================================================
+//moments//  100
+array {Data} [, {IncludeKurtosis} ].  Returned array (size 5 or 6):  [0] = mean; [1], [2] = SD, Variance using divisor of (pop. size-1);  [3], [4]  = SD, Var. with divisor pop. size; if {IncludeKurtosis}, [5] = kurtosis (divisor pop. size). 
+===============================================================
+//setbins//  101
+array {Data} [, scalar {BinWidth}, scalar {LoCentre}, scalar {HiCentre}, bool {IncludeAllData} ]. Note: either one argument, or all 5.  {Data} must be >= 4 items. Must be at least 4 bars. {IncludeAllData}: if 'true', out-of-range data goes into end bars. Returns Mx, size  3 x NoBars. [3,0] is either NoBars or a neg. value ( = error).
+===============================================================
+//sum//  102
+array {AnyArray} [, scalar {StartPtr} [, scalar {EndPtr} ] ].  Returns scalar - sum of elements, either all, or all to end ( {S.P.} supplied), or all in a range ( {E.P}. also supplied).
+===============================================================
+//shuffle//  103
+array {AnyArray} [, {ReturnOrigIndices} ]. Shuffles AnyArray directly. If {AnyArray} is <I>all zeroes</I>, AnyArray is first converted to [0, 1, 2, ...] and then shuffled. VOID UNLESS there is a second nonzero arg; if so, returns original indices of AnyArray's elements (but still directly alters AnyArray).
+===============================================================
+//isarray//  104
+scalar or array Variable. Returns 1 or 0.
+===============================================================
+//norm//  105
+array {Data}. Returns Euclidean norm of contents (i.e. square root of sum of squares).
+===============================================================
+//inverse//  106
+matrix {SquareMx}  [, scalar VirtualZero]. Error returns list array, size 1, value NaN; call to 'empty(.)' returns 'true'.
+===============================================================
+//text//  107
+any number of <# magenta>literals<# blue>, scalar variables or arrays.  Literals ('10'): taken as unicode char. value; other scala%rs ('x', '2+3'): value converted to string form. Arrays: char. arr%ay taken as is; non-char. ar%ray are converted to  e.g. "1, 3, 45, -4.7".
+===============================================================
+//last//  108
+array {AnyArray} [,  scalar {Which} ].  If {Which} is absent or zero, returns the last value in the array. If +1 or -1, the last-but-one entry; etc. If | Which |  >= array length, raises an error.
+===============================================================
+//errortrap//  109
+(Version 1:) array or scalar {Anything},  scalar {ErrorSignature}.  Turns error trapping on, so that function faults return {ErrorSignature} rather than crashing. Make {Anything} intuitive, e.g. "on". (Version 2:) array or scalar {Anything} - turns trapping off.
+===============================================================
+//errormsg//  110
+None.  Returns cumulated error messages in different paragraphs, or - if none - " ".
+===============================================================
+//errorcnt//  111
+None.  Returns the number of errors since error trapping turned on. 
+===============================================================
+//list_to//  112
+scalar {ListNo}, scalar {FirstPtr}, scalar LastPtr. Returns list extent as array. Impossible arguments crash. Attempt to return empty array crashes.
+===============================================================
+//fourier//  113
+array {RealArray} or matrix {CxArray} [,  bool {ForwardTransform}].  Inverse transform only done if last arg. present and false. If the input is {CxArray}, the output object copies its dimensional structure. (Forward action: no coeff, negative expon'l; Inverse: coeff. 1/N, +ve. exp.)
+===============================================================
+//rect//  114
+array {PolarCxArray} [, scalar {VirtualZero} ].  P.C.A.: structure ignored; regarded as linear sequence: [abs.][angle][abs.][angle]... Must have even size. Negative absol. value crashes. Returned array has same structure as input array.
+===============================================================
+//polar//  115
+array {RectCxArray} [, scalar {VirtualZero} ].  R.C.A.: structure ignored; regarded as linear sequence: [real][imag] [real][imag]... Must have even size. Returned array has same structure as input array. |Angle| always <= PI.    (0 + j.0) --> 0 angle 0.
+===============================================================
+//complex//  116
+array {CxArray}, array (length 2) or mx (2 cols) or scalar {Var}, array {Operation},  array {PolRectTyping} [, scalar {VirtualZero} ].  {Opn.} = '+', '-', '*', '/', or '^'. {P.R.T.} - length 3, using chars. 'P', 'R'; e.g. for (polar + rect --> polar), use "PRP". {CxArray} taken as linear sequence [real][imag].. or [abs][angle].. Returned object has same structure as CxArray.
+===============================================================
+//merge//  117
+Two or more arrays {Source1}, {Source2} ...;  zero or more scalars {Extent1}, {Extent2}, ... ]. Data is interleaved into the returned array in slices of length set by {Extenti} for {Sourcei}. Absent {Extenti} defaults to 1. Extents can be 0 or negative, in which case the corresponding array is ignored; but extents can't all be such. Structures ignored, list array returned (with chars. rating of {Source1}). Arrays may have unequal length. Output array building stops as soon as data for some array has run out.
+===============================================================
+//graphresize//  118
+scalar {GraphID}, scalar {HorizPixels}, scalar {VertPixels}. Void. Sets rim of the graph cage. No errors raised. The two scalars can be combined in a single array.
+===============================================================
+//place//  119
+array {Data},  scalar {LowLimit} [, scalar {HighLimit} ].  Returns index of first value at or between limits (or if no 3rd. arg.,  the first value at or above {LowLimit}). Returns -1, if no qualifiers. <# red>Deprecated; use function 'placement' instead.
+===============================================================
+//places//  120
+array {Data},  scalar {LowLimit} [, scalar {HighLimit} ].  (No 3rd. arg.: {HighLimit} taken as infinity.)  Returns array, size 6: [0] = 1st. loc'n in range (i.e. at or between limits); [1] = last loc'n in range; [2] = no. placed between [0] and [1] that are below range; [3] = do. above range; [4],[5]: no. below / above range in whole array. <# red>Deprecated, removal planned.
+===============================================================
+//reorder//  121
+array {Key},  any no. arrays {Arr1}, {Arr2}.. of same size as {Key}.  VOID. Each of Arr1.. has elements rearranged such that new Arr[i] = old Arr[Key[i]]. {Key} values (rounded) must be in range. Duplications allowed. All {Arr1} etc. must have the same size as {Key}.
+===============================================================
+//matches//  122
+variable {Var1}, variable {Var2} [, scalar {Tolerance} ] -- Nonvoid. allowed combinations: array-array (same length, not nec. same structure); array-scalar; scalar-scalar. Returned object of same structure as {Var1}, with only values 0 (mismatch) and 1 (match). |Difference| <= {Tolerance} taken as a match. Tolerance < 0 ignored.
+===============================================================
+//mismatches//  123
+variable {Var1}, variable {Var2} [,scalar {Tolerance} ] -- Nonvoid. allowed combinations: array-array (same length, not nec. same structure); array-scalar; scalar-scalar. Returned object of same structure as {Var1}, with only values 1 (mismatch) and 0 (match). |Difference| <= {Tolerance} taken as a match. Tolerance < 0 ignored.
+===============================================================
+//nozero//  124
+variable {Var} [, scalar {Tolerance} ] -- returns true (scalar 1) if NO element of {Var} is 0. If {Tolerance} present and positive, |values| <= Tolerance are taken as 0.
+===============================================================
+//allzero//  125
+variable {Var} [, scalar {Tolerance} ] -- returns true (scalar 1) only if ALL elements of {Var} are 0. If {Tolerance} present and positive, |values| <= Tolerance are taken as 0.
+===============================================================
+//is//  126
+variable {Var} [, scalar {Tolerance} ] -- Returned object has same structure as {Var}, with only values 0 (where Var[i] = 0) and 1 (where Var[i] not 0). If {Tolerance} present and positive, |values| <= Tolerance are taken as 0.
+===============================================================
+//not//  127
+variable {Var} [, scalar {Tolerance} ] -- Returned object has same structure as {Var}, with only values 1 (where Var[i] = 0) and 0 (where Var[i] not 0). If {Tolerance} present and positive, |values| <= Tolerance are taken as 0 and so replaced by 1.
+===============================================================
+//bkmkcopy//  128
+array {Source}, scalar {StartPtr}, array {OpenBkMk}, array {CloseBkMk}.  Looks for bkmks from StartPtr on. Returns what is between them. No find, or nothing between them, --> array size 1, value NaN; 'empty(.)' returns 'true'.
+===============================================================
+//bkmkreplace//  129
+array {Source}, scalar {StartPtr}, array {OpenBkMk}, array {CloseBkMk}, array NewData [, bool {RetainBkMks}.  Looks for bkmks from StartPtr on. If found, implants NewData between them. ===============================================================
+//rowop//  130
+matrix {Mx}, scalar {RowNo}, scalar {K1}, array {RC1} , scalar {TierNo1} [, array {Sign}, scalar {K2}, array {RC2} , scalar {TierNo1} ]. VOID. {RC} is 'R',r','C','c' (for row or col), or anything else (for row / col [1 1 1 ...]). Suppose RC1 = 'R', 'RC2' = 'C', Sign = '+': then Mx[RowNo] = K1.Mx[TierNo1] + K2.Mx[][TierNo2].  Sign must be one of '+ - * /', or crasho.
+===============================================================
+//colop//  131
+matrix {Mx}, scalar {ColNo}, scalar {K1}, array {RC1} , scalar {TierNo1} [, array {Sign}, scalar {K2}, array {RC2} , scalar {TierNo1} ]. VOID. {RC} is 'R',r','C','c' (for row or col), or anything else (for row / col [1 1 1 ...]). Suppose RC1 = 'R', 'RC2' = 'C', Sign = '+': then Mx[][ColNo] = K1.Mx[TierNo1] + K2.Mx[][TierNo2].  Sign must be one of '+ - * /', or crasho.
+===============================================================
+//randsign//  132
+array or scalar {Data} [, scalar {ProbOfPlus}] .  Returns a copy of Data with all values multiplied randomly by +1 or -1. Probability of mult. by +1 is {ProbOfPlus}, which must be 0 ≤ value ≤ 1, or crash; default for omission is 0.5.
+===============================================================
+//starttimer//  133
+scalar(s) and/or array(s) {TimerNo(s)} -- Void. Sets start time of listed timer(s). Each timer identifier must lie in the range 0 - 19, or error raised.
+===============================================================
+//timer//  134
+scalar {TimerID} [, char array {DoWhat} ].  Timer IDs are 0 to 19.  Returns no. msecs. since 'starttimer(TimerID)' call. If no 'starttimer' call, returns time since start of 1 AD. {DoWhat} - 1st. char. 'P' or 'p' (pause), 'R' or 'r' (resume), or '?' (returns TRUE if paused, FALSE if not); others crash. SPECIAL FIRST ARG VALUES: -1: returns msecs. since the user program began; -2: returns msecs. since MonoMaths instance began. 
+===============================================================
+//plotmesh//  135
+<# magenta> matrix  {YValues},  matrix/array{XValues};  the rest are all optional: array {PtType}, array/scalar {PtWidth}, array {PtClr}, array {LnType}, array/scalar {LnWidth}, array {LnClr}, array {PtFamily}, array {LnFamily}, array {XLnFamily}, array {Looping}, array {Texts}, array {FontName}.  Coordinate matrices must be at least 2x2 and have identical dimensions. Only 1st. 2 args. obligatory.
+===============================================================
+//placeboard//  136
+VOID. <u>VERSION 1:</u> scalar {GraphID}, values {Left}, {Top}, {Width}, {Height} (any mix of scalars / arrays). Values  referable to the window's placement on the screen. Values <= 1 are fractions of screen width/height; > 1, pixels. Negative values maintain the preexisting value.
+<u>VERSION 2:</u> scalar {GraphID}, char array {PutItWhere}. Graph dimensions unchanged. Placement options: "top_left", "top_mid", "top_right", "mid_left", "mid_mid",  "mid_right", "btm_left", "btm_mid", "btm_right".
+===============================================================
+//lastclosed//  137
+none.  Returns GraphID, if a graph just closed; otherwise returns 0. (Resets internal flag when called, so would not return the same GraphID twice after its closure.)
+===============================================================
+//jagger//  138
+array {Subject}, array {Operation}, scalar / array {NewRow} [, scalar {RowNo} [, scalar {Length} [, scalar {Padder} ] ] ].  Alters {Subject}. If a list array, overwrites it as a one-row matrix with {newRow}; otherwise alters {Subject} a/c to supplied arguments. {Operation}: ('A','a') appends the new row,  ('I','i') inserts it at {RowNo}, ('O','o') overwrites the old row (if RowNo beyond end, appends, inserting rows of just padder if needed.) ('append' ignores {RowNo}, if present. For all other opns, {RowNo} must be present and legal.)  {NewRow}: if scalar, internally seen as array, length 1. {Subject} rows are padded or amputated, a/c to other args. Default: pad with 0's. RETURNED: {{ no rows, no cols, padder }}.
+===============================================================
+//cull//  139
+array {Subject},  scalar or array {UnwantedValue(s)},  [, array {FromWhere} ].  Returns culled copy. {FromWhere}[0]: 'R','r' = from right (high) end only; 'L', 'l' = from left (low) only; 'T','t' = from both ends. Other / absence: remove throughout Subject. Input structure ignored; list array out (with same chars. rating). The 'empty array' returned, if nothing left.
+===============================================================
+//unmerge//  140
+array {SourceArray}, NAMED arrays {Destination1},  {Destination2} [, {Destination3} .. ].  Deals out the source data to two or more destination arrays, byte by byte in rotation, like cards to players. (Original form and content of these arrays is overwritten.) Returns amount of unused data (where SourceArray size is not a multiple of the no. of destination arrays).
+===============================================================
+//span// 141
+array {Source}, array (/ scalar) {Bkmk1}, array / (scalar) {Bkmk2} [, scalar {FromPtr} [, scalar {ToPtr} ] ].  Normally returns the subarray that lies between {BkMk1} and {BkMk2} in {Source}. if {BkMk1} or {BkMk2} scalar, all is taken between the remaining bookmark and start / end of Source (or a/c to FromPtr, ToPtr). Preserves chars. rating. Returns: (a) SCALAR 1, if {BkMk1} an array but not found; (b) SCALAR 2, if {BkMk2} an array but not found; (c) ARRAY [NaN] if the subarray logically exists but has zero extent; (d) ARRAY of data, if subarray exists and holds data. Any {BkMk1}'s between the first and {BkMk2} are included in the returned subarray.
+===============================================================
+//readgrid//  142
+scalar {GraphID}.  2D or 3D. Returns array: Xmin, Xmax, Xcuts, Ymin, Ymax, Ycuts [, Zmin, Zmax, Zcuts ]. Can be used as arg. for a subsequent 'grid(.)' or 'grid3d(.)' call.  No graph found: size 1, value NaN; immediate call to 'empty(.)' --> TRUE.
+===============================================================
+//captured//  143
+optional array {ShowWhere}. Returns contents of the array most recently captured in the F1 display, and also optionally publishes information about it. ShowWhere[0]} only is consulted; capital letter --> verbose report, small letter --> concise report. 'R','r': to Results Window; 'D','d': to dialog box; 'M','m': to internal buffer whence "iomessage()" retrieves it. Any other value, or scalar argument, does not put a report anywhere.
+===============================================================
+//gfixedclick//  144
+scalar {GraphID}.  Returns: [0] = key (-2 = no graph; -1 = no fixed submenu clicked yet; 0 = click already handled; 1 = not yet handled); [1] = msecs since 1 AD (-1 if no graph or no click yet); [2] onwards = text of menu, less spaces (or is a single space, if no graph or no clicks yet).
+===============================================================
+//decide//  145
+array {Heading},  array {BodyText},  1 to 4 arrays {ButtonTexts}  [, scalars {Width} [, {Height} [, {Left} [, {Top}] ] ].  Buttons go from left to right.  Last 4 args: < 1 = proportion of screen; > 1 = pixels. Returned: 0 = corner icon closure; 1 to 4 = btns. in order of args. (left btn. to right btn.)
+===============================================================
+//run//  146
+array {RunStuff} , array {WhatIsRunStuff}. Void. {W.I.R.S.} is case-insensitive. If {W.I.R.S.}[0] = 'F': RunStuff is the file path and name of a MonoMaths pgm ("~/" allowed).  If [0] = 'T': RunStuff is instead actual pgm. text. if [0][1] = "FQ" or "TQ", runs without putting text in Asst. Window or Results Window.
+===============================================================
+//pgm_copy//  147
+array or scalar {FromBkMark}, array or scalar {ToBkMark} [, bool {IncludeTheFromBkMark} [, bool {IncludeTheToBkMark} ] ].  Returns text between book marks. If BkMark scalar, is a pointer; if array, is text. NB!! Call to 'pgm_copy()' must COME AFTER indicated text (or its args. are taken as the book marks themselves).
+===============================================================
+//pgm_graft//  148
+array ReplacemtText, array or scalar {FromBkMark}, array or scalar {ToBkMark} [, bool {IncludeTheFromBkMark} [, bool {IncludeTheToBkMark} ] ].  Replaces text between book marks. If BkMark scalar, is a pointer; if array, is text. NB!! Call to 'pgm_graft()' must COME AFTER indicated text (or its args. are taken as the book marks themselves).
+===============================================================
+//replace//  149
+array {BaseArray},  scalar {FromPtr}, scalar {Extent},  scalar / array {InsertThis}.  Returns a list array (same chars. rating). Structure of {BaseArray} ignored. {Extent}, if too large, downsized to include end of array. {FromPtr} neg: if -n, and extent = k, they are adjusted to 0 and k-n. {FromPtr} too high, or {Extent} < 1: {BaseArray} is  returned unchanged.
+===============================================================
+//replaceto//  150
+array {BaseArray},  scalar {FromPtr}, scalar {ToPtr},  scalar / array {InsertThis}.  Returns a list array (same chars. rating). Structure of {BaseArray} ignored. {FromPtr} below 0 adjusted to 0. If {FromPtr} or {ToPtr} beyond the end, {BaseArray} is returned unchanged.
+===============================================================
+//insert//  151
+array {BaseArray},  scalar {AtPtr},  array or scalar {InsertThis}.  Gives a list array (same chars. rating), being a copy of {BaseArray}'s data with insertion of {InsertThis} at {AtPtr}. If {AtPtr} \< 0 or \> length of {InputArray}, a simple copy of the data of {InputArray} is returned. (If {AtPtr} = length of {InputArray}, the effect is to append the data.)
+===============================================================
+//delete//  152
+array {BaseArray},  scalar {FromPtr} [, scalar {Extent} ].  Gives a list array (same chars. rating). Structure of BaseArray ignored. Extent downsized if too large. If logically would return empty array, returns array size 1, [0]=NaN, call to 'empty(.)' --> 'true'.  Negative {FromPtr}:  FromPtr = -n and Extent k  has the same effect as  FromPtr = 0, Extent = k-n.  
+===============================================================
+//deleteto//  153
+array {BaseArray},  scalar {FromPtr}, scalar {ToPtr}.  Gives a list array (same chars. rating). Structure of BaseArray ignored. ToPtr downsized if too large. If logically would return empty array, returns array size 1, [0]=NaN, call to 'empty(.)' --> 'true'. Negative {FromPtr} is adjust to 0.
+===============================================================
+//list//  154
+scalar {ListNo} [, scalar {FirstPtr} [, scalar {Extent} ] ]. Returns list extent as array (1 or 3 args.) or a scalar (2 args). Impossible arguments crash. Attempt to return empty array crashes.
+===============================================================
+//lists//  155
+scalar or array {PadValue}, scalar {FirstListNo}, scalar {NoLists} [, scalar {FixedRowLength} ].  Returns mx, rows having length of longest list (or as per 4th. arg). Same fn. as 'lists_read(.)'. ===============================================================
+//lists_to//  156
+scalar or array {PadValue}, scalar {FirstListNo}, scalar {LastListNo} [, scalar {FixedRowLength} ].  Returns mx, rows having length of longest list (or as per 4th. arg). Same fn. as 'lists_read_to(.)'.
+===============================================================
+//clear//  157
+any no. args. of any type. Zeroes all values. Original structure of each variable is preserved.
+===============================================================
+//expunge//  158
+array {InArray},  scalar or array {Target} [, scalar {FromPtr} [, scalar {Extent} ]].  Returns a copy of InArray with all instances of {Target} removed within the stated extent of {InArray}. Returns a list array (the 'empty' array [NaN], if all contents expunged). ERRORS: Negative {FromPtr} or {Extent} crash; otherwise impossible extents simply return a copy of InArray as a list array.
+===============================================================
+//iok//  159
+none.  If last load/save successful, or if neither have occurred since startup, returns 'true'. Internal flag not reset by this call.
+===============================================================
+//iomessage//  160
+[Optional array {WhichPart} ].  If last load/save unsuccessful, holds failure message;  sometimes holds information with a successful call. When 'empty' it consists of a single space.  Internal buffer is not reset by this call. {WhichPart} only useful after successful "load(.., true)", in which case iomessage("name") returns all before '::' and ("time") all after '::'. 
+===============================================================
+//iofile// 161
+scalar or array {WhatPart} -- Returns the file name from the last disk load or save; returns " " if none yet, or if last such failed.  {WhatPart}:  if an array, and first character is 'P' or 'p', only the path returned (terminated by '/'); if 'N' or 'n', only the name; anything else, including scalar, returns the full path and name.
+============================================================
+//shufflemx//  162
+matrix {Mx},  array {RowOrCol} [, array {ImposedOrder}].  Returns copy of {Mx} with rows/columns reordered. {RoworCol}[0]: 'R','r' --> reorder rows; 'C','c' --> reorder columns. {ImposedOrder}: If absent, order of rows / columns is random. If present, must have length = no. rows / cols, as it dictates their new order. Duplications and omissions allowed in {ImposedOrder}.
+===============================================================
+//kill//  163
+any no. scalar or array args. Void. All internal data and info. goes, and the name can be reused for variables of either type (whatever its original type).
+===============================================================
+//asc//  164
+array {Arr}.  Simply returns the value of Arr[0]. (Use: "x = asc('A')".)
+===============================================================
+//pgm_load//  165
+array {LoadStuff} , array {WhatIsLoadStuff}. Void. Stops current pgm and puts new text into Asst. Window in its place. If {W.I.L.S.}[0] = 'F','f': LoadStuff is the file path and name of the new text ("~/" allowed); if [0] = 'T','t': LoadStuff is itself the new text.
+===============================================================
+//list_new//  166
+none. Returns the new total no. of lists, so to ascribe an identifier to the list, do: "ThisList = list_new()-1;".
+===============================================================
+//lists_new//  167
+scalar {NoNewLists}.  Returns the new total no. of lists.
+===============================================================
+//list_clear//  168
+scalar {ListNo}.  Void. Empties the list of all data. Crashes if nonexistent list addressed.
+===============================================================
+// lists_clear//  169
+scalar {FirstListNo},  scalar {NoLists}.  Void. Empties the lists of all data. Crashes if nonexistent lists addressed.
+===============================================================
+// lists_clear_to//  170
+scalar {FirstListNo},  scalar {LastListNo}.  Void. Empties the lists of all data. Crashes if nonexistent lists addressed.
+===============================================================
+//lists_kill//  171
+scalar {AllFromThisListNo}.  All lists at and above the arg. cease to exist. No error crashes; if arg. < 0, it is corrected to 0; if > no. lists, simply no list is killed.
+===============================================================
+//lists_preserve//  172
+none. Void. Prevents destruction of lists at end of pgm; they persist into the next (only) pgm. run. No inverse function (as none needed).
+===============================================================
+//list_add//  173
+scalar {ListNo},  any no. of scalars and arrays.  Values will be appended to the list. Crashes if ListNo faulty.
+===============================================================
+//lists_count//  174
+none.  Returns the number of lists in existence.
+===============================================================
+//list_size//  175
+scalar {ListNo}.  Returns its size. Doesn't crash if no such list, but instead returns -1 (so can be used as test for existence).
+===============================================================
+//list_read//  176
+scalar {ListNo} [, scalar {FirstPtr} [, scalar {Extent} ] ]. Returns list extent as array (1 or 3 args.) or a scalar (2 args). Impossible arguments crash. Attempt to return empty array crashes.
+===============================================================
+//list_read_to//  177
+scalar {ListNo}, scalar {FirstPtr}, scalar {LastPtr}. Returns list extent as array. Same fn. as 'list_to(.)'. Impossible arguments crash. Attempt to return empty array crashes.
+===============================================================
+//list_alter//  178
+scalar {ListNo},  scalar {StartPtr},  scalar or array {NewData}. Overwrites from StartPtr up. Crashes if any attempt to write beyond end of list (i.e. cannot be used to append).
+===============================================================
+//lists_read//  179
+scalar or array {PadValue}, scalar {FirstListNo}, scalar {NoLists} [, scalar {FixedRowLength} ].  Returns mx, rows having length of longest list (or as per 4th. arg).
+===============================================================
+//lists_read_to//  180
+scalar or array {PadValue}, scalar {FirstListNo}, scalar {LastListNo} [, scalar {FixedRowLength} ].  Returns mx, rows having length of longest list (or as per 4th. arg). Same fn. as 'lists_read_to(.)'.
+===============================================================
+//list_push//  181
+scalar {ListNo},  scalar or array {Data}. All values appended to list (arrays go in with [0] first). Returns new list size. Crashes if list doesn't exist.
+===============================================================
+//list_pop//  182
+scalar {ListNo},  scalar or array {NamedVariable}. If enough list data and enough room in variable, data lopped from list, --> fill variable. (Array: order of data is as it was in the list.). If not, does nothing to args. Returns new size of list, or negative no. ('virtual' size of list, if opn. had happened). 
+===============================================================
+//placement//  183
+scalar or array {Value(s)}, array {RefArray} [, scalar {StartIndex} ].  Returns structure of same dimensionality as {Value(s)}.  <b>RefArray must be sorted</b>, in ascending order. Consider RefArray = [P, Q]; Value \< P returns NEGINF;  Value V = P returns 0;  V = Q returns 1; V between P and Q returns index of 0 + (V - P) / (Q - P);   V \> Q returns POSINF. Leeway of 1e-10 applies. Duplications: [P, Q, Q, R]: V = Q returns 1;  V halfway from Q to R returns 2.5. If {StartIndex} supplied, it is floored; if negative, reset to 0. Then search starts from that index in {RefArray}.
+===============================================================
+//isplot//  184
+scalar {PlotID}.  Returns 2 for 2D plot, 3 for 3D plot, or 0 if unidentified.
+===============================================================
+//isgraph//  185
+scalar {GraphID}.  Returns 2 for 2D plot, 3 for 3D plot, or 0 if unidentified.
+===============================================================push( pop(
+//push//  186
+array {NamedArray},  scalar/array {NewData}, scalar {SizeLimit} [, bool {PushOntoLowEnd} ] --  VOID. If {NamedArray} is a list array, {NewData} can be any size, and is added to low-index end (if no boolean, or boolean is TRUE) or to high-index end. If {NamedArray} is a matrix, {NewData} length must be exact multiple of row length of {NamedArray}. If {NamedArray} is data[NaN], it will become {NewData}. If is 1xN matrix, all values NaN, it will become a MxN matrix, where M is length of {NewData}/N.
+===============================================================
+//pop//  187
+array {NamedArray},  scalar/array {HowMuchData} [, bool {PopFromLowEnd} ] --  {HowMuchData} is removed from low-index end (if no boolean, or boolean is TRUE) or from high-index end of {NamedArray}. If {NamedArray} is a matrix, {HowMuchData} is the number of rows to be removed; otherwise the number of elements. RETURNED: List array of the removed data; or [NaN], if {NamedArray} was empty.
+===============================================================
+//reversed//  188
+any no. of scalars or arrays.  Returns a list array with all values in the reverse order to their occurrence in arguments.
+===============================================================
+//newclick//  189
+scalar {GraphID}.  Returns 'true' if graph exists and it has just been clicked; false otherwise (no crashes). Resets its internal flag, so can't be used twice for one click.
+===============================================================
+//list_delete//  190
+scalar {ListNo},  scalar {FirstPtr} [, scalar {Extent} ].  Delete indicated part of given list. Extent downsized if excessive. Crashes if no such list or if pointers would include nonexistent elements.  Returns new length of list.
+===============================================================
+//list_delete_to//  191
+scalar {ListNo},  scalar {FirstPtr}, scalar {LastPtr}.  Delete indicated part of given list. Crashes if no such list or if pointers would include nonexistent elements.  Returns new length of list.
+===============================================================
+//list_insert//  192
+scalar {ListNo},  scalar {InsertAt},  any no. of scalars and arrays.  Crashes if list does not exist or if position not in list. (Cannot be used to append.)
+===============================================================
+//distance//  193
+scalars or arrays {Variable1}, {Variable2} [, bool {DontTakeSqRoot} [, bool {DontTakeMean} ] ].  No bools: Returns RMS (root of mean of squares) of differences. True euclidean distance: set {D.T.S.R.} false, {D.T.M.} true. Deployments of 1st. 2 args.: (1) scalar-scalar: RMS of their difference. (2) scalar-array: scalar return, RMS of the differences between scalar and each array element; (3) array-array, equal length: scalar return, RMS of term-by-term differences; (4) array-matrix (mx column length = array length): returns an array, ith. element being RMS of term-by-term differences of array and ith. row of matrix.
+===============================================================
+//pixels//  194
+scalar {GraphID} OR array {"screen"}.  {Scalar arg.:} Returns array of length 4. For 2D: [X width per pixel; Y width per pixel; pixels wide (graph rim); pixels high ]. For 3D: [0] = [1] = 0, [2] and [3] as for 3D (the blue rim around the graph). Invalid graph: [ -1, -1, -1, -1 ]. See 'help' or 'hints' re caveat for use after 'graphresize(.)'. {Array arg. (e.g. "screen"):} returns array of length 2: [screen width, screen height].
+===============================================================
+//hypot//  195
+scalars or arrays {Variable1}, {Variable2},  bool {DontTakeSqRoot}.  "Hypotenuse": sqrt of sum of squares. Returned: (a) Scalar-scalar:  a scalar. (b) Array-array: an array of term-by-term calcns. (c) One a scalar: an array, input array terms being calc'd against that value. If last arg. 'true', returns sums of squares.
+===============================================================
+//vecdirns//  196
+array {Grid}, matrix {Angles}, scalar or matrix {ArrowLength}.  {Grid}: [Xlo, Xhi, Xsegs; Ylo, Yhi, Ysegs].  {Angles} dims.: [Ysegs+1] x [Xsegs+1]. {A.L.}: scalar -> constant-length arrows; otherwise must have same dims. as Angles. Returned: matrix [2*size of Angles] x 2.
+===============================================================
+//primes//  197
+scalar {Lowest}, scalar {Highest}  [, scalar {Extent} [,  {anything} ].  Use 'th' for last arg, as its presence --> 2nd. and 3rd. taken as ordinals (e.g. '20th. prime'). If none in range, returns array size 1, value NaN, 'empty(.)' --> 'true'. No upper limit.
+===============================================================
+//unpack//  198
+array {Donor},  any no. of scalar or array {NamedRecipients}.   {Donor} need not be assigned, and structure is ignored. For other arguments, new names taken as scalars, so arrays need to be predefined. {NamedRecipients} filled in order given. Return indicates match between size of {Donor} and capacity of {NamedRecipients}; 0 if exact match, +n if {Donor} has n values left over, -n if n values too few for the recipients.
+===============================================================
+//binom//  199
+(Version 1:)  scalar {TopNo},  scalar {LowBtmNo}. Returns a scalar binom. coeff. (Version 2:)  scalar {TopNo},  scalar {LowBtmNo}, scalar {HighBtmNo}.   Returns array of binom. coeffs., denom. value ranging from LowBtmNo to HighBtmNo. TopNo < 170.
+===============================================================
+//logbinom//  200
+(Version 1:)  scalar {TopNo},  scalar {LowBtmNo}. Returns a scalar binom. coeff. (Version 2:)  scalar {TopNo},  scalar {LowBtmNo}, scalar {HighBtmNo}.   Returns array of binom. coeffs., using from LowBtmNo to HighBtmNo. TopNo < 2,147,483,647.
+===============================================================
+//select//  201
+<u>Version 1:</u>  array {SourceArray},  array {WhichIndices} .  Returns a list array holding values at given indices in {S.A.}.  Indices in {W.I.} are paired for matrices (order: row, column), grouped for higher structures (highest dim. first). <u>Version 2:</u> array {SourceArray}, scalar {LowKey} [, scalar {HighKey} ],  array {WhichIndices} -- The two arrays must have same total size (structures irrelevant). For absol. address N: if WhichIndices[N] = LowKey (if no HighKey); or if LowKey ≤ WhichIndices[N] ≤ Highkey; then SourceArray[N] is included in the output list array. Can return [NaN].
+===============================================================
+//substitute//  202
+(Form 1:) array {Source}, scalar/array {OldVal}, scalar {NewVal}.  Returns copy with all values in {Source} which are equal to value(s) of {OldVal} replaced by {NewVal}. ({OldVal} may be NAN; <b>not true</b> for other forms below.)
+(Form 2:) array {Source}, scalar {LoVal}, scalar {HiVal}, scalar {NewVal}.  Returns copy with all values at or between limits replaced by {NewVal}. (LoVal and HiVal can be out of order.)
+(Form 3:) array {Source}, array {Values}, scalar {Replacer}.  Every value in {Source} which exactly equals any value in {Values} is replaced by {Replacer}.
+(Form 4:) array {Source}, array {OldSegmt}, array {NewSegmt}. Returns copy with all segments {OldSegmt} replaced by {NewSegmt}.
+RETURNED: array with same chars. rating as {Source}, and also the same structure UNLESS output array length differs from that of {Source}. (Only occurs with form 3, and only if {OldSegmt} and {NewSegmt} have different lengths.)
+===============================================================
+//removedups//  203
+<u>Form 1:</u> array {Array}. Returns a list array with all duplicated values removed (but originals left). Structure of {Array} ignored. <u>Form 2:</u>  matrix {Mx}, array {RorC}. Only {RorC}[0] examined: 'R' or 'r' - return {Mx} with duplicated rows removed; 'C' or 'c; - same for duplicated columns.
+===============================================================
+//find//  204
+\nVersion 1:  array {ArrayToSearch},  scalar {StartPtr},  scalar {Value}. Searches for scalar {Value} in {ArrayToSearch}.
+Version 2:  array {ArrayToSearch},  scalar {StartPtr},  scalar {LoValue}, scalar {HiValue}. Searches for the first value lying between or at the given limits. 
+Version 3:  array {ArrayToSearch},  scalar {StartPtr},  array {SoughtArray}. Searches for {SoughtArray} in {ArrayToSearch}.
+ALL RETURN the index in {ArrayToSearch}, or -1 if no find.
+===============================================================
+//finds//  205
+\nVersion 1:  array {ArrayToSearch},  scalar {StartPtr},  scalar {Value}. Searches for all instances of scalar {Value} in {ArrayToSearch}.
+Version 2:  array {ArrayToSearch},  scalar {StartPtr},  scalar {LoValue}, scalar {HiValue}. Searches for all values lying between or at the given limits. 
+Version 3:  array {ArrayToSearch},  scalar {StartPtr},  array {SoughtArray}. Searches for all instances of {SoughtArray} in {ArrayToSearch}.
+ALL RETURN an array of size 3: [no. finds][1st. at][last at]. If no find: [0][-1][-1].
+===============================================================
+//selectrows//  206
+matrix {Mx}, array {RowNos}. Returns matrix with as many rows as there are elements in RowNos. Bad RowNos[i] crash.
+===============================================================
+//selectcols//  207
+matrix {Mx}, array {ColumnNos}. Returns matrix with as many columns as there are elements in ColumnNos. Bad ColumnNos[i] crash.
+===============================================================
+//pause//  208
+scalar {PauseIndex}  (which must be in the range 0 to 9). Use 'pausable(.)' to modify pausing.
+===============================================================
+//pausable//  209
+scalar {PauseIndex} [,  bool {PausingEnabled} ]. If one arg., simply returns pausability as a bool. If 2nd. arg., sets pausability (and also returns that setting as a bool). 
+===============================================================
+//poke//  210
+array {Receiver},  array {Sites},  scalar or array {Data}. <b>VOID</b>. {Sites} is a list array of indices for Receiver; e.g. if Receiver is a matrix, {Sites} must be: [row1][col1][row2][col2]... (high dim. first). If {Data} is scalar, that value goes to all sites.
+===============================================================
+//pokerows//  211
+matrix {Receiver},  array {RowNos},  matrix {Data}. Void. New rows overwrite old ones. All rows of {Data} used, starting from Data[0].  There must be as many rows in Data as there are locations in Sites. Check out using 'replacerows(.)' - nonvoid - instead.
+===============================================================
+//pokecols//  212
+matrix {Receiver},  array {ColNos},  matrix {Data}. Void. All ROWS of {Data} used; e.g. if ColNos[i] is N, then ROW Data[N] overwrites COLUMN Receiver[ ][N]. There must be as many rows in Data as there are values in ColNos.
+===============================================================
+//boardresize//  213
+scalar {GraphID}, scalar {Width}, scalar {Height}. Void. Arg. \<= 1 is taken as a factor of screen width or height; values > 1 as pixels. No errors raised. 'Maximize' triggered by Width = Height = 1.0.
+===============================================================
+//cullbykey//  214
+array {Victim},  array {KeyArray}.  Arrays are the same size. If {KeyArray}[i] = 0, Victim[i] is removed. If all of {KeyArray} is 0, returned array has size 1, value NaN; call to 'empty(.)' then returns 'true'. 
+===============================================================
+//empty//  215
+scalar / array {Subject}.  Returns TRUE if every single value in {Subject} is NaN. If an array, the size and structure of {Subject} are irrelevant.
+===============================================================
+//appendrows//  216
+matrix {Mx},  scalar / array / matrix {NewData} [,  {NoRows} ]. Returns copy of {Mx} with added row(s); number of columns remains the same. (a) {NewData} scalar: new row(s) are all this value. No. rows added is 1 (no 3rd. arg.) or {NoRows}. (b) {NewData} array: = the new row(s) (must be multiple of row length). (c) {NewData} matrix: grafted onto Mx.  {NoRows} is ignored if {NewData} is an array or matrix.
+===============================================================
+//appendcols//  217
+matrix {Mx},  scalar / array / matrix {NewData} [,  {NoColumns} ]. Returns copy of {Mx} with column(s) added to the high end of row(s); the number of rows remains the same. (a) {NewData} scalar: column(s) are all this value. No. cols added is 1 (no 3rd. arg.) or {NoColumns}. (b) {NewData} array: = the new column(s) (must be multiple of column length). (c) {NewData} matrix: grafted on to right side of Mx.  {NoColumns} is ignored if {NewData} is an array or matrix.
+===============================================================
+//insertrows//  218
+matrix {Mx}, scalar {AtRowNo}, scalar / array / matrix {NewData} [, {NoRowsIfScalar} ]. Returns result. Silly {AtRowNo} adjusted (no crash). {NewData}: Scalar: value replicated for 1 row (or a/c to {NoRows} if present). List array: as many rows as length allows. Mx: all inserted. For all, sizes must be consistent.
+===============================================================
+//insertcols//  219
+matrix {Mx}, scalar {AtColNo}, scalar / array / matrix {NewData} [, {NoColsIfScalar} ]. Returns result. Silly {A.C.N.} adjusted (no crash). {N.D.}: Scalar: value replicated for 1 col (or a/c to 4th. arg. if present). List array: as many cols as length allows. Mx: all inserted. For all, sizes must be consistent.
+===============================================================
+//plotshape//  220
+char. array {ShapeType}, arrays{Coords1},  {Coords2},  char. array {LineType}, scalar {LineWidth}, array{LineColour},  array{FillColour} [, scalar {PivotX} [, scalar {PivotY} [,  scalar{MagnifierX} [,  scalar{MagnifierY} [,  scalar {RotationAngle} ] ] ] ] ] -- returns the plot ID.
+===============================================================
+//copyshape//  221
+scalar {PlotID}, scalar {PivotX} [, scalar {PivotY} [,  scalar{MagnifierX} [,  scalar{MagnifierY} [,  scalar {RotationAngle} ] ] ] ] -- returns the new plot ID.
+===============================================================
+//plotbins//  222
+<u>Form 1:</u> matrix {SetBarsOutputMx} [, scalar {BarWidthRatio} [,  scalar/array {LineShape} [, scalar {LineWidth} [, scalar/array {LineColour} [, scalar/array {FillColour} ]]]]].  <u>Form 2:</u> replace first arg. by three arrays, {LeftEdges}, {RightEdges}, {DataPerBin}. Returns array of plot IDs (one per bar).
+===============================================================
+//sumrows//  223
+matrix {Mx} [, scalar {FromRow} [, scalar {NoRows} ].  E.g. Output[k] = Mx[0][k] + Mx[1][k] + Mx[2][k] +... Silly 2nd. and 3rd. args.: no crash; instead, responds as if virtual rows of zeroes existed after ends of matrix.
+===============================================================
+//sumcols//  224
+matrix {Mx} [, scalar {FromCol} [, scalar {NoCols} ].  E.g. Output[k] = Mx[k][0] + Mx[k][1] + Mx[k][2] +..  Silly 2nd. and 3rd. args.: no crash; instead, responds as if virtual columns of zeroes existed on both sides of matrix.
+===============================================================
+//deleterows//  225
+matrix {Matrix},  scalar {FromRow},  scalar {Extent}  <# blue><b>OR</b>  matrix {Matrix},  array {WhichRows}  --  Returns copy with rows deleted.  Does its best with silly 2nd. and 3rd. args.; no crash. If all rows to be deleted, returns array size 1, value NaN, and 'empty(.)' --> 'true' at next call.
+===============================================================
+//deletecols//  226
+matrix {Matrix},  scalar {FromCol},  scalar {Extent}  <# blue><b>OR</b>  matrix {Matrix},  array {WhichColumns}  --  Returns copy with columns deleted.  Does its best with silly 2nd. and 3rd. args.; no crash. If all columns to be deleted, returns array size 1, value NaN, and 'empty(.)' --> 'true' at next call.
+===============================================================
+//xmenu//  227
+array {MainTitle}, array {SubTitles}. Void. <I>{SubTitles} has individual submenu titles delimited by '|'; only spaces internal to a subtitle are preserved. Each call overwrites previous menu system. Don't use empty title or subtitles. Must have at least 1 submenu, maximum 20. 
+===============================================================
+//xvisible//  228
+values (any mix of scalars or arrays) {MenuNumbers}.  (a) SETS visibilities: [0] for main menu item, [1+] for submenus. Shortfall of values --> change only those referenced; excess ignored. (b) RETURNS final state of all menus, so can read with e.g. "arr = visibility(true)" (which redundantly sets main menu item to visible, but also returns visibility status of all items).
+===============================================================
+//xclick//  229
+No args.  Returns submenu number (1+) for submenu just clicked; or -1 if (a) no submenu item ever clicked, or (b) none clicked since the last call to this function.
+===============================================================
+//plot//  230
+<# red>YValue(s),  XValue(s),  <# green>PointType, PointWidth, PointColour, <# magenta>LineType, LineWidth, LineColour, <# orange>PointFamily, LineFamily,  <# brown>Texts, FontName. <# black>See 'Help | Graphing - Interactive' or use F1 on 'plot' for details.
+===============================================================
+//plot3d//  231
+<# red>ZValue(s),  YValue(s),  XValue(s),  <# green>PointType, PointWidth, PointColour, <# magenta>LineType, LineWidth, LineColour, <# orange>PointFamily, LineFamily,  <# brown>Texts, FontName. <# black>See 'Help | Graphing - Interactive' or use F1 on 'plot3d' for details.
+===============================================================
+//graph//  232
+any no. of scalars or arrays.  If values are identifiable 2D plots, they are plotted on the graph which is newly created by this command. If no args., or none are identifiable, an empty graph displays.
+===============================================================
+//graph3d//  233
+any no. of scalars or arrays.  If values are identifiable 3D plots, they are plotted on the graph which is newly created by this command. If no args., or none are identifiable, an empty graph displays.
+===============================================================
+//header//  234
+scalar {GraphID} [,  any no. of scalars or arrays: {Text} ].   {Text} handled as for "writeln(.)" args. Always returns an array.  If {GraphID} exists, returns either the existing header (if no 2nd. argument); or just a copy of {Text}. If {GraphID} not identified, returns the 'empty array'. {Text} may contain Pango-compliant formatted texts.
+===============================================================
+//footer//  235
+Form 1: scalar {GraphID},  any no. of scalars or arrays: {Text}.   {Text} handled as for "writeln(.)" args. All formatting tags valid. Simply returns {Text}. If {Text} begins with "|+|", cursor forced visible; if "|-|", forced invisible. Both apply to future 'footer' calls for this graph.
+Form 2: scalar {GraphID} [, bool {FinalVersion} ]. Returns either the last footer set by a 'footer(.)' call for this graph; or, if FinalVersion present and 'true', the possibly user-edited version now on display. If FinalVersion is 'true', the return is bare text: all formatting tags are omitted.
+ Always returns an array.  If {GraphID} not identified, returns the 'empty array'.
+ ===============================================================
+//labelx//  236
+scalar {GraphID} [,  any no. of scalars or arrays ].  2nd.+ args. (scale descriptor) handled as for "show(.)" args. If {GraphID} exists, its scale descriptor is changed. Does not handle formatted text.  Normally VOID; but if only one argument, then the fn RETURNS the current label.
+===============================================================
+//labely//  237
+scalar {GraphID} [,  any no. of scalars or arrays ].  2nd.+ args. (scale descriptor) handled as for "show(.)" args. If {GraphID} exists, its scale descriptor is changed. Does not handle formatted text.  Normally VOID; but if only one argument, then the fn RETURNS the current label.
+===============================================================
+//labelz//  238
+scalar {GraphID} [,  any no. of scalars or arrays ].  2nd.+ args. (scale descriptor) handled as for "show(.)" args. If {GraphID} exists, its scale descriptor is changed. Does not handle formatted text.  Normally VOID; but if only one argument, then the fn RETURNS the current label.
+===============================================================,
+//plotsof//  239
+scalar {GraphID}.  Returns array of plots existing in the graph. Failure --> array of length 1, value NaN, and subsequent 'empty(.)' returns 'true'.
+===============================================================
+//scaleoverx//  240
+scale {GraphID},  array {OverwriteTexts}.  {O.T.}: comma delimites individual texts. Blanks significant.  {2D only:} If too few texts, not all are applied. If too many, excess ignored. Runs of commas OK.  If {O.T.} = "#", all hairline texts blanked. {3D only:} Must be exactly 3 texts, one each for 'From', 'To' and 'Step'.
+===============================================================
+//scaleovery//  241
+scale {GraphID},  array {OverwriteTexts}.  {O.T.}: comma delimites individual texts. Blanks significant.  {2D only:} If too few texts, not all are applied. If too many, excess ignored. Runs of commas OK.  If {O.T.} = "#", all hairline texts blanked. {3D only:} Must be exactly 3 texts, one each for 'From', 'To' and 'Step'.
+===============================================================
+//scaleoverz//  242
+scale {GraphID},  array {OverwriteTexts}.  {O.T.}: comma delimites individual texts. Blanks significant. Must be exactly 3 texts, one each for 'From', 'To' and 'Step'.
+===============================================================
+//scalefudgex//  243
+scalar {GraphID}, scalar {Multiplier}, array {AddedText} [, bool {NoTextFor_0} [, {OmitNumeral_1} ] ].  E.g. {Multiplier} = 1/PI, {AddedText} = " pi" (or "π"), then scale mkgs "0, 3.14.., 6.28.." replaced by "0 pi,  1 pi, 2 pi, .." (you supply internal blank). {N.T.F_0}: "0 pi" --> "0". {O.N_1}: "1 pi" --> "pi". Does not work for 3D graphs.
+===============================================================
+//scalefudgey//  244
+scalar {GraphID}, scalar {Multiplier}, array {AddedText} [, bool {NoTextFor_0} [, {OmitNumeral_1} ] ].  E.g. {Multiplier} = 1/PI, {AddedText} = " pi" (or "π"), then scale mkgs "0, 3.14.., 6.28.." replaced by "0 pi,  1 pi, 2 pi, .." (you supply internal blank). {N.T.F_0}: "0 pi" --> "0". {O.N_1}: "1 pi" --> "pi". Does not work for 3D graphs.
+===============================================================
+//moveshape//  245
+scalar {GraphID}, scalar{PlotID}, scalar {PivotX} [, scalar {PivotY} [,  scalar{MagnifierX} [,  scalar{MagnifierY} [,  scalar {RotationAngle} ] ] ] ] -- VOID. No action, if PlotID not the ID of an existing shape. GraphID invalid (e.g. 0 or neg): plot still updated, no graph accessed. GraphID valid: either visibly moved (if that graph has the plot already) or inserted (if not).
+===============================================================
+//scaleformatx//  246
+scalar {GraphID} [, array {FormatString} ].  E.g. {F.S.} "F2" forces two decimal places; "X4" forces hex, caps, 4 places min; (default) "G4" - most compact for given no. digits.
+===============================================================
+//scaleformaty//  247
+scalar {GraphID} [, array {FormatString} ].  E.g. {F.S.} "F2" forces two decimal places; "X4" forces hex, caps, 4 places min; (default) "G4" - most compact for given no. digits. Use anything excepted by C# documentation.
+===============================================================
+//scaleformatz//  248
+scalar {GraphID} [, array {FormatString} ].  E.g. {F.S.} "F2" forces two decimal places; "X4" forces hex, caps, 4 places min; (default) "G4" - most compact for given no. digits. Use anything excepted by C# documentation.
+===============================================================
+//scaleformat//  249
+scalar {GraphID} [, array {FormatString} ]. Applies to all axes (unlike e.g. 'scaleformatx(.)').  Examples: {F.S.} "F2" forces two decimal places; "X4" forces hex, caps, 4 places min; (default) "G4" - most compact for given no. digits. Use anything excepted by C# documentation.
+===============================================================
+//showhairlines// 250
+scalar {GraphID},  scalars {HowX} [, {HowY} [, {HowZ} ] ]. 0 --> no hairlines or stubs; 1 --> axis stubs; 2 (or any other value) --> full hairlines. No errors raised. Does not suppress text against hairlines.
+===============================================================
+//scalefit//  251
+scalar {LoValue},  scalar {HiValue} [, scalar {LowLmtForNoSegs} [, scalar {HiLmtForNoSegs} ] ].  Returns an array of suggested axis scaling (e.g. "0, 1, 2..." instead of "-0.2347, 1.6521, 1.8868,.."). Two args --> best nos., with 4 to 7 segs. More args. usually --> tighter fit, but less pretty nos. 
+===============================================================
+//chain//  252
+array or scalar {ChainLink}, scalar {ReturnedArrayLength}.  Replicates {C.L.} till length {R.A.L.} attained. E.g. "chain ('ABC', 2)" --> "AB", <I>not</I> "ABCABC" (which requires "chain('ABC', 6); )"
+===============================================================
+//plotmesh3d//  253
+<# magenta> matrix  {ZValues},  array / matrix {YValues},  array / matrix {XValues};  the rest are all optional: array {PtType}, array/scalar {PtWidth}, array {PtClr}, array {LnType}, array/scalar {LnWidth}, array {LnClr}, array {PtFamily}, array {LnFamily}, array {XLnFamily}, array {Looping}, array {Texts}, array {FontName}. Form of 1st. 3 args.: see 'hints'. Only these 3 args. are obligatory.
+===============================================================
+// 254 not for users ('__array')
+===============================================================
+//finddup//  255
+array {Subject},  bool {OfEarlierValue}  [,  scalar {FromPtr}  [, scalar {ToPtr}  ] ] -- If {OfEarlierValue} TRUE, finds first value in (given range of) {Subject} which duplicates an <b>earlier</b> value in {Subject}; otherwise the first which duplicates a <b>later</b> value.  RETURNED:  [ index of find,   index of matched value,   the value matched ].
+===============================================================
+//perturb//  256
+array {InArray},  scalar {SD},  scalar {MaxDeviation} -- perturbs each value in {InArray} in a Gaussian manner. {SD} and {MaxDeviation} must both be \> 0. Don't make {MaxDeviation} \<\< {SD}, as processing time would then be vastly longer.
+===============================================================
+//mesh//  257
+array {XCuts},  array {YCuts} [, array {ZCuts} ] -- returns a matrix of coordinates of all hairline cuts; row 0 for X coords, 1 for Y coords; if a 3D graph, an extra row 2 for Z coords. Order of points: front plane to back plane (if 3D); in each plane / in 2D, from bottom left cnr, then across, then up by rows, till top right cnr.
+===============================================================
+//  258 -- not for users ('__scalar')
+===============================================================
+//replacerows//  259
+matrix {Mx}, scalar {FromRow}, scalar / array / matrix {NewData} [, {NoRowsIfScalar} ]. Returns result. Silly FromRow crashes. {N.D.}: Scalar: value replicated for 1 row (or a/c to 4th. arg. if present). List array: as many rows as length allows. Mx: all inserted. For all, sizes must be consistent. Cannot append to Mx. Consider using void version 'pokerows(.)'.
+===============================================================
+//replacecols//  260
+matrix {Mx}, scalar {FromCol}, scalar / array / matrix {NewData} [, {NoColsIfScalar} ]. Returns result. Silly {FromCol} crashes. {N.D.}: Scalar: value replicated for 1 row (or a/c to 4th. arg. if present). List array: as many rows as length allows. Matrix: <I>rows</I> replaced Mx <I>columns</I>. For all, sizes must be consistent. Cannot append to Mx. Consider using void version 'pokerows(.)' instead.
+===============================================================
+//chainrows//  261
+(Form 1:) array {Row}, scalar {NoRows}.  --> matrix with every row = Row. (Form 2:) scalar {Value}, scalar {NoRows}.  --> a <I>column vector</I> with every element = Value.
+===============================================================
+//chaincols//  262
+(Form 1:) array {Col}, scalar {NoCols}.  --> matrix with every Col = Col. (Form 2:) scalar {Value}, scalar {NoCols}.  --> a <I>row vector</I> with every element = Value.
+===============================================================
+//copyrows//  263
+matrix {Mx},  scalar {FromRow} [, scalar {NoRows} ].  Returns a submatrix. If {NoRows} absent, rest of matrix copied. 2nd. and 3rd. args. must be valid as is - no corrections made.
+===============================================================
+//copycols//  264
+matrix {Mx},  scalar {FromCol} [, scalar {NoCols} ].  Returns a submatrix. If {NoCols} absent, rest of matrix copied. 2nd. and 3rd. args. must be valid as is - no corrections made.
+===============================================================
+//copyrowsto//  265
+matrix {Mx},  scalar {FromRow}, scalar {ToRow}.  2nd. and 3rd. args. must be valid as is - no corrections made.
+===============================================================
+//copycolsto//  266
+matrix {Mx},  scalar {FromCol}, scalar {ToCol}.  2nd. and 3rd. args. must be valid as is - no corrections made. mouse
+===============================================================
+//compareto//  267
+array {Arr1}, array {Arr2}, scalar VirtZero, scalar FromPtr, scalar ToPtr.  If subrange, must be present in both arrays. Returned: array, size 9: [0] = Arr1 length - Arr2 length; [1] ptr. to first |diff| > VirtZero; [2] = last such; [3] = max pos. diff; [4] = max neg. diff; [5] = max. |diff|; [6] = av. diff; [7] = av. |diff|; [8] = RMS diff.
+===============================================================
+//mouse//  268
+scalar {GraphID} [, bool {ReturnAHistoryMatrix} ].  No 2nd. arg, or false: Returns array, size 18: [0] - clicked graph ID; [1] - button (left = 1, right = 3); [2] - TRUE if button still down; [3] - time button went down; [4] - time it was down; [5] to [9] unused; [10, 11] - scaled coordinates at button DOWN; [12, 13] - pixel coords at DOWN; [14, 15] - scaled coords. at button UP; [16, 17] - pixel coords. at button UP. {2nd. arg. TRUE:} Matrix 5x18, row [0] is the latest click.
+===============================================================
+//gxmenu//  269
+ scalar {GraphID}, array {MainMenuTitle}, array {SubmenuTitles}.  Always returns TRUE unless GraphID not identified. {SubmenuTitles} is delimited by '|', up to 20 items allowed. Only spaces internal to titles are preserved. Completely replaces any preexisting menu system.
+===============================================================
+//gxvisible//  270
+scalar {GraphID}, values {Visibility} ( = any mix of scalars and arrays). {Visibility} elements are booleans, 'true' = turn visibility on, 'false' off. [0] = main menu item, [1+] = subtitles. Shortfall in Visibility: omitted menus keep old visibility setting. Excess ignored. RETURNS an array of all visibilities, indices as above. If GraphID not identified, returns array size 1, value -1.
+===============================================================
+//gxclick//  271
+scalar {GraphID}.  Returns the ID of the submenu last clicked in this particular graph; IDs are numbers from 1 up. No click since startup or since last call to this function --> -1.  GraphID fails --> -2. A successful identification resets the internal buffer so that an immediately subsequent call for the same graph would return -1.
+===============================================================
+//paintshape//  272
+scalar {GraphID}, scalar {PlotID},  char. array {LineType} [, scalar {LineWidth} [, array{LineColour} [,  array{FillColour} ] ] ] -- VOID. For no fill (transparent shape), set {FillColour} to any scalar. (For {LineColour}, a scalar is interpreted differently; some colour will be returned.)
+===============================================================
+//mxdiag//  273
+<# magenta>square matrix {Mx} [, array {Operator}, scalar or array {Operand} ].  1 arg. --> returns main diag. as array;  3 args. returns copy of {Mx}, altered. {Operator}  '=': replace main diag. with {Operand} (which can be scalar).  {Operator} '+','-','*','/': new main diag = (old diag ~ {Operator} ~ {Operand}).
+===============================================================
+274 UNUSED
+===============================================================
+275 UNUSED
+===============================================================
+//undim//  276
+any no. of <# magenta>named arrays.  Void. Redimensions all to 1-dim. (i.e. to list arrays).
+===============================================================
+//str//  277
+scalar or array {Value} [, chars array {FormatHow} ].  Converts values to displayable string format; in the case of arr%ays, such values are separated by a comma-space combination. {FormatHow} - as recognized by C# for type double. Do F1 on 'str' for allowed values.  ALIAS: "valuetostring".
+===============================================================
+//valuetostring//  278
+scalar or array {Value} [, chars array {FormatHow} ].  Converts values to displayable string format; in the case of arr%ays, such values are separated by a comma-space combination. {FormatHow} - as recognized by C# for type double. Do F1 on 'str' for allowed values.  ALIAS: "str".
+===============================================================
+//list_cull//  279
+scalar {ListNo}, any no. scalars and arrays holding {Values}.  List will end up with every instance of every value in {Values} removed. Returns final list size.
+===============================================================
+//list_cull_range//  280
+scalar {ListNo}, scalar {LowerLimit}, scalar {HigherLimit}.  List will end up with every instance of a value in given range (including the limits) removed. Returns final list size.
+===============================================================
+//list_find//  281
+(From 1:) scalar {ListNo}, scalar {Value}.  Find first value = Value.  (Form 2:) scalar {ListNo}, scalar {LowerLimit}, scalar {HigherLimit}.  Find first value between or at limits. (Order of limits can be reversed - higher before lower.) Form 3: scalar {ListNo}, array {Sequence}. All return -1 if no find.
+===============================================================
+//mxhalf//  282
+<u>READ version: </u>matrix {SqMx}, array {WhichHalf}.  Returns list array. Arguments as below.
+<u>WRITE version:</u>matrix {SqMx}, array {WhichHalf}, array {OtherHalfAction}, array {Data} [, array / scalar {MainDiagonal} ]. RETURNS SqMx copy, altered.
+{SqMx}: NxN matrix, N ≥ 2. {WhichHalf}: "L"(ower), "U"(pper). {OtherHalfAction}: SPACE = leave alone; "C" = copy by reflection; "N" = same, but change sign. {Data} must have size (N<^>2</^> ‒ N) / 2. {MainDiagonal}: absent = leave alone; scalar or array (length N) = fill value(s).
+===============================================================
+//offset//  283
+array {Struc}, array {IndexAddresses}.  Returns absolute addresses: scalar, if {IndexAddresses} is list array (length = no. dimensions in Struc); list array, if {IndexAddresses} is a matrix (column size = no. dimensions in Struc).  {Struc} is either the structure itself (limited to 3D by MonoMaths) or a list array containing its dimensions, [0] = highest. (No limit to number of dimensions in this case.)
+===============================================================
+//indexed//  284
+array {Struc}, scalar / array {OffsetAddresses} [, bool {LowToLow}.  Returns indexed addresses: a list array, if {OffsetAddresses} is scalar; a matrix if {OffsetAddresses} is a list array.  {Struc} is either the structure itself (limited to 3D by MonoMaths) or a list array containing its dimensions, [0] = highest. (No limit to number of dimensions in this case.)  If {LowToLow} absent or 'false', highest dimension index is in [0] of the return; otherwise the reverse.
+===============================================================
+//keyed//  285
+[ array {RefArray} [, HistoryDepth ] ] -- RETURNS bool ('true' if keying occurred since startup and since last call to this function); if {RefArray} supplied, fills with key data. If enters as chars. array, key names used; otherwise unicodes. {HistoryDepth} ≤ 1 --> list array; > 1 --> jagged matrix, padder 0.
+===============================================================
+//findinmx//  286
+matrix {Mx},  scalar / array {Sought},  bool {FirstFindOnly}  [,  scalar {FirstRow}  [, scalar {LastRow} ] ] -- finds {Sought} in ROWS. If {FirstFindOnly} is FALSE, returns data for all finds. RETURNED: A matrix of two rows; row[0] records the row(s) of the find(s), row[1] records the column(s) of the find(s). If there are no finds, then a 2x1 matrix is returned, both values being -1.
+===============================================================
+//cap// 287
+scalar / array {InputValues},  scalar {CriticalValue},  scalar {Asymptote} -- returns a copy of {InputValues} - same structure - in which every value above {CriticalValue} is downscaled to a smaller value, still greater than {CriticalValue} but never ≥ {Asymptote}.
+===============================================================
+//list_opn//  288 
+scalar {ListIndex}, scalar {Position}, array {Operation}, scalar {Value} [, {DontChangeList}].  Does op'n "list item . Opn . Value", and returns the scalar result. If {D.C.L.} absent or false, also alters list item. {Op.}[0] is one of: " + - * / ^ A B S " (small letters allowed). 'A' = absolute value; 'B; = boo%lean evaluation; 'S' = sign (replace 0 with Value). For 'A' and 'B' Value is irrelevant, but cannot be omitted. Crashes for unidentified or invalid opns. (e.g. div. by 0), or unidentified list or position.
+===============================================================
+//hsl//  289
+<# magenta>colour {Colour}.  Returns hue-sat'n-lum. value for a colour, as a list array, size 3. All [i] range 0 to 1.  {Colour} forms: (1) name (e.g. "red"); (2) RGB array ( length >= 3, [0]-[2] read as R,G,B); (3) palette index (0 to 9; higher - modulus taken); White: enter -2.
+===============================================================
+//hsl_to_rgb//  290
+array <# magenta>of length 3 {HSL}.  Given an array of hue-sat-lum values as [0] to [3], all in range 0 to 1, returns RGB as array, size 3, [0] being red. Any arg. error returns black ( 0, 0, 0).
+===============================================================
+//scalejumpx//  291
+scalar {GraphID}, scalar {FirstLabelled}, scalar {HairlineJumps}.  2D only. E.g. Args = (g, 0, 3): label only every 3rd. hairline, starting from hairline 0 ( = the left graph margin).
+===============================================================
+//scalejumpy//  292
+scalar {GraphID}, scalar {FirstLabelled}, scalar {HairlineJumps}.  2D only. E.g. Args = (g, 0, 3): label only every 3rd. hairline, starting from hairline 0 ( = the bottom graph margin).
+===============================================================
+//showarray//  293
+array {Array}.  Produces the same window as when F1 is keyed while the cursor is beside an array name, during / after run (with that array still in scope). {Array} may be a temporary array.
+===============================================================
+//factors//  294
+any mix of scalars and arrays.  Factors common to all of the values are returned. (If only one arg, all its factors returned.) If no common factors, returns array size 1, value NaN, 'empty(.)' returns 'true'. Values must be < max. integer size.
+===============================================================
+//peck//  295
+array {NamedArray}, scalar {SoughtValue} [, {Replacemt} ]. Void. Replace / remove first instance of {S.V.}. No 3rd. arg: replaces value, structure undisturbed. If 3rd. arg, then {N.A.} must be a list array; it is shortened by 1 (if then empty, --> array size 1, value NaN, 'empty(.)' returns 'true'). 
+===============================================================
+//prodrows//  296
+matrix {Mx} [, scalar {FromRow} [, scalar {NoRows} ] ].  E.g. Output[k] = Mx[0][k] x Mx[1][k] x Mx[2][k] x... Silly 2nd. and 3rd. args.: no crash; instead, responds as if virtual rows of ones extended beyond both ends of matrix.
+===============================================================
+//prodcols//  297
+matrix {Mx} [, scalar {FromCol} [, scalar {NoCols} ] ].  E.g. Output[k] = Mx[k][0] x Mx[k][1] x Mx[k][2] x..  Silly 2nd. and 3rd. args.: no crash; instead, responds as if virtual columns of ones extended beyond both sides of matrix. <I>Special form, intended for jagged matrices:</I> extra 4th. arg, a bool; if 'true', <I>terminal</I> 0's of rows treated as if 1's. (except where row is all zeroes).
+===============================================================
+//product//  298
+array Array [, scalar {IgnoreZeroes} ]. Returns scalar product of all elements of {Array}. If {I.Z.}, then Array[0] is multiplied by all <I>non-zero</I> [i] from [1] up. (If Array[0] itself is zero, product = 0.)
+===============================================================
+//rgb//  299
+<# magenta>colour {Colour} [, {FailureColour} ]. Returns array, size 3: [0]-[2] = red, green, blue. Error in {Colour} defaults to {FailureColour} if present and valid, otherwise to black: (0,0,0). Main allowed {Colour} forms: (1) name (e.g. "red"); (2) RGB array ( length 3, [0]-[2] read as R,G,B); (3) "0xRRGGBB".
+===============================================================
+//join//  300
+matrix {Matrix},  array / scalar {Delimiter},  array / scalar {Padder}  [,  array / scalar {EmptyRowCue} ] -- Paste the rows of Matrix together, delimited by 'Delimiter'. (The first and last elements of the returned array are never Delimiter.) {Matrix}:if a list array, taken as a 1xN matrix. {Delimiter}: If an array, the whole array is used. {Padder}: if array, only the first value is used. {EmptyRowCue}: if omitted, rows of just Padder will be ignored. (If all rows such, returns [NaN]). Otherwise this arg. replaces empty rows. It may have any length.
+===============================================================
+//graphkey//  301
+scalar {GraphID}.  Returns array, size 3: [0] = last base keypress; [1] = helper keys code (0 to 7:   0=none, 1="a"(alt), 2="c"(ctrl), 3="s"(shift), 4="ac", 5="as", 6="cs", 7="acs".); [3] = unprocessed key presses still on the internal stack. (Each call to 'graphkey(.)' pops a value off this stack. When none left returns [0, 0, 0]; if {GraphID} not identified, returns {-1, -1, -1].)
+===============================================================
+//graphcolours//  302
+scalar {GraphID}, scalar / array {0 to 6 Colour Cues}. Colour cues: scalar = ignored (no change to colour); array = new colour (= black, if invalid). Returns 6x3 matrix of RGB colours. Colours (with Mx row nos.): 	[0]: plotting surface;  [1] hairlines;  [2]: perimeter;  [3]: bgd. beyond perimeter;  [4]: text at hairlines;  [5]: text of axis descriptor.
+===============================================================
+//evict//  303
+array {SourceArray},  array {WhichIndices} .  Returns a list array holding {S.A.} values <I>after removing</I> those at {W.I.} locations.  Indices in {W.I.} are paired for matrices (order: row, column), grouped for higher structures (highest dim. first). If all removed returns array size 1, value NaN, 'empty(.) returns 'true'.
+===============================================================
+//gfixedvisible//  304
+scalar {GraphID}, array {MenuName}, bool {MakeVisible}. Can alter visibility of fixed graph menus (but not of their individual submenus). {M.T.}: only [0] is examined, which must be on of 'F' (File), 'Z' (Zoom), 'V' (ViewPoint), or 'S' (Scaling). (Case-insensitive.)  
+===============================================================
+//programfile// 305
+variable {WhichPart} -- returns the user program file path and/or name; crashes if program not yet saved to disk. If WhichPart[0] is 'P' or 'p', returns path (with final '/'); if 'N' or 'n', returns name; if anything else, or scalar, returns path and name.
+===============================================================
+//solve_de// 306
+char array{FnName}, scalar {Y0}, array {XX} [, char array {Method} ] -- solves "dy/dx = ƒ(x,y)". {FnName} holds the name of some function which takes scalar args x and y and produces the scalar evaluation of the RHS of the diff. equation. {XX} is an arithmetic progression from Xlow to Xhigh. {Y0} is the imposed value of the solution when x = Xlow. {Method} is "eul"(Euler) or "run" (Runge-Kutta 4th. order). Default for omission is Euler.
+===============================================================
+//unjag//  307
+matrix {Mx}, scalar {RowNo} [, scalar or array {PadValue} ]. Returns Mx[RowNo], after cleaning off terminal padding. If no {P.V.} supplied, cleans off all from char 0 to char 32 (SPACE). If nothing left of row, returns array size 1, value NaN, and 'empty(.)' returns 'true'. {Mx} can be a list array, in which case it is treated like a jagged matrix with one row.
+===============================================================
+//jag//  308
+matrix {Mx}, array {Operation}, array {NewRow} [, scalar {RowNo} [, scalar {Length} [, scalar {Filler} ] ] ].  Returns copy with new row: appended ('A','a') / inserted ('I','i') / overwriting old row ('O','o'). ('append' ignores {RowNo}, if present. For all other opns, {RowNo} must be present and legal.) Whole {Mx} padded, or this row amputated, a/c to other args. Default: pad with 0's. {Mx} can be a list array, when it is taken as a 1xN matrix; so you can build a jagged array starting from it.
+===============================================================
+//differences//  309
+array {InArray}.  If {InArray} is [a, b, c, d], the return is [b-a, c-b, d-c] - which is shorter than InArray by 1. If {InArray} has length 1, returns [NaN].
+===============================================================
+//progressive//  310
+array {Subject},  array {Operation}.  Returns non-chars. array of the same structure as {Subject}. If {Operation} starts with '+', terms are progressively added ( [1, 2, 3, 4] --> [1, 3, 6, 10]); if {Operation} starts with '*', progressively multiplied ([1, 2, 3, 4] --> [1, 2, 6, 24]). No check for overflow.
+===============================================================
+//rowvec//  311
+any number of literals, scalar variables or arrays. The character status of arr%ays is not recognized; the output is always a non-char. row vector. 
+===============================================================
+//colvec//  312
+any number of literals, scalar variables or arrays. The character status of arr%ays is not recognized; the output is always a non-char. column vector. 
+===============================================================
+//matrix//  313
+scalar {NoRows}, scalar {NoCols} [, any number of literals, scalar variables or arrays {Values} ]. RETURNS a matrix of the specified size. If {Values} is absent, the matrix is filled with zeroes. Otherwise {Values} is cycled through to fill the matrix row by row; if insufficient data, it is continually recycled till matrix is filled; if too much data, excess is ignored.
+===============================================================
+//matrixop//  314
+matrix {SubjectMx}, char. array {Opn}, array {Imposed}.  Returns matrix with same dims. as {SubjectMx}.  {Opn} - a standard arithmetic sign, or 'M' (maximum of two elements) or 'm' (minimum). If {Imposed} is a row vector, Imposed[i] interacts with each SubjectMx[..., i]; analogously for column vectors. If {Imposed} is an array (any structure except a vector) with same data length as {SubjectMx}, element by element operation done.
+===============================================================
+//lop//  315
+array {InArr}, scalar {HowMany} [, scalar {MinLength} ].  Returns copy of data strip of {InArr} with {HowMany} elements lopped off the end; if none left, returns 'empty' array [NaN]. If {MinLength} present and ≥ 1, data cannot be lopped shorter than that.
+=============================================================== 
+//pad// 316
+array {InArr}, scalar {DesiredLength}, array or scalar {PadValue} [, bool {TruncateIfOver} ].  Returns padded copy. If {P.V.} an array, [0] used. Overlength {InArr}: ret'd as is, unless last arg true. If {InArr} 'empty' and {DesiredLength} > 1, whole returned array is filled with PadValue.
+===============================================================
+//truncate// 317
+array {InArr}, scalar {DesiredLength}.  Returns copy, truncated. If under length, copy = original.
+===============================================================
+//readtable// 318
+EITHER <i>one</i> matrix {Table} OR <i>two</i> list arrays {InRow, Outrow};   scalar / array {InValues}, array {LookupRule} [, scalar {StartPtr}].  Returns copy with exactly the same structure as {InValues}. {Table}[0] or {InRow} holds key values, and MUST be sorted in ascending order with NO duplications. {Table}[1] or {OutRow} holds output values.  {LookupRule}: "=" = exact match, or else return MINREAL; "~" = use nearest {InRow} value; "L" = interpolate linearly using nearest pair of {InRow} values. {StartPtr}: If 0+, is the same table search start for every value in {InValues}. If negative, is readjusted for each input item to the floor of the previous {InRow} index (in this case only, {InValues} MUST be sorted, though duplicates are allowed).
+===============================================================
+//intersection// 319
+Two or more arrays.  Returns a list array with values common to all arrays. Ignores structure and chars. rating. Duplicates removed. If nil common, returns array size 1, value NaN, 'empty(.)' true.
+===============================================================
+320 ("__importscalar") and 321 ("__importarray") are for internal use, not available to users.
+===============================================================
+//setfunc// 322
+<U>Version 1:</U> scalar {WhichFunc}, array {FnName} [, bool {DontCrashIfNotFound} [, bool {LookInUserFnsOnly} ] ]. {WhichFunc} is 1 or 2.  If {FnName} found, sets substitute for anonymous fn. 'func1(..)' or 'func2(..)'. Returns 1 (system fn.) or 2 (user fn.). No find --> crash, unless 2nd. arg. set; then returns 0. <U>Version 2:</U> scalar {WhichFunc}, {FnName] is scalar or is spaces only: negates previously set substitute. Returns -1.
+===============================================================
+//func1// 323
+any and all ignored (without raising an error), if no substitute set by 'setfunc(.)'; then returns '0'. Otherwise arguments profile must conform to what the substituting function requires.
+===============================================================
+//func2// 324
+any and all ignored (without raising an error), if no substitute set by 'setfunc(.)'; then returns '0'. Otherwise arguments profile must conform to what the substituting function requires.
+===============================================================
+//bitop// 325
+array {Operation}, any mix of scalar and array {Values}.  Returns a scalar. {Values} must lie within: <-1e15 < val. < 1e15.  {Op} = '1' or '2' (1's, 2's complement): only one value allowed. {Op} = '&', '|', or '^' (XOR): must be at least 2 values, for which the operation is chained; e.g. for '&', the result = value1 & value2 & value3 &...
+===============================================================
+//exec//326
+Mode 1: array {CommandLineStatement}] [ , scalar {WaitTime} ];  Mode 2: array {FileName} [ , array(s) {Arguments}] [ , scalar {WaitTime} ]  -- execute the application or script at {FileName}, optionally with arguments in {Arguments}. If the last argument is scalar and rounds to greater than 0, it is taken as {WaitTime}, and the function waits up to that many milliseconds for the script to end. RETURNED: (a) {WaitTime} absent or invalid: always 0. (b) Application ended before {WaitTime}: returns the exit code emitted by the application. (c) Application still running at {WaitTime}: returns 999.
+===============================================================
+//kill_on_exit//327
+No args.; void. The next exit (from 'exit;' or from end of pgm. being reached) will be followed by MonoMaths instance closure. Fails if program ends through error crash or through fn. 'crash(.)'. The fn. can occur anywhere in the program (but is not valid till processed).
+===============================================================
+//unicode//339
+variables {UnicodeValues} -- any number and mix of args. Returns a chars. array using the supplied values as unicode values. Values are rounded. Values < 0 or > hex. DFFF --> 32 (space). 
+===============================================================
+//overlay//340
+array {Underdog}, array {Overlay}, array {Operation} [, scalar {Pointer1} [, scalar {Pointer2} ] ]. Non-void. Overlay overlays Underdog partly or wholly, and 'Operation' decides how overlapping elements interact to produce the returned array. Opns: '+', '-', '*', '/' (e.g. '-' --> Underdog element - Overlay element), '#' (overwrite); 'o' / 'u' / 'b' (overwrite where overlay element / underdog element / both elements are nonzero); '\>' (overwrite if overlay element \> underdog element); '\<' (analogous). <i>List Array -- List Array:</i> one pointer n; then Overlay[i] intereacts with Underdog[n+i].  <i>Matrix -- Matrix:</i>  row and column pointers 'r', 'c'; Overlay[i, j] overlaps Underdog[r+i, c+j]. Both cases: negative n, r, c allowed; and no size restrictions.  <i>Matrix -- row vector:</i>  NO pointers; overlapping starts at Underdog[0, 0]. Every row of the matrix interacts with the same row vector. Overlay must have the same column length as Matrix. <i>Matrix -- column vector:</i>   analogous.
+{Operation} - List Array / List Array only: each element rotated through. Other combinations: only Operation[0] significant.
+===============================================================
+//swing//341
+scalars or arrays (equal length)  {Xto}, {Yto} [, {Xfrom}, {Yfrom}  [, {Xpivot}, {Ypivot} ] ] -- the angle which a ray hinged at the 'pivot' point makes in swinging from the 'from' point to the 'to' point. Defaults for absent args.: 'pivot' = origin; 'from' = point on positive X axis.
+===============================================================
+//keydown//  342
+bool {AsCharArray}.  Returns whatever key is being held down (or the latest of a series of such keys). {AsC.A.} TRUE: returns a string, like "Cntrl"; FALSE: returns the key value as a scalar. Use F1 on 'keydown' to get much more complete information.
+===============================================================
+//unbin// 343
+array {Values}  [, bool {TreatAsCharsArray}] -- (2nd. arg., if present, overrules array's internal .IsChars setting.) If a chars. array: ignores all but unicodes 48('0'), 49('1'); first char. is MSB. If a nonchars. array: all chars significant, all --> binary 1 except 0.0; and first char. is LSB.
+===============================================================
+//bestsquare// 344
+scalar {Number}. Returns array [P, Q] where P x Q = Number (rounded), and P and Q are as close in value as possible. P <= Q. {Number} rounding to <= 0: Returns [NaN], call to 'empty(.)' --> TRUE.
+===============================================================
+//charpoly// 345
+square matrix {Mx} [, scalar {virtZero} ]  --  returns characteristic polynomial (ascending order of degree). Highest coeff. always +1. If {virtZero} present and nonzero, smaller elements are set to 0. {Mx} must be at least 2x2.
+===============================================================
+//submatrix// 346
+matrix {Mx}, scalar {PivotRow}, scalar {PivotColumn} -- returns submatrix made by removing the indicated column and row from {Mx}. {Mx} need not be square but must have at least 2 rows and 2 columns.
+===============================================================
+//cofactor// 347
+square matrix {Mx}, scalar {PivotRow}, scalar {PivotColumn} [, scalar {DontApplySign} ] --  returns cofactor, unless last arg. present and nonzero, when it returns the minor. {Mx} must be at least 2x2.
+===============================================================
+//dimlike// 348
+arrays {Victim1}, {Victim2},... , array {Model} -- void; all {Victims} will be (re)created with the dimensions of {Model}.
+===============================================================
+//copymx// 349
+matrix {Mx},  scalar {FirstRow}, scalar {FirstCol} [, scalar {NoRows} [, scalar {NoCols} ] ] -- returns a submatrix copied from Mx. All arguments must be legal. Omitted rows / cols --> all rows / cols to end of Mx are copied.
+===============================================================
+//copymxto// 350
+matrix {Mx},  scalar {FirstRow}, scalar {FirstCol}, scalar {LastRow}, scalar {LastCol} -- returns a submatrix copied from Mx. All arguments must be legal.
+===============================================================
+//tozero// 351
+//fromzero// 352
+scalar or array {Value}  [,  scalar {Precision} ].  {Precision}: If positive, the number of decimal places allowed (default = 0). If negative, the number of numerals to the left of the decimal point which must be zero.
+===============================================================
+//min//  353
+any number of scalar or array values.  Returns lowest value in all arr%ays and sc%alars.
+===============================================================
+//minat//  354
+any number of scalar or array values.  Detects lowest value in all ar%rays and sc%alars. Returns array, size 3: [0] = min. value, [1] = no. of argument holding it (to base 0), [2]  = position inside that argument (to base 0).
+===============================================================
+//minabs//  355
+any number of scalar or array values.  Returns that value which, when unsigned, is the lowest value in all arr%ays and sc%alars. NB: the returned value retains its original sign, so may be negative.
+===============================================================
+//minabsat//  356
+any number of scalar or array values.  Detects that value which, when unsigned, is the lowest value in all ar%rays and sc%alars. Returns array, size 3: [0] = min. value, [1] = no. of argument holding it (to base 0), [2]  = position inside that argument (to base 0). NB: the returned value retains its original sign, so may be negative.
+===============================================================
+//and// 357
+variable {Var1}, variable {Var2} [, scalar {Tolerance} ] -- Nonvoid. allowed combinations: array-array (same length, not nec. same structure); array-scalar; scalar-scalar. Returned object of same structure as {Var1}, with values 1 ('true') and 0 ('false'). Return[i] = (Var1[i] is nonzero) AND (Var2[i] is nonzero). ('nonzero' = absolute value > {Tolerance}.)
+===============================================================
+//or// 358
+variable {Var1}, variable {Var2} [, scalar {Tolerance} ] -- Nonvoid. allowed combinations: array-array (same length, not nec. same structure); array-scalar; scalar-scalar. Returned object of same structure as {Var1}, with values 1 ('true') and 0 ('false'). Return[i] = (Var1[i] is nonzero) OR (Var2[i] is nonzero). ('nonzero' = absolute value > {Tolerance}.)
+===============================================================
+//xor// 359
+variable {Var1}, variable {Var2} [, scalar {Tolerance} ] -- Nonvoid. allowed combinations: array-array (same length, not nec. same structure); array-scalar; scalar-scalar. Returned object of same structure as {Var1}, with values 1 ('true') and 0 ('false'). Return[i] = (Var1[i] is nonzero) XOR (Var2[i] is nonzero). ('nonzero' = absolute value > {Tolerance}.)
+===============================================================
+//xorcomp// 360
+variable {Var1}, variable {Var2} [, scalar {Tolerance} ] -- Nonvoid. allowed combinations: array-array (same length, not nec. same structure); array-scalar; scalar-scalar. Returned object of same structure as {Var1}, with values 1 ('true') and 0 ('false'). Return[i] = NOT [ (Var1[i] is nonzero) XOR (Var2[i] is nonzero) ]. ('nonzero' = absolute value > {Tolerance}.)
+===============================================================
+//correlation// 361
+array {Fn1}, array {Fn2}, scalar {XStep}, variable {XOffset} [, scalar {FirstIndex} [, scalar {LastIndex} ] ] -- Computes <& 8747><v>a<^>b</^>  Fn1(x)<B>.</B>Fn2(x + XOffset) dx. Limits 'a', 'b' straddle Fn1 unless {F.I} and/or {L.I.} reduce the range. (NB - these are <I>indices</I> of Fn1, not X-axis values.). Fn2 can have different length; values for out-of-range Fn2 elements are taken as 0.
+===============================================================
+//convolution// 362
+array {Fn1}, array {Fn2}, scalar {XStep} -- Returns the convolution of the two discretized functions.  Arrays must have same length ( = length of returned convolution). {XStep} is the horizontal axis distance between Fn1[n] and Fn1[n+1].
+===============================================================
+//fft//  363
+array {RealArray} or matrix {CxArray} [,  bool {ForwardTransform}].  Inverse transform only done if last arg. present and false. If length is not an integral power of 2, input is padded with zeroes till it is. Always returns a matrix, size Nx2: ([i][0] real, [i][1] imag). (Forward action: no coeff, negative expon'l; Inverse: coeff. 1/N, +ve. exp.) 
+===============================================================
+//homedirectory//  364
+none. Returns the user's personalized home directory, e.g. "/home/fred/".
+===============================================================
+//playsound// 365
+array {FileName} [,  bool {WaitTillSoundFinished} ].  If the file is not found or unplayable, no error is raised but no sound occurs. If {WaitTillSoundFinished} present and nonzero, program operation stops till the sound is finished. 
+===============================================================
+//aspect// 366
+{Case 1:}  scalars [ {GraphID}, ]  {DeclinationAngle},  {AscensionAngle}.  3D graphs only. Sets initial view point. If GraphID not supplied, refers to next graph drawn. To keep a current angle, use system constant NAN.  {Case 2:}  scalar {GraphID}. Returns array [Declination, Ascension]; if graph unidentified or 2D, returns the 'empty' array [NaN] with 'empty(.)' --> true. (The 3 arg. form returns these; the 2. arg. form is void.)
+===============================================================
+//choosefilename// 367
+array {DirectoryName} [, scalar {AllowMultipleFileChoice} ].   Opens file dialog box, and offers a choice of file(s). Returns chosen file path+name (if > 1, delimiter is '#'); or if user CANCELS, " ". {DirectoryName}: Only text up to the last '/' is used. If error, opens at the last <i>correctly named</i> directory of the path; if whole path is garbage, opens at an unpredictable path.
+===============================================================
+//currentdirectory// 368
+array {DirectoryName} OR scalar {Dummy}.  Scalar arg.: simply returns the current directory. {DirectoryName} valid: sets the current directory to it, and returns it. (This directory will then be the opening directory for e.g. loading and saving of files.) {DirectoryName} invalid: nothing set, and returns the error message(which always begins with the SPACE char.). No abbreviations allowed in {DirectoryName}.
+===============================================================
+//checkdirectory// 369
+array {DirectoryName} [, bool {AllowFileName}].  Returns TRUE if this directory exists AND if access permitted; otherwise FALSE (e.g. in Ubuntu the root directory "/" will return false.)  {AllowFileName} - if present and TRUE, no final '/' added, and all ignored after the last '/'; otherwise final '/' is forced. Usual abbrevns. (e.g. "~/") allowed.
+===============================================================
+//filesize// 370
+array {PathAndName}.  Returns the file size, or -1 if unsuccessful (the file does not exist).
+===============================================================
+//split// 371
+array {Original}, array / scalar {Delimiter} [, array / scalar {Padder}  [, bool {AcceptEmptySuba%rrays} [, scalar {FixedLength} [, array / scalar {Prefix} [, array / scalar {Suffix} ] ] ] ] ] ).  Produces a jagged matrix of the same chars. type as Original. {Delimiter}: If an array, the whole array is the delimiter. {Padder}: the default is 32 (space char).  {AcceptEmptySuba%rrays}: Empty subarrays omitted unless  this present and true, when they are made up of Padder (± Prefix and Suffix). (If TRUE and all strings empty, returns the 'empty' array.) {FixedLength}: If present and rounds to >= 1, rows (inclusive of any prefix or suffix) are either amputated or padded to this exact length. {Prefix}and/or {Suffix}, if present, are appended to front and/or back of subarray before padding is added.
+===============================================================
+//clipcull// 372
+scalar {LowerLimit},  scalar {UpperLimit}, array {Values} [, bool {ExcludeValuesAtLimits} ].  RETURNS a copy of Values with all values outside the limits removed (and at the limits, if {Exclude..} present and nonzero). To not have one of the limits, replace it with <I>any</I> array (e.g. "none"). If all values removed, returns array length 1, value NaN, and subsequent 'empty(.)' --> true.
+===============================================================
+//clipcullabs// 373
+scalar {LowerLimit},  scalar {UpperLimit}, array {Values} [, bool {ExcludeValuesAtLimits} ].  RETURNS a copy of Values with all |values| outside the |limits| removed (and at the limits, if {Exclude..} present and nonzero). To not have one of the limits, replace it with <I>any</I> array (e.g. "none"). If all values removed, returns array length 1, value NaN, and subsequent 'empty(.)' --> true.
+===============================================================
+//nth// 374
+scalar {Number} [, bool {JustTheSuffix} [, bool {NoFullStop} ] ].  Returns a chars. array with the appropriate suffix: nth(1) --> "1st.", nth(-22) --> "-22nd.". {Number} is first rounded. If {JustTheSuffix} is present and TRUE, then eg. 23 --> "rd.".  Independently, if {NoFullStop} is present and TRUE,  then e.g. 23 --> "23rd".
+===============================================================
+//fixedsize// 375
+array {InData}, scalar {Extent}, array/scalar {Padder} [, bool {PadAtStart} [, bool {TruncateIfTooLong} [, array {TruncationSign} ]]]   Returns copy of InData as list array. Array short: padded at end, unless {PadAtStart} present and TRUE. If overlength: only truncated if {TruncateIfTooLong}.  {TruncationSign} if present overwrites the end, if truncation occurred. E.g.: Truncation of "ABCDEF" to length 5 --> "ABCDE" (no TruncationSign), "ABC.." (TruncationSign = "..").
+===============================================================
+//val//  376
+IF SCALAR EXPECTED: chars. array {NumberInStringForm} [, scalar {FailureValue}].  IF ARRAY EXPECTED: chars. array {ArrayInStringForm}, array {Delimiter} [, scalar {FailureValue}]. Returns the array or scalar (a/c to argument format). Leading and trailing spaces are allowed in {NumberInStringForm}, and also around delimiters in {ArrayInStringForm}. If parsing fails, instead returns {FailureValue}, or if absent, returns MAXREAL. (Array form: failure value returned in an array of size 1.)  This function is an alias of the function "stringtovalue(.)".
+===============================================================
+//stringtovalue//  377
+IF SCALAR EXPECTED: chars. array {NumberInStringForm} [, scalar {FailureValue}].  IF ARRAY EXPECTED: chars. array {ArrayInStringForm}, array {Delimiter} [, scalar {FailureValue}]. Returns the array or scalar (a/c to argument format). Leading and trailing spaces are allowed in {NumberInStringForm}, and also around delimiters in {ArrayInStringForm}. If parsing fails, instead returns {FailureValue}, or if absent, returns MAXREAL. (Array form: failure value returned in an array of size 1.)  An alias for this function is "val(.)".
+===============================================================
+//chooseclr//  378
+array {InputClr}, array {OutputType} -- Raises a colour dialog. {InputClr} forms (e.g. for red): "red"; "FF0000"; [255, 0, 0]. Return form fixed by {OutputType} which must be exactly one of: "hex" (returns "FF0000"); "bytes" (returns [255, 0, 0]); "verbose" (returns lots of stuff). Cancelled dialog returns empty array [NaN].
+===============================================================
+//ladderclr// 379
+scalar {NoColours}, array/scalar {FirstColour}, array/scalar {LastColour} [, array {HoldWhatConstant} [, bool {ColoursAreHSL} [, scalar {DistortionFactor} ] ] ] -- returns a palette of colours grading from {FirstColour} to {LastColour}, as matrix with 3 cols (R, G, B values). Colours can be in any of the usual forms. {HoldWhatConstant}: if present, should hold one or two of 'H','S', 'L' (case-insens.). Internal HSL intermediate colours will then hold one or two of these constant. {ColoursAreHSL}: if present and TRUE, colours must be arrays of size 3, holding H,S,L values in the range 0 to 1. {DistortionFactor}: default 1. Fractional value (e.g. 0.5): more rapid initial change; beyond 1 (e.g. 2): slow initial change, rapid at end. Ignored if \<= 0.
+============================================================
+//structure//  380
+{Values} stored in any mix of scalars / arrays.  A structure with these dimensions (the highest dimension coming first) is returned, with all elements zero.
+============================================================
+//boardplacemt//  381
+scalar {GraphID}.  If graphing board identified, returns array of size 4: [left wrt screen, top wrt screen, width, height]. Otherwise the 'empty array': size 1, value NaN. An internal adjustment: if either [0] or [1] should return as 1 (pixel), this is changed to 1.001 (see Hints for why).
+============================================================
+//window//  382
+array {WhichWindow}, array {Action} [, array {TheText}, array / scalar {Where} [, bool {Formatted} OR scalar {NoCharsToDelete} ] ].  {WhichWindow}: 'A'(ssignments), 'R'(esults). {Action}: 'C'(lear), 'F'(ocus), 'R'(ead), 'W'(rite), 'M'(arkup), 'D'(elete). (Both args case-insens; only [0] is read.) Actions 'C', 'F': void;  'R': returns text of the window. Action 'W' uses remaining args; all but the last <i>must</i> be present. Action 'D' needs all, but ignores TheText. {Where} must be <i>exactly</i> one of: "fill", "start", "append", integer (e.g. "12" or 12; = char. posn. for insertion). If {Formatted} present and true, tags are processed. Action 'M' (only with WhichWindow 'A'): 3rd. arg. is '+' (turn on), '-' (off), '?' (leave as is); all return '+' or '-' (status after fn operation). {Errors} do not crash program; simply nothing happens, AND scalar 0 returned.
+============================================================
+//smash// 383
+[ array {Message} [, array {SaveWhere} ] ] -- kills its instance of MonoMaths. If {Message} present and is an array, it will be saved somewhere. If {SaveWhere} present, the message goes there. If no second argument, or if saving there fails, instead it is saved in the file "/tmp/smash.txt".
+============================================================
+//thislineno// 384
+No args. Returns the line number at which it occurs in the program.
+============================================================
+//findbrackets// 385
+array {Text}, scalar {Ptr}, scalar / array {Opener}, scalar / array {Closer} -- Finds matching brackets for nesting level at {Ptr}. {Opener} and {Closer}: only first value used. All must be UFT8-codable values. Return has length 2: [position of Opener, position of Closer]. Either (or both) = -1, if item(s) not found.
+============================================================
+//window_find// 386
+variable {SoughtText} [, bool {MatchCase}, bool {WholeWord}, bool {FromCursorDown}, bool {MarkAll}] -- finds text in Assignments Window (start posn. of cursor is relevant). If SoughtText is other than an array with valid unicode value(s), or if there are any missing arguments, the main menu's dialog box is invoked; otherwise not, but effect is the same.
+============================================================
+//datetime//  387
+none. Returns array of length 10: [0]: year (4 digits). [1]: month (base 1). [2]: date in month. [3]: hour, [4]: min, [5] sec, all base 0. [6]: millisec. [7]: day of week (0 = Sunday). [8] day of year (base 1). [9] msec. since start of 1 AD.
+===============================================================
+//plu// 388
+{Form 1:}  array {Text}, scalar {Value} [, array {PluralText} ] --  If {Value} is exactly 1, returns {Text}; otherwise returns pluralized form of {Text}. If no third arg., uses algorithms (e.g. "key" --> "keys", but "city" --> "cities"); case of alteration = case of last letter of {Text}. If third arg., it is returned as is when {Value} is not 1.
+{Form 2:}  scalar {Value}, array {Text} [, array {PluralText} ] --  Same, but prefixes Value - e.g. "1 key", "2.34 keys".
+===============================================================
+//clipboard// 389
+variable {Cue} [, variable {DataToSave} ] -- (a) One-argument: RETURNS any string stored in computer clipboard (or the 'empty' array, if none). (b) Two args.: VOID; places {DataToSave} onto the clipboard as string data (non-chars. arrays use ", " as separator). {Cue} can be anything; suggested are: "get" (1 arg.), "set" (2 args.).
+===============================================================
+//lookup//  390
+array {Name} [, array or scalar {NoFindIndicator}, array or scalar {UnassignedIndicator} ]. Used to read a main program variable from within a function. If found, returns a copy of it. If not found: (1) 1-arg. version: crashes. 3-arg: returns appropriate arg. (2-arg. not allowed.)
+===============================================================
+//touch_array//  391
+char. array {VarName}, scalar {AbsAddress},  scalar {NewValue}, scalar/array {Operation} -- {VarName} must be in quotes. If such a MAIN program array exists, then the element at ABSOLUTE address {AbsAddress} will change according to Operation: '+', '-', '*', '/' (replacemt = old value <operation> {NewValue}), and '#' ({NewValue} replaces old value). If success, TRUE returned.  Failure --> FALSE returned, but no error message and no crash. 
+===============================================================
+//commandline//  392
+bool {AsListArray}.  C# parses the command line to a string array. If {AsListArray} is TRUE, these array strings are concatenated with a space between them; if FALSE, a jagged matrix is built from the string array, using the space character as the padder.
+===============================================================
+//reposition// 393
+Four values {NewLeft}, {NewTop}, {NewWidth}, {NewHeight} as any mix of scalars / arrays.  Returns list array size 4, same values. Any negative dimension: no change in it. A dimension >= 0 and <= 1 is taken as fraction of screen width / height. Internal correction of impractical values.
+===============================================================
+//repartition// 394
+array/scalar {WhichWindow}, scalar {NewHeight}.  Changes window height without altering MonoMaths instance size or layout. {WhichWindow}[0]  is 'A' or 'R'. Any other value, or (rounded) {NewHeight} ≤ 0 --> no changes. {NewHeight} <= 1 is taken as a fraction of screen height; otherwise is pixels. {NewHeight} \> combined heights - 20 corrected to that. RETURNED: array size 2, [FinalAsstWindowHt, FinalResWindowHt].
+===============================================================
+//palette// 395
+(Version 1:) scalar {ColourIndex} - returns a chars. array -- <# blue>0:"blue"; <# red>1: "red";  <# green>2: "green";  <# orange>3: "orange";  <# magenta>4: "magenta";  <# darkviolet>5: "darkviolet";  <# deepskyblue>6: "deepskyblue";  <# brown>7: "brown";  <# grey>8: "grey";  <# black>9: "black".  (Version 2:)  matrix {UserPalette}, scalar {ColourIndex}.  The internally used index in both cases is the absolute value of ColourIndex, modulo (length of the palette). 
+===============================================================
+//blockfile// 396
+array {FileName} [, array {DoWhat} [, array {Message} ] ] -- blocks saving of contents of Asst Window via "File" menu with path+name {FileName}. If {FileName} prefixed by "!", what follows cannot be used even as part of a path+name. {DoWhat}: 'B' blocks, 'U' unblocks (if previously blocked), 'A' unblocks all previously blocked, '?' does nothing (except return as below), other values crash. If omitted, defaults to 'B'. {FileName} - standard abbreviations allowed; not accessed (may be scalar) for {DoWhat} of 'A', '?'. Invalid or nonexistent file name does not raise an error. {Message} replaces the inbuilt no-save message. RETURNS blocked file names in all cases, after the action of the function is complete; multiple files delimited by '|'. If none blocked, returns " ".
+===============================================================
+//btnrelease// 397
+No args. -- returns array size 15: results of click on SELECTED text (only). Used fields: [0]: 1=left btn, 2=middle, 3=right, 0=none yet / since this fn last called (each call resets just this element). [1] = absolute time (msecs); [2] = msecs since last click (same as [1], if none); [5] =CNTRL down, [6]=ALT down; [11, 12] = posn. rel. to top left of window; [13, 14] rel. to screen. At the start of a program run, all fields are zero.
+===============================================================
+//cursordata// 398
+[ bool {Verbose} ] -- {Verbose} absent / FALSE: Returns word at cursor as list array. If text had been selected, = exactly the selected text; otherwise = the sequence of identifier chars. [alphanumeric, '_'] around the cursor. If none, returns SPACE (but never the empty array). {Verbose} TRUE: Same, then MAXREAL, then [ptr. to first char. (rel. to start of all text)] [ptr. to last char.] [was a selection]. If no word found, returns [ SPACE  MAXREAL  -1  -1  0 ].
+===============================================================
+//persistent_array// 399
+{TO SET contents}: array {NewData}.  {TO GET contents}:  NO arg. or any scalar. -- Manipulates an internal array of MonoMaths which is set to [NaN] at instance startup, and thereafter only ever altered when this function resets it. Hence it persists across user program runs until (re)altered by such.
+===============================================================
+//lettercase// 400
+array {TheString}, array {Model}.  Returns string with case adapted a/c to {Model}. (Invalid {Model}: TheString returned untouched.) Valid values of {Model}: "A" (all upper case); "a" (all lower case); "Aa" (1st. letter upper, all others lower); "Aa_Aa" (every word starts with a capital, other letters lower case); "Aa.Aa" (Capitals only occur at start of string and after '.', '?' and '!'.
+===============================================================
+//bracketlevel// 401
+array {String}, array/scalar {Opener}, array/scalar {Closer}, scalar {CharPointer} -- Returns array of size 3: [0] = level at {CharPointer} (outside all bkts = level 1), or -1 (bracket mismatch somewhere in {String}). [2] = ptr to first {Opener} at or to left of {CharPointer}; -1, if none.  [3] = ptr to first {Closer} at or to right; -1, if none.
+===============================================================
+//exit_plus// 402
+array {DoWhat} [, array/scalar {FilePathAndName} [, bool {DisplayAsFormatted} ] ] -- Always evokes an exit (errors or not). If no errors, either simulates subsequent "File | New" ({DoWhat} = "new"; any further arguments ignored) or "File | Load" ({DoWhat} = "load"). If so, {FileName} must be supplied; it is handled exactly as with function 'load'. Unless there is a full path and name, a dialog box will appear (as with function 'load'). Whatever is {DoWhat}, there is <b>no warning</b> that existing unsaved text will be cleared. {Errors} leave existing text in place (including cancelling from dialog box). 
+===============================================================
+//insert_image// 403
+array {FilePathName}, scalar {Width}, scalar {Height}, array {LocationCue} -- Inserts image in Assts Window in place of the first occurrence of the text {LocationCue}. Standard abbrevns. allowed in {FilePathName}. {Width} and {Height} are in pixels; if either is less than 10, both are ignored, and the natural image size is used. RETURNED: If no error (and image visible), " "; otherwise an error message. NB: to avoid the image being placed into the 'insert_image(.)' statement itself, define LocationCue in parts: "text('[', 'image1]')".
+===============================================================
+//isnan//  404
+array or scalar {InData} -- returns TRUE for each value which is set to NaN. Returns a scalar if a single scalar argument, otherwise an array of the same structure as {InData}.
+===============================================================
+//randrange// 405
+named array or scalar {NamedVariable}, scalar / array {LowLimit}, scalar / array {HighLimit} [, bool {IntegersOnly} ] -- VOID. Random values inserted directly into the variable, overwriting preexisting data. Inverted limits are corrected internally. If {IntegersOnly} present and TRUE, then LowLimit and HighLimit will be rounded, and returned values will be integral, in the range INCLUSIVE of both limits. If {LowLimit} and {HighLimit} are not both scalar, they must both be arrays of same length as NamedVariable.
+===============================================================
+//fixangle// 406
+array / scalar {Angle} [, scalar {MinimumAngle} ] -- Nonvoid; returns the angle adjusted to lie in the range {{ {MinimumAngle},  {MinimumAngle+2π} }}. Default for no 2nd. argument: range {{ 0, 2π }}.
+===============================================================
+//distmutual//  407
+arrays {XValues} [, {YValues} [, {ZValues} ] ]  [, bool {DontTakeSqRoot} [, bool {FillWholeMatrix} ] ]  --  The array(s) represent coords of a point in 1 to 3 dimensions. Upper triangle only is  filled, unless last bool TRUE. For 1 dimension, result[i,j] (j > i) = XValues[j] - XValues[i]; first boolean ignored; if 2nd. boolean TRUE, result[i,j] (i > j) = - result[j,i].
+===============================================================
+//distpoints// 408
+arrays {X1Values} [, {Y1Values} [, {Z1Values} ] ],  {X2Values} [, {Y2Values} [, {Z2Values} ] ],  [ bool {DontTakeSquareRoot} ] -- X1... represent coordinates of one set of points in 1-, 2- or 3-dimensional space; X2... represent coordinates of another set of points in the same space. Returned matrix dimensions: (size of X1Values <b>X</b>  size of X2Values). For 1 dimension, elements are signed: result[i,j] = X2Values[j] - X1Values[i]; and {DontTakeSquareRoot} ignored.
+===============================================================
+//setalias// 409
+Any number of {variable names}; variables must have been assigned and be persistent, and be within the same functional scope; constants not allowed. Alias values are integral and ascend from 0.
+===============================================================
+//getval// 410
+scalar {Alias} [, 0 to 5 scalars {AddressElement} ] -- {Alias} is a nonnegative integer as assigned by earlier call to 'setalias(.)'. Returns the value of the whole aliassed variable (scalar or array), if only one argument; or else, if an array, only the segment indicated by the address. {AddressElements} are as would go between "[..]" for array, except that you replace "[]" with -1 or MINREAL.
+===============================================================
+//setval// 411
+scalar {Alias} [, 0 to 5 scalars {AddressElement}, scalar / array Data ] -- Void. {Alias} is a nonnegative integer as assigned by earlier call to 'setalias(.)'. Sets the value of the whole aliassed variable (scalar or array), if no address elements; or else, if an array, only the segment indicated by the address. {AddressElements} are as would go between "[..]" for array, except that you replace "[]" with -1 or MINREAL.
+===============================================================
+//prevalence// 412
+MODE 1:  array {InData}, scalar {OnlyIfDuplicatedThisOften} [, scalar {OmitThisValue} ] --  Returns a matrix with two rows; row 0 holds all the unique values of the array, and row 1 the no. of occurrence of each such value. The matrix is sorted in descending order on row 1: result[1,0] is the highest prevalence. (Within tying values, order in the matrix is indeterminate.) {OnlyIfDuplicatedThisOften}: Rounded; if \< 1, --> 1.  Values occurring less often are ignored. (If no values in {InData} so occur, this option results in the empty array [NaN].) {OmitThisValue}: If present, function behaves as if InData contained no instance of OmitThisValue.
+MODE 2: array {InData}, array {LoValues} [, array {HiValues} ] -- Returns list array one longer than LoValues; Result[i] is the frequency of occurrence of LoValues[i] (or if 3 args, values ≥ LoValues[i] and \< HiValues[i]); last element of Result holds no. instances not scoring.
+===============================================================
+413 ("__constant") is for internal use, not available to users.
+===============================================================
+//filter// 414
+array {InArr},  scalar {WindowWidth},  scalar {StepSize},  array {Mode}  --  Returns the result of running a window across InArr and operating on it at each window position; returns an array of the same dimensions as InArr, though with smaller dimensions (unless scalars are both 1). Window not allowed to overlap edges of the structure. {Mode} - "average" or "maximum".
+===============================================================
+//pointsof// 415
+scalar {PlotID},  bool {ScaledCoordinates} [, bool {OriginalShape} ] ) -- returns a matrix of all X, Y (, Z) values for the plot: rows 0, 1 (,2) are X, Y (,Z) values. If {ScaledCoordinates} TRUE, scale coordinates are returned; otherwise pixel coordinates relative to whole drawing surface (not graph box margins). Note that pixel Y increases with movement down the surface. {OriginalShape} (ignored if not a shape): TRUE --> values of basic plot; FALSE or missing --> points as at latest <i>graphed</i> translation/rotation/magnification.
+===============================================================
+//cluster// 416
+MODE 1: {"resolve"},  matrix {Map},  bool {IncludeDiagonallyTouching} -- {Map} enters with ONLY values 0 ('sea') and -1 ('land'). Returned matrix has same dimensions as {Map}. {Action - "resolve"}: zeros unchanged, but all -1 changed to integers 1+, one value per 'island'. If 3rd. arg FALSE, parts of same land mass must be in same row or column; if TRUE, diagonally touching elements are also part of the same land mass.
+MODE 2: {"single"},  matrix {Map},  bool {IncludeDiagonallyTouching}, scalar {ThisRow}, scalar {ThisColumn}, scalar {FillValue} -- whatever the value at the matrix location, returns the associated cluster. No restriction on value at that location, but {FillValue} must be nonzero. Returns copy of Map with all elements of the cluster labelled with {FillValue}, all other elements being replaced by 0.
+===============================================================
+//mxcentre// 417
+char. array {Mode},  matrix {InMatrix} [, bool {RoundToNearestEvenNo}] -- returns array [ row, column ] of 'centre' of nonzero data in the matrix. {Mode} = "of rectangle" returns centre of smallest rectangle with all nonzero data inside or on its perimenter; {Mode} = "of mass" returns centre of mass ('mass' of element = its value; negative values allowed). <b>ERROR</b> returns [ -1, -1 ] (e.g. all zeroes; centre of mass outside of matrix - occurs sometimes when there are negative values).
+===============================================================
+//graphvisible// 418
+scalar {GraphID} [, bool {NewVisibility} ]  -- Always returns the final visible status of the graph as 'true' or 'false'. If {NewVisibility} is present, 'true' forces visibility, 'false' forces invisibility. If no graph {GraphID} exists, returns 'false' (with no indication that the graph does not exist).
+===============================================================
+//cursorposn// 419
+array {Window} [, scalar {NewPosn} ]  -- returns position of cursor (after any invoked movement). {Window} must start with 'A','a','R' or 'r', or -1 is returned. If NewPosn present and ≥ 0, first moves cursor there. If NewPosn beyond end of text, set to end of text.
+===============================================================
+//mainmenu// 420
+array {MenuTitles} [, bool {MakeVisible} ] -- One arg: {MenuTitles} is a single exact main menu title; return as below. Two arg: {MenuTitles} is one or more exact titles, delimited by '|'; or "ALL" for all of them. {MakeVisible} determines visibility. RETURN: +1 for visible (after any change), 0 for not visible, -1 for unidentifiable menu title. (Any one error sets this, even though as many menus changed as possible.)
+===============================================================
+//keyname// 421
+scalar / array {KeyValues} [,  char array {Delimiter} ] -- Given key value(s) as returned by function "keydown(false)", returns its/their key names. Where more than 1, the delimiter is {Delimiter} (if present and an array), or defaults to a single space.
+===============================================================
+//solveexp// 422
+char array {Expression} [,  array {Values} ] -- evaluates expression. <b>One arg version:</b> {Expression} takes the form "a * (2+3^(2*PI))" - literals, constants, main program <b>scalars</b>.  <b>Two arg version:</b> Expression takes the form "{{1}} + {{3}} * ..." where {{n}} refers to Values[n]. <b>Both versions:</b> Spaces, tabs, pars ignored. Parsing errors crash. No system functions allowed; only signs "+-*/^".
+===============================================================
+//sigmoid// 423
+array {XX}, scalar {Index}, scalar {Coeff}, char array {Mode} -- returns a list array of one of three 'sigmoid' functions. Structure of {XX} ignored. {Mode}: only the first character is checked. "r(ising)": output curve rises from left (asymptote 0) to right (asymptote 1). "f(alling):" 1 ‒ the rising curve. "c(ompressed)": symmetrical about Y axis; Y = 1 for  X = 0;  Y = 0.5 for X = {Coeff};  Y = 0  for X --> +infinity. 
+Equations: 	{Mode} "r" uses  y = 1 /  (1  +  {Coeff}.e<^>‒{Index}.x</^>);  {mode} "c" uses y = 1 / (1  +  (x / {Coeff})<^>{Index}</^>).
+
+===============================================================
+//sequence//  424
+scalar {StartValue},  one or more names of scalars -- args. 2+ are either existing scalars or names so far unused and which will be here defined as scalars. Values are assigned to the arguments starting from {StartValue} (rounded), incremented by one for each next scalar in the list. The return is {StartValue} + the number of scalar args. following.
+===============================================================
+//crash// 425
+Crashes program, with error message that you supply. Any number of <# magenta>literals<# blue>, scalar variables or arrays.  Literals ('10'): taken as unicode char. value; other scala%rs ('x', '2+3'): value converted to string form. Arrays: treated according to char. rating of arr%ay; non-char. ar%rays show as e.g. "1, 3, 45, -4.7".
+===============================================================
+//plotmx//  426
+<# red>Matrix,  XX,  <# green>PointType, PointWidth, PointColour, <# magenta>LineType, LineWidth, LineColour<# black> -- key F1 with cursor on 'plotmx' for details.
+===============================================================
+//rotaterow// 427
+matrix {Matrix}, scalar {RowNo} [, scalar {NoTimes} [, scalar/array {Replacement} [, scalar {StartAt} [, scalar {EndAt} ] ] ] ] -- VOID. Rotates part or all of a single row inside a matrix. {NoTimes} can overflow or underflow (modulo taken). Positive rotates row to right, negative to left. If no 4th. argument, or if it is an array (e.g. "wrap"), wraparound occurs; otherwise {Replacement} replaces the last moved datum at each (notional) rotation. If final arg(s), only that part of row is rotated.
+===============================================================
+//rotatecol// 428
+matrix {Matrix}, scalar {ColNo} [, scalar {NoTimes} [, scalar/array {Replacement} [, scalar {StartAt} [, scalar {EndAt} ] ] ] ] -- VOID. Rotates part or all of a single column inside a matrix. {NoTimes} can overflow or underflow (modulo taken). If positive, each notional rotation step rotates away from row 0. If no 4th. argument, or if it is an array (e.g. "wrap"), wraparound occurs; otherwise {Replacement} replaces the last moved datum at each (notional) rotation. If final arg(s), only that part of column is rotated.
+===============================================================
+//multibox// 429
+named array {Heading}, named array {LayoutString}, named array {Texts}, array {ButtontTitles} [, array {TextsDelimiter} ]  -- designer dialog box. {LayoutString}: 'L'(abel with wrap), 'l'(abel with no wrap), 'T'(extbox), 'V'(textview, editable), 'v'(not editable), 'W'(textview using text tags), 'w' (not editable), 'X'/'x' (checked / unchecked check btn), 'R'/'r' (checked / unchecked radio btn). Final value reflects btn changes: checked one(s) as capitals.  <i>Change horiz. level</i> by inserting '|'. {Texts}: One per widget of every sort, delimited by '|' (or by {TextsDelimiter}). Named arrays are altered. {TextsDelimiter}: only first character is used. RETURNS button no.
+===============================================================
+//setbox// 430
+Two or four values in any scalar / array mix: {Width}, {Height} [, {CentreX}, {CentreY}] -- VOID.  Values are fractions of screen dimension if 0 \< Value ≤ 1, otherwise are pixels. Default with -1. (If one of Width and Height is defaulted, both get defaulted.) Setting persists only till next fn <b>request</b>, <b>show</b> or <b>decide</b> (no effect on file dialogs).
+===============================================================
+//count// 431
+array {Subject}, array / scalar {CountThis} [,  scalar {StartPtr} [,  scalar {EndPtr} ] ]  -- returns the number of instances of {CountThis} in all {Subject} (just 2 args) or in the subarray of {Subject} between pointers (inclusive). Out-of-range pointers adjusted to appropriate limit. For speed, if {CountThis} is single-valued, enter as a scalar, not as a one-valued array.
+===============================================================
+//getsegmt// 432
+NAMED array {InArray},  array / scalar {Delimiter} ,  scalar {WhichSegment}  -- Returns segment identified by no. {WhichSegmt} (first segment is 0). {InArray} must be nonempty.  If {Delimiter} is an array, only its first element is taken as the delimiter.  Crashes if {WhichSegment} out of range; returns [NaN] if segment is empty (happens if there is a delimiter at start or end of InArray, or if two contiguous delimiters).
+===============================================================
+//setsegmt// 433
+NAMED array {InArray},  array / scalar {Delimiter} ,  scalar {WhichSegment},  scalar / array {NewData}  -- VOID, as it changes InArray directly. If {Delimiter} is an array, only its first element is taken as the delimiter.  Crashes if {WhichSegment} out of range. {NewData}: if you want to make the segment empty, set this to NaN.
+===============================================================
+//findsegmt// 434
+array {InArray}, scalar/array {Delimiter}, array/scalar {Target} [, bool {FullLengthMatchReqd} [, scalar {StartSegment} [, scalar {MaxNoFinds} ] ] ]  -- If bool is missing or TRUE, Target must exactly match the segment; otherwise the segment need only begin with Target. Target may be "NaN". {MaxNoFinds}: If missing or rounds to 1, only the first find returned. If ≤ 0 or too large, all finds returned. Otherwise the set limit applies. RETURNED: <u>No finds:</u> [-1, -1, -1]. <u>Finds:</u> array of length = no. finds x 3: (A) Target nonempty: one triplet per find, thus: [segment no., first element of segment, last element of segment]. (B) Target is NaN: triplet is [segment no., ptr. to left of adjacent delimiters, ptr. to right one].
+===============================================================
+//findany// 435
+array {InArray},  scalar {StartPtr},  array {TargetSet} [, scalar / array {Delimiter} ]  --  finds first occurrence of any of a set of target scalars or subarrays within InArray. <u>VERSION 1:</u> 3 args. only. Each element of {TargetSet} is separately sought; the return is [index in InArray, index in TargetSet]. No find --> [-1, -1]. <u>VERSION 2:</u> 4 args. {TargetSet} is a set of subarrays demarcated by {Delimiter} (which is a single value; if an array, its first element only is used). The return: [index in InArray,  no. of subarray in TargetSet (to base 0) ]. Again, no find --> [-1, -1]. {Target set} must not start or end with delimiter, or have contiguous delimiters.
+===============================================================
+//defluff// 436
+NAMED variable {Subject},  scalar {VirtualZero}  -- VOID. Any elements in Subject that have absolute value ≤ {VirtualZero} are changed to 0. If {VirtZero} is zero or negative, nothing happens.
+===============================================================
+//randum//  437
+scalar {NoBytes}.  Reads {Nobytes} bytes from Linux kernel via "/dev/urandom", returns array of length {NoBytes}. If {NoBytes} rounds to less than 1, it is corrected to 1.
+===============================================================
+//equal// 438
+arrays {Array1}, {Array2},  scalar / array {HowFar} -- Compares the two arrays as far as {HowFar} indicates; if arrays equal over this extent, TRUE is returned; otherwise FALSE. No other information given. {HowFar} scalar: is the extent, taken from starts of arrays. If too big, or 0 or negative, set to the length of Array1. {HowFar} an array: this is sought as a subarray in {Array1} (only). If found, the extent is all in Array1 up to but not including that subarray. If not found, extent is the length of Array1.
+===============================================================
+//ini_data// 439
+optional array {Target}  --  returns INI file data for any property with a name containing {Target}. If no argument, or a scalar, then all fields returned. Format, e.g. for two properties: [ property1_name  MAXINT32  property1_data  MAXINT32  property2_name  MAXINT32  property2 data ]. If no finds, return is " ". A subarrays "property_data" takes these forms: (1) string type: unicodes; (2) value type: a single element, being the numerical value; (3) colour type: subarray has length 3, = R, G, B bytes. For (1), you need to use "chars(aa)".
+===============================================================
+//train// 440
+Too complicated to present any explanations here. Here are the standard forms:
+Puff = train("new");  
+Puff = train("from",  DelimitedArray,  scalar/array Delimiter);  
+Puff = train("from",  JaggedMatrix,  scalar/array Padder);  
+Header = train("header", Puff);
+Arr = train("read", Puff,  scalar WhichCarriage);
+Puff1 = train("copy", Puff,  scalar startCarriage, NoOfCarriages);
+Arr = train("delimit",  Puff,  scalar/array Delimiter);  
+Puff1 = train("append", Puff,  scalar/array NewCarriage);
+Puff1 = train("insert", Puff,  scalar WhichCarriage,  scalar/array NewCarriage);
+Puff1 = train("alter", Puff,  scalar WhichCarriage,  scalar/array NewCarriage);
+Puff1 = train("delete", Puff,  scalar StartCarriage,  scalar NoDoomedCarriages);
+findings = train("find",  Puff,  scalar/array Sought,  scalar FirstCarriageToCheck,  scalar MaxNoFinds);  <# green>whole carriage must match<# blue>
+findings = train("holds",  Puff,  scalar/array Sought,  scalar FirstCarriageToCheck,  scalar MaxNoFinds); <# green>carriages containing Sought will match<# blue>
+findings = train("starts",  Puff,  scalar/array Sought,  scalar FirstCarriageToCheck,  scalar MaxNoFinds); <# green>carriages starting with Sought will match<# black>
+===============================================================
+//removeruns//  441
+array {InArray} [, scalar / array {OfThese} ] -- returns copy of {InArray} (as list array) with runs of values replaced by a single value (e.g. "AAA" --> "A"). If no 2nd. arg., runs of anything replaced; e.g. "AAABAADD" --> "ABAD". Otherwise only runs of value(s) in {OfThese} are replaced; e.g. for OfThese = "BD", "AAABBCCDD" --> AAABCCD". Structure of {InArray} ignored. Output chars. rating is same as that of {InArray}.
+===============================================================
+//seekno//  442
+array {TheString} [, scalar {StartPtr} [, scalar {EndPtr} [, bool {IntegerOnly} [, bool {AllowNegSign} ] ] ] -- Looks in the designated part (or all) of {TheString} for a number. Defaults: {StartPtr} absent or \<0 --> 0;  {EndPtr} absent, or negative (e.g. -1), or beyond end --> last character; {IntegerOnly} taken as FALSE if absent; {AllowNegSign} FALSE if absent. RETURNS: array, size 3: (1) Valid value found: [ptr to frst char.,  ptr. to last char., Value]. (2) Value correctly formatted but out of range: same two pointers, third element is NaN. (3) Value not found: returns [-1, -1, NaN].
+===============================================================
+//inject// 443
+[ scalar / array {DataToAssign}, ]   char. array {VarNames} [, bool {returnStatsArray} ]  --  {VarNames} is a delimited list, the first non-ID char. being taken as the delimiter. The subarrays are taken as variable names; provided they are valid as such, AND the variable is used elsewhere at the same fn. level, they here receive values. {DataToAssign}: absent --> series 0, 1, 2, ...  Scalar: all variables get that value. Array: values assigned successively, with wraparound, from the array. Note that a due value is used up from DataToAssign even if the var. name is invalid.
+RETURN: (1) {returnStatsArray} FALSE or absent: returns scalar, no. substrings ( = no. values used up).  (2) {returnStatsArray} TRUE: array of size 3: [0] = no. substrings (= no. values used up); [1] = no. unused valid var. names; [2] = no. empty strings.
+===============================================================
+//hotkeysoff// 444
+scalar {GraphID} -- turns off hot keys for the graph (though the short cuts remain written on the graph menus). Cannot be undone; you would have to close this graph and create a duplicate graph to get them back!
+===============================================================
+//findlineno// 445
+scalar {LineNo_ToBase1}  [,  bool {AndGoThere} ] -- RETURNS the Asst Window text of the line number supplied; or [NaN], if no such line. If the 2nd. arg. is present and is TRUE, will put the cursor at the start of that line.
+===============================================================
+//firfilter// 446
+array {InArray}, array / scalar {ImpulseResponse} [, scalar {Delay} [, scalar {LeftPadder} [, scalar {RightPadder} ] ] ] -- Applies the FIR filter to the input signal: see Hints file. If {ImpulseResponse} is scalar N where N ≥ 1 and ≤ InArray's length, then it is internally replaced by the N-termed array [1/N, 1/N, ..]. {Delay}; default is 0. Allowed to be negative (a predictive filter).  {LeftPadder} has default MINREAL, and {RightPadder} has default MAXREAL. RETURNED: (1) Success: array of same length as {InArray} with indeterminate values replaced by padders; (2) No valid data output possible: the 'empty' array [NaN]. 
+===============================================================
+//graphtitle// 447
+scalar {GraphID}, array {TheTitle} -- void; puts {TheTitle} into the blue top margin of the window and in the panel button representing the graph. Argument errors do not crash; simply nothing happens.
+===============================================================
+//monotonicity// 448
+array {InArray},  bool {ExpectAscending} [, scalar {StartPtr} [,  scalar {VirtualZero} ] ] -- RETURNS an array of size 4: [No. anomalies,  Index of first anomaly (or 0, if none),  No. contiguous duplicators,  Index of first such duplicator ]. {StartPtr}: all of array ignored before this value. {InArray}: must have length (from the start pointer) of at least 2. {VirtualZero}: ≤ 0 --> 0.
+===============================================================
+//divmod// 449
+array / scalar {X},  scalar {Y} -- If {X} is scalar, returns the list array [X div Y,  X mod Y]. If {X} is an array of data length L, returns a matrix of L rows, row i being [ X[i] div Y,  X[i] mod Y ]. The sign of {X} is preserved, if {Y} is positive.
+===============================================================

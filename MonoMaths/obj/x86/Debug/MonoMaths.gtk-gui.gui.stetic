@@ -1,0 +1,1232 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<stetic-interface>
+  <configuration>
+    <images-root-path>..</images-root-path>
+    <target-gtk-version>2.12</target-gtk-version>
+  </configuration>
+  <import>
+    <widget-library name="glade-sharp, Version=2.12.0.0, Culture=neutral, PublicKeyToken=35e10195dab3c99f" />
+    <widget-library name="../bin/Debug/MonoMaths.exe" internal="true" />
+  </import>
+  <widget class="Gtk.Window" id="MonoMaths.MainWindow" design-size="1618 667">
+    <action-group name="Default">
+      <action id="FileAction">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">_File</property>
+        <property name="ShortLabel" translatable="yes">File</property>
+      </action>
+      <action id="NewAction">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">New</property>
+        <property name="ShortLabel" translatable="yes">New</property>
+        <signal name="Activated" handler="OnNewActionActivated" />
+      </action>
+      <action id="OpenAction">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">Open</property>
+        <property name="ShortLabel" translatable="yes">Open</property>
+        <signal name="Activated" handler="OnOpenActionActivated" />
+      </action>
+      <action id="SaveAction">
+        <property name="Type">Action</property>
+        <property name="Accelerator">&lt;Control&gt;s</property>
+        <property name="Label" translatable="yes">Save</property>
+        <property name="ShortLabel" translatable="yes">Save</property>
+        <signal name="Activated" handler="OnSaveActionActivated" />
+      </action>
+      <action id="SaveAsAction">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">Save As</property>
+        <property name="ShortLabel" translatable="yes">Save As</property>
+        <signal name="Activated" handler="OnSaveActionActivated" />
+      </action>
+      <action id="LoadFunctionAction">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">Load Function</property>
+        <property name="ShortLabel" translatable="yes">Load Function</property>
+        <signal name="Activated" handler="OnLoadFunctionActionActivated" />
+      </action>
+      <action id="SaveFunctionAction">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">Save Function</property>
+        <property name="ShortLabel" translatable="yes">Save Function</property>
+        <signal name="Activated" handler="OnSaveFunctionActionActivated" />
+      </action>
+      <action id="ExitAction">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">Exit</property>
+        <property name="ShortLabel" translatable="yes">Exit</property>
+        <signal name="Activated" handler="OnExitActionActivated" />
+      </action>
+      <action id="ReloadAction">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">Reload</property>
+        <property name="ShortLabel" translatable="yes">Reload</property>
+      </action>
+      <action id="ReloadAction0">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">-</property>
+        <property name="ShortLabel" translatable="yes">-</property>
+        <signal name="Activated" handler="OnReloadActionActivated" />
+      </action>
+      <action id="ReloadAction1">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">-</property>
+        <property name="ShortLabel" translatable="yes">-</property>
+        <signal name="Activated" handler="OnReloadActionActivated" />
+      </action>
+      <action id="ReloadAction2">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">-</property>
+        <property name="ShortLabel" translatable="yes">-</property>
+        <signal name="Activated" handler="OnReloadActionActivated" />
+      </action>
+      <action id="ReloadAction3">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">-</property>
+        <property name="ShortLabel" translatable="yes">-</property>
+        <signal name="Activated" handler="OnReloadActionActivated" />
+      </action>
+      <action id="ReloadAction4">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">-</property>
+        <property name="ShortLabel" translatable="yes">-</property>
+        <signal name="Activated" handler="OnReloadActionActivated" />
+      </action>
+      <action id="ReloadAction5">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">-</property>
+        <property name="ShortLabel" translatable="yes">-</property>
+        <signal name="Activated" handler="OnReloadActionActivated" />
+      </action>
+      <action id="ReloadAction6">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">-</property>
+        <property name="ShortLabel" translatable="yes">-</property>
+        <signal name="Activated" handler="OnReloadActionActivated" />
+      </action>
+      <action id="ReloadAction7">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">-</property>
+        <property name="ShortLabel" translatable="yes">-</property>
+        <signal name="Activated" handler="OnReloadActionActivated" />
+      </action>
+      <action id="ReloadAction8">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">-</property>
+        <property name="ShortLabel" translatable="yes">-</property>
+        <signal name="Activated" handler="OnReloadActionActivated" />
+      </action>
+      <action id="ReloadAction9">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">-</property>
+        <property name="ShortLabel" translatable="yes">-</property>
+        <signal name="Activated" handler="OnReloadActionActivated" />
+      </action>
+      <action id="ReloadAction10">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">-</property>
+        <property name="ShortLabel" translatable="yes">-</property>
+        <signal name="Activated" handler="OnReloadActionActivated" />
+      </action>
+      <action id="ReloadAction11">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">-</property>
+        <property name="ShortLabel" translatable="yes">-</property>
+        <signal name="Activated" handler="OnReloadActionActivated" />
+      </action>
+      <action id="ReloadAction12">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">-</property>
+        <property name="ShortLabel" translatable="yes">-</property>
+        <signal name="Activated" handler="OnReloadActionActivated" />
+      </action>
+      <action id="EditAction">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">Edit</property>
+        <property name="ShortLabel" translatable="yes">Edit</property>
+      </action>
+      <action id="UndoAction">
+        <property name="Type">Action</property>
+        <property name="Accelerator">&lt;Control&gt;z</property>
+        <property name="Label" translatable="yes">Undo</property>
+        <property name="ShortLabel" translatable="yes">Undo</property>
+        <signal name="Activated" handler="OnUndoActionActivated" />
+      </action>
+      <action id="RedoAction">
+        <property name="Type">Action</property>
+        <property name="Accelerator">&lt;Control&gt;y</property>
+        <property name="Label" translatable="yes">Redo</property>
+        <property name="ShortLabel" translatable="yes">Redo</property>
+        <signal name="Activated" handler="OnRedoActionActivated" />
+      </action>
+      <action id="CopyAction">
+        <property name="Type">Action</property>
+        <property name="Accelerator">&lt;Control&gt;c</property>
+        <property name="Label" translatable="yes">Copy</property>
+        <property name="ShortLabel" translatable="yes">Copy</property>
+        <signal name="Activated" handler="OnCopyActionActivated" />
+      </action>
+      <action id="CutAction">
+        <property name="Type">Action</property>
+        <property name="Accelerator">&lt;Control&gt;x</property>
+        <property name="Label" translatable="yes">Cut</property>
+        <property name="ShortLabel" translatable="yes">Cut</property>
+        <signal name="Activated" handler="OnCutActionActivated" />
+      </action>
+      <action id="PasteAction">
+        <property name="Type">Action</property>
+        <property name="Accelerator">&lt;Control&gt;v</property>
+        <property name="Label" translatable="yes">Paste</property>
+        <property name="ShortLabel" translatable="yes">Paste</property>
+        <signal name="Activated" handler="OnPasteActionActivated" />
+      </action>
+      <action id="IndentSelectedLinesAction">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">Indent Selected Lines         Tab</property>
+        <property name="ShortLabel" translatable="yes">Indent Selected Lines</property>
+        <signal name="Activated" handler="OnIndentSelectedLinesActionActivated" />
+      </action>
+      <action id="UnindentSelectedLinesAction">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">Unindent Selected Lines   Shift+Tab</property>
+        <property name="ShortLabel" translatable="yes">Unindent Selected Lines</property>
+        <signal name="Activated" handler="OnUnindentSelectedLinesActionActivated" />
+      </action>
+      <action id="ActionSeparator1">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">_____</property>
+        <property name="Sensitive">False</property>
+        <property name="ShortLabel" translatable="yes">-</property>
+      </action>
+      <action id="Action1">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">=</property>
+        <property name="ShortLabel" translatable="yes">=</property>
+      </action>
+      <action id="RemarkOutSelectedLinesAction">
+        <property name="Type">Action</property>
+        <property name="Accelerator">&lt;Control&gt;slash</property>
+        <property name="Label" translatable="yes">Remark-Out Selected Lines</property>
+        <property name="ShortLabel" translatable="yes">Remark-Out Selected Lines</property>
+        <signal name="Activated" handler="OnRemarkOutSelectedLinesActionActivated" />
+      </action>
+      <action id="UndoRemarkOutOfSelectedLinesAction">
+        <property name="Type">Action</property>
+        <property name="Accelerator">&lt;Control&gt;question</property>
+        <property name="Label" translatable="yes">Undo Remark-Out of Selected Lines</property>
+        <property name="ShortLabel" translatable="yes">Undo Remark-Out of Selected Lines</property>
+        <signal name="Activated" handler="OnUndoRemarkOutOfSelectedLinesActionActivated" />
+      </action>
+      <action id="SearchAction">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">Search</property>
+        <property name="ShortLabel" translatable="yes">Search</property>
+      </action>
+      <action id="FindAction">
+        <property name="Type">Action</property>
+        <property name="Accelerator">&lt;Control&gt;f</property>
+        <property name="Label" translatable="yes">Find</property>
+        <property name="ShortLabel" translatable="yes">Find</property>
+        <signal name="Activated" handler="OnFindActionActivated" />
+      </action>
+      <action id="FindAgainAction">
+        <property name="Type">Action</property>
+        <property name="Accelerator">F3</property>
+        <property name="Label" translatable="yes">Find Again</property>
+        <property name="ShortLabel" translatable="yes">Find Again</property>
+        <signal name="Activated" handler="OnFindAgainActionActivated" />
+      </action>
+      <action id="ReplaceAction">
+        <property name="Type">Action</property>
+        <property name="Accelerator">&lt;Control&gt;r</property>
+        <property name="Label" translatable="yes">Replace</property>
+        <property name="ShortLabel" translatable="yes">Replace</property>
+        <signal name="Activated" handler="OnReplaceActionActivated" />
+      </action>
+      <action id="ExperimentalAction">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">Experimental</property>
+        <property name="ShortLabel" translatable="yes">Experimental</property>
+      </action>
+      <action id="DoIt1Action">
+        <property name="Type">Action</property>
+        <property name="Accelerator">&lt;Control&gt;&lt;Alt&gt;x</property>
+        <property name="Label" translatable="yes">Do It - 1</property>
+        <property name="ShortLabel" translatable="yes">Do It - 1</property>
+        <signal name="Activated" handler="OnDoIt1ActionActivated" />
+      </action>
+      <action id="InsertBookmarkCtrlB0To9Action">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">Insert Bookmark  (Ctrl B, 0 to 9)</property>
+        <property name="ShortLabel" translatable="yes">Insert Bookmark</property>
+        <signal name="Activated" handler="OnInsertBookmarkActionActivated" />
+      </action>
+      <action id="GoToBookmarkCtrlShift0To9Action">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">Go to Bookmark  (Ctrl+Shift+0 to 9)</property>
+        <property name="ShortLabel" translatable="yes">Go to Bookmark</property>
+        <signal name="Activated" handler="OnGoToBookmarkActionActivated" />
+      </action>
+      <action id="ExtraAction">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">Extra</property>
+        <property name="ShortLabel" translatable="yes">Extra</property>
+      </action>
+      <action id="ActionX0">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">0</property>
+        <property name="ShortLabel" translatable="yes">0</property>
+        <signal name="Activated" handler="OnExtraActionActivated" />
+      </action>
+      <action id="ActionX1">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">1</property>
+        <property name="ShortLabel" translatable="yes">1</property>
+        <signal name="Activated" handler="OnExtraActionActivated" />
+      </action>
+      <action id="ActionX2">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">2</property>
+        <property name="ShortLabel" translatable="yes">2</property>
+        <signal name="Activated" handler="OnExtraActionActivated" />
+      </action>
+      <action id="ActionX3">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">3</property>
+        <property name="ShortLabel" translatable="yes">3</property>
+        <signal name="Activated" handler="OnExtraActionActivated" />
+      </action>
+      <action id="ActionX4">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">4</property>
+        <property name="ShortLabel" translatable="yes">4</property>
+        <signal name="Activated" handler="OnExtraActionActivated" />
+      </action>
+      <action id="ActionX5">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">5</property>
+        <property name="ShortLabel" translatable="yes">5</property>
+        <signal name="Activated" handler="OnExtraActionActivated" />
+      </action>
+      <action id="ActionX6">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">6</property>
+        <property name="ShortLabel" translatable="yes">6</property>
+        <signal name="Activated" handler="OnExtraActionActivated" />
+      </action>
+      <action id="ActionX7">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">7</property>
+        <property name="ShortLabel" translatable="yes">7</property>
+        <signal name="Activated" handler="OnExtraActionActivated" />
+      </action>
+      <action id="ActionX8">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">8</property>
+        <property name="ShortLabel" translatable="yes">8</property>
+        <signal name="Activated" handler="OnExtraActionActivated" />
+      </action>
+      <action id="ActionX9">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">9</property>
+        <property name="ShortLabel" translatable="yes">9</property>
+        <signal name="Activated" handler="OnExtraActionActivated" />
+      </action>
+      <action id="FunctionArgumentsCursorAfterAction">
+        <property name="Type">Action</property>
+        <property name="Accelerator">&lt;Shift&gt;&lt;Control&gt;space</property>
+        <property name="Label" translatable="yes">Function Arguments (cursor after "("  )</property>
+        <property name="ShortLabel" translatable="yes">Display Function Arguments</property>
+        <signal name="Activated" handler="OnDisplayFunctionArgsActionActivated" />
+      </action>
+      <action id="FunctionCodeWithCursorAfterAction">
+        <property name="Type">Action</property>
+        <property name="Accelerator">&lt;Control&gt;d</property>
+        <property name="Label" translatable="yes">Function Code (with cursor after "("  )</property>
+        <property name="ShortLabel" translatable="yes">Display Function Text</property>
+        <signal name="Activated" handler="OnDisplayFunctionArgsActionActivated" />
+      </action>
+      <action id="AppearanceAction">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">Appearance</property>
+        <property name="ShortLabel" translatable="yes">View</property>
+      </action>
+      <action id="ToggleRemarksColouringSystemAction">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">Toggle Remarks Colouring System</property>
+        <property name="ShortLabel" translatable="yes">Toggle Remarks Colouring System</property>
+        <signal name="Activated" handler="OnToggleRemarksColouringSystemActionActivated" />
+      </action>
+      <action id="ToggleMarkupTagSystemAction">
+        <property name="Type">Action</property>
+        <property name="Accelerator">F2</property>
+        <property name="Label" translatable="yes">Toggle Markup Tag System</property>
+        <property name="ShortLabel" translatable="yes">Toggle Markup Tag System</property>
+        <signal name="Activated" handler="OnToggleMarkupTagSystemActionActivated" />
+      </action>
+      <action id="CodeCompletionAction">
+        <property name="Type">Action</property>
+        <property name="Accelerator">&lt;Control&gt;space</property>
+        <property name="Label" translatable="yes">Code Completion</property>
+        <property name="ShortLabel" translatable="yes">Code Completion</property>
+        <signal name="Activated" handler="OnCodeCompletionActionActivated" />
+      </action>
+      <action id="ColourMatchOfBracesAction">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">Colour-Match of Braces     "{...}"</property>
+        <property name="ShortLabel" translatable="yes">Colour-Match of Braces     "{...}"</property>
+        <signal name="Activated" handler="OnColourMatchActionsActivated" />
+      </action>
+      <action id="ColourMatchOfBracketsAction">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">Colour-Match of Brackets "(...)"</property>
+        <property name="ShortLabel" translatable="yes">Colour-Match of Brackets "(...)"</property>
+        <signal name="Activated" handler="OnColourMatchActionsActivated" />
+      </action>
+      <action id="SystemListContentsAction">
+        <property name="Type">Action</property>
+        <property name="Accelerator">&lt;Control&gt;F1</property>
+        <property name="Label" translatable="yes">System List Contents</property>
+        <property name="ShortLabel" translatable="yes">View Contents of a System List</property>
+        <signal name="Activated" handler="OnViewContentsOfSystemListActionActivated" />
+      </action>
+      <action id="RunAction">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">Run</property>
+        <property name="ShortLabel" translatable="yes">Run</property>
+      </action>
+      <action id="RunDurationsAction">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">Run Durations</property>
+        <property name="ShortLabel" translatable="yes">Show Run Time</property>
+        <signal name="Activated" handler="OnShowRunTimeActionActivated" />
+      </action>
+      <action id="HelpAction">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">Help</property>
+        <property name="ShortLabel" translatable="yes">Help</property>
+      </action>
+      <action id="OverviewAction">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">Overview</property>
+        <property name="ShortLabel" translatable="yes">Overview</property>
+        <signal name="Activated" handler="OnHelpMenusActivated" />
+      </action>
+      <action id="SyntaxAction">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">Syntax</property>
+        <property name="ShortLabel" translatable="yes">Syntax</property>
+        <signal name="Activated" handler="OnHelpMenusActivated" />
+      </action>
+      <action id="ArraysAction">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">Arrays</property>
+        <property name="ShortLabel" translatable="yes">Arrays</property>
+        <signal name="Activated" handler="OnHelpMenusActivated" />
+      </action>
+      <action id="ListsAction">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">Lists</property>
+        <property name="ShortLabel" translatable="yes">Lists</property>
+        <signal name="Activated" handler="OnHelpMenusActivated" />
+      </action>
+      <action id="SystemFunctionsAction">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">System Functions</property>
+        <property name="ShortLabel" translatable="yes">System Functions</property>
+        <signal name="Activated" handler="OnHelpMenusActivated" />
+      </action>
+      <action id="UserFunctionsAction">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">User Functions</property>
+        <property name="ShortLabel" translatable="yes">User Functions</property>
+        <signal name="Activated" handler="OnHelpMenusActivated" />
+      </action>
+      <action id="LoopsAndInterruptsAction">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">Loops and Interrupts</property>
+        <property name="ShortLabel" translatable="yes">Loops and Interrupts</property>
+        <signal name="Activated" handler="OnHelpMenusActivated" />
+      </action>
+      <action id="ConditionalsAction">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">Conditionals</property>
+        <property name="ShortLabel" translatable="yes">Conditionals</property>
+        <signal name="Activated" handler="OnHelpMenusActivated" />
+      </action>
+      <action id="DataIOAndDisplayAction">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">Data I/O and Display</property>
+        <property name="ShortLabel" translatable="yes">Data I/O and Display</property>
+        <signal name="Activated" handler="OnHelpMenusActivated" />
+      </action>
+      <action id="GraphingBasicAction">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">Graphing - Basic</property>
+        <property name="ShortLabel" translatable="yes">Graphing - Basic</property>
+        <signal name="Activated" handler="OnHelpMenusActivated" />
+      </action>
+      <action id="GraphingInteractiveAction">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">Graphing - Interactive</property>
+        <property name="ShortLabel" translatable="yes">Graphing - Interactive</property>
+        <signal name="Activated" handler="OnHelpMenusActivated" />
+      </action>
+      <action id="MainMenuItemsAction">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">Main Menu Items</property>
+        <property name="ShortLabel" translatable="yes">Main Menu Items</property>
+        <signal name="Activated" handler="OnHelpMenusActivated" />
+      </action>
+      <action id="PnemonicsMacrosAction">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">Pnemonics (Macros)</property>
+        <property name="ShortLabel" translatable="yes">Pnemonics (Macros)</property>
+        <signal name="Activated" handler="OnHelpMenusActivated" />
+      </action>
+      <action id="SelfAlteringProgramsAction">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">Self-Altering Programs</property>
+        <property name="ShortLabel" translatable="yes">Self-Altering Programs</property>
+        <signal name="Activated" handler="OnHelpMenusActivated" />
+      </action>
+      <action id="KillCurrentGraphsAction">
+        <property name="Type">Action</property>
+        <property name="Accelerator">&lt;Control&gt;&lt;Alt&gt;g</property>
+        <property name="Label" translatable="yes">Kill Current Graphs</property>
+        <property name="ShortLabel" translatable="yes">Kill Current Graphs</property>
+        <signal name="Activated" handler="OnKillCurrentGraphsActionActivated" />
+      </action>
+      <action id="TechnicalAction">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">Technical</property>
+        <property name="ShortLabel" translatable="yes">Technical</property>
+      </action>
+      <action id="VersionAction">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">Version</property>
+        <property name="ShortLabel" translatable="yes">Version</property>
+        <signal name="Activated" handler="OnVersionActionActivated" />
+      </action>
+      <action id="InternalDataAction">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">Internal Data</property>
+        <property name="ShortLabel" translatable="yes">Internal Data</property>
+        <signal name="Activated" handler="OnInternalDataActionActivated" after="yes" />
+      </action>
+      <action id="DonTClearResultsWindowAtGOAction">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">Don't Clear Results Window at 'GO'</property>
+        <property name="ShortLabel" translatable="yes">Don't Clear Results Window at 'GO'</property>
+        <signal name="Activated" handler="OnDonTClearResultsWindowAtGOActionActivated" />
+      </action>
+      <action id="NewMonoMathsInstanceAction">
+        <property name="Type">Action</property>
+        <property name="Accelerator">&lt;Control&gt;&lt;Alt&gt;m</property>
+        <property name="Label" translatable="yes">Run New MonoMaths Instance</property>
+        <property name="ShortLabel" translatable="yes">Run New MonoMaths Instance</property>
+        <signal name="Activated" handler="OnNewMonoMathsInstanceActionActivated" after="yes" />
+      </action>
+      <action id="SaveSettingsForFutureRunsAction">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">Save Settings for future runs</property>
+        <property name="ShortLabel" translatable="yes">Save Settings for future runs</property>
+        <signal name="Activated" handler="OnSaveSettingsForFutureRunsActionActivated" />
+      </action>
+      <action id="SaveArrayOrSystemListAction">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">Save Array or System List</property>
+        <property name="ShortLabel" translatable="yes">Save Array or System List</property>
+        <signal name="Activated" handler="OnSaveArrayOrSystemListActionActivated" />
+      </action>
+      <action id="UnusedVariablesAction">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">Unused Variables</property>
+        <property name="ShortLabel" translatable="yes">List Unused Variables</property>
+        <signal name="Activated" handler="OnListUnusedVariablesActionActivated" />
+      </action>
+      <action id="ListAllFunctionsAction">
+        <property name="Type">Action</property>
+        <property name="Accelerator">F6</property>
+        <property name="Label" translatable="yes">List All Functions</property>
+        <property name="ShortLabel" translatable="yes">List All Functions</property>
+        <signal name="Activated" handler="OnListAllFunctionsActionActivated" />
+      </action>
+      <action id="ArrayMemoryUseAction">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">Array Memory Use</property>
+        <property name="ShortLabel" translatable="yes">Total Array Storage</property>
+        <signal name="Activated" handler="OnTotalArrayStorageActionActivated" />
+      </action>
+      <action id="PnemonicsCurrentlyLoadedAction">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">Pnemonics Currently Loaded</property>
+        <property name="ShortLabel" translatable="yes">Show Pnemonics</property>
+        <signal name="Activated" handler="OnShowPnemonicsActionActivated" />
+      </action>
+      <action id="ReloadPnemonicsAction">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">Reload Pnemonics</property>
+        <property name="ShortLabel" translatable="yes">Reload Pnemonics</property>
+        <signal name="Activated" handler="OnReloadPnemonicsActionActivated" />
+      </action>
+      <action id="ToggleBreakPointAction">
+        <property name="Type">Action</property>
+        <property name="Accelerator">&lt;Control&gt;&lt;Alt&gt;b</property>
+        <property name="Label" translatable="yes">Toggle Break Point</property>
+        <property name="ShortLabel" translatable="yes">Toggle Break Point</property>
+        <signal name="Activated" handler="OnToggleBreakPointActionActivated" />
+      </action>
+      <action id="FindLineByNumberAction">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">Find Line by Number</property>
+        <property name="ShortLabel" translatable="yes">Find Line by Number</property>
+        <signal name="Activated" handler="OnFindLineByNumberActionActivated" />
+      </action>
+      <action id="DisplayLineNosNonEditableModeAction">
+        <property name="Type">Action</property>
+        <property name="Accelerator">&lt;Control&gt;&lt;Alt&gt;l</property>
+        <property name="Label" translatable="yes">Display Line Nos. (non-editable mode)</property>
+        <property name="ShortLabel" translatable="yes">Show Current Line's Number</property>
+        <signal name="Activated" handler="OnShowCurrentLineSNumberActionActivated" />
+      </action>
+      <action id="ColourSelectorAction">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">Colour Selector</property>
+        <property name="ShortLabel" translatable="yes">Colour Selector</property>
+        <signal name="Activated" handler="OnColourSelectorActionActivated" />
+      </action>
+      <action id="DoIt2Action">
+        <property name="Type">Action</property>
+        <property name="Accelerator">&lt;Control&gt;&lt;Alt&gt;y</property>
+        <property name="Label" translatable="yes">Do It - 2</property>
+        <property name="ShortLabel" translatable="yes">Do It - 2</property>
+        <signal name="Activated" handler="OnDoIt2ActionActivated" />
+      </action>
+      <action id="NavigateBackwardsAction">
+        <property name="Type">Action</property>
+        <property name="Accelerator">&lt;Control&gt;&lt;Alt&gt;comma</property>
+        <property name="Label" translatable="yes">Navigate Backwards</property>
+        <property name="ShortLabel" translatable="yes">Navigate Backwards</property>
+        <signal name="Activated" handler="OnNavigateBackwardsActionActivated" />
+      </action>
+      <action id="NavigateForwardsAction">
+        <property name="Type">Action</property>
+        <property name="Accelerator">&lt;Control&gt;&lt;Alt&gt;period</property>
+        <property name="Label" translatable="yes">Navigate Forwards</property>
+        <property name="ShortLabel" translatable="yes">Navigate Forwards</property>
+        <signal name="Activated" handler="OnNavigateForwardsActionActivated" />
+      </action>
+      <action id="WhichOccurrenceOfWordAction">
+        <property name="Type">Action</property>
+        <property name="Accelerator">&lt;Control&gt;&lt;Alt&gt;slash</property>
+        <property name="Label" translatable="yes">Which Occurrence of Word</property>
+        <property name="ShortLabel" translatable="yes">Which Occurrence</property>
+        <signal name="Activated" handler="OnWhichOccurrenceOfWordActionActivated" />
+      </action>
+      <action id="GoToNthAction">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">Go to Nth Occurrence (Ctrl+1 to 9, Ctrl+Alt+0 to 9; revert: Ctrl+0)</property>
+        <property name="ShortLabel" translatable="yes">Go to Nth</property>
+        <signal name="Activated" handler="OnGoToNthActionActivated" />
+      </action>
+      <action id="ChangeAppearanceColoursAction">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">Change Appearance - Colours</property>
+        <property name="ShortLabel" translatable="yes">Change Appearance - Colours</property>
+        <signal name="Activated" handler="OnChangeAppearanceColoursActionActivated" />
+      </action>
+      <action id="ChangeAppearanceFontsAction">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">Change Appearance - Fonts</property>
+        <property name="ShortLabel" translatable="yes">Change Appearance - Fonts</property>
+        <signal name="Activated" handler="OnChangeAppearanceFontsActionActivated" />
+      </action>
+      <action id="ShowAction">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">Show</property>
+        <property name="ShortLabel" translatable="yes">Inspect</property>
+      </action>
+      <action id="GOAction">
+        <property name="Type">Action</property>
+        <property name="Accelerator">F5</property>
+        <property name="Label" translatable="yes">GO</property>
+        <property name="ShortLabel" translatable="yes">GO</property>
+        <signal name="Activated" handler="OnGOActionActivated" />
+      </action>
+      <action id="RemoveAllBreakPointsAction">
+        <property name="Type">Action</property>
+        <property name="Accelerator">&lt;Control&gt;&lt;Alt&gt;k</property>
+        <property name="Label" translatable="yes">Remove All Break Points</property>
+        <property name="ShortLabel" translatable="yes">Remove All Break Points</property>
+        <signal name="Activated" handler="OnRemoveAllBreakPointsActionActivated" />
+      </action>
+      <action id="AbortRunAction">
+        <property name="Type">Action</property>
+        <property name="Accelerator">&lt;Control&gt;F5</property>
+        <property name="Label" translatable="yes">Abort Run</property>
+        <property name="ShortLabel" translatable="yes">Abort Run</property>
+        <signal name="Activated" handler="OnAbortRunActionActivated" />
+      </action>
+      <action id="GoToScreenPosnBeforeLastRunAction">
+        <property name="Type">Action</property>
+        <property name="Accelerator">&lt;Control&gt;minus</property>
+        <property name="Label" translatable="yes">Go to Screen Posn before Last Run</property>
+        <property name="ShortLabel" translatable="yes">Go to Screen Posn before Last Run</property>
+        <signal name="Activated" handler="OnGoToScreenPosnBeforeLastRunActionActivated" />
+      </action>
+      <action id="ShowSequenceOfFunctionCallsAction">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">Show Sequence of Function Calls</property>
+        <property name="ShortLabel" translatable="yes">Show Sequence of Function Calls</property>
+        <signal name="Activated" handler="OnShowSequenceOfFunctionCallsActionActivated" />
+      </action>
+      <action id="FunctionsByCategoryAction">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">Functions by Category</property>
+        <property name="ShortLabel" translatable="yes">Functions by Category</property>
+        <signal name="Activated" handler="OnHelpMenusActivated" />
+      </action>
+      <action id="SpecialCharactersAction">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">Special Characters</property>
+        <property name="ShortLabel" translatable="yes">Special Characters</property>
+        <signal name="Activated" handler="OnSpecialCharactersActionActivated" />
+      </action>
+      <action id="FormattingWithTextTagsAction">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">Formatting with Text Tags</property>
+        <property name="ShortLabel" translatable="yes">Formatting with Text Tags</property>
+        <signal name="Activated" handler="OnHelpMenusActivated" />
+      </action>
+      <action id="GoToThisFunctionSDeclarationAction">
+        <property name="Type">Action</property>
+        <property name="Accelerator">&lt;Primary&gt;&lt;Alt&gt;f</property>
+        <property name="Label" translatable="yes">Go to this function's Declaration</property>
+        <property name="ShortLabel" translatable="yes">Go to this function's Declaration</property>
+        <signal name="Activated" handler="OnGoToThisFunctionSDeclarationActionActivated" />
+      </action>
+      <action id="RemoveAllBookmarksCtrlBAction">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">Remove All Bookmarks   (Ctrl B, -)</property>
+        <property name="ShortLabel" translatable="yes">Remove All Bookmarks</property>
+        <signal name="Activated" handler="OnRemoveAllBookmarksActionActivated" />
+      </action>
+      <action id="ListAllFindsMoveToAnyAction">
+        <property name="Type">Action</property>
+        <property name="Accelerator">F4</property>
+        <property name="Label" translatable="yes">List all Finds, Move to any</property>
+        <property name="ShortLabel" translatable="yes">List all Finds, Move to any</property>
+        <signal name="Activated" handler="OnListAllFindsMoveToAnyActionActivated" />
+      </action>
+      <action id="ConformIndentsAction">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">Conform indents</property>
+        <property name="ShortLabel" translatable="yes">Conform indents</property>
+        <signal name="Activated" handler="OnConformIndentsActionActivated" after="yes" />
+      </action>
+      <action id="ActionX10">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">10</property>
+        <property name="ShortLabel" translatable="yes">10</property>
+        <signal name="Activated" handler="OnExtraActionActivated" />
+      </action>
+      <action id="ActionX11">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">11</property>
+        <property name="ShortLabel" translatable="yes">11</property>
+        <signal name="Activated" handler="OnExtraActionActivated" />
+      </action>
+      <action id="ActionX12">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">12</property>
+        <property name="ShortLabel" translatable="yes">12</property>
+        <signal name="Activated" handler="OnExtraActionActivated" />
+      </action>
+      <action id="ActionX13">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">13</property>
+        <property name="ShortLabel" translatable="yes">13</property>
+        <signal name="Activated" handler="OnExtraActionActivated" />
+      </action>
+      <action id="ActionX14">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">14</property>
+        <property name="ShortLabel" translatable="yes">14</property>
+        <signal name="Activated" handler="OnExtraActionActivated" />
+      </action>
+      <action id="ActionX15">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">15</property>
+        <property name="ShortLabel" translatable="yes">15</property>
+        <signal name="Activated" handler="OnExtraActionActivated" />
+      </action>
+      <action id="ActionX16">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">16</property>
+        <property name="ShortLabel" translatable="yes">16</property>
+        <signal name="Activated" handler="OnExtraActionActivated" />
+      </action>
+      <action id="ActionX17">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">17</property>
+        <property name="ShortLabel" translatable="yes">17</property>
+        <signal name="Activated" handler="OnExtraActionActivated" />
+      </action>
+      <action id="ActionX18">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">18</property>
+        <property name="ShortLabel" translatable="yes">18</property>
+        <signal name="Activated" handler="OnExtraActionActivated" />
+      </action>
+      <action id="ActionX19">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">19</property>
+        <property name="ShortLabel" translatable="yes">19</property>
+        <signal name="Activated" handler="OnExtraActionActivated" />
+      </action>
+      <action id="AnonymousFunctionsAction">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">Anonymous Functions</property>
+        <property name="ShortLabel" translatable="yes">Anonymous Functions</property>
+        <signal name="Activated" handler="OnHelpMenusActivated" />
+      </action>
+      <action id="ColourMatchOfSquareBracketsAction">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">Colour-Match of Square Brackets "[...]"</property>
+        <property name="ShortLabel" translatable="yes">Colour-Match of Square Brackets "[...]"</property>
+        <signal name="Activated" handler="OnColourMatchActionsActivated" />
+      </action>
+      <action id="MarkTextBetweenBracesAction">
+        <property name="Type">Action</property>
+        <property name="Accelerator">&lt;Primary&gt;&lt;Alt&gt;bracketleft</property>
+        <property name="Label" translatable="yes">Mark Text between Braces "{...}"</property>
+        <property name="ShortLabel" translatable="yes">Colour Text between Braces "{...}"</property>
+        <signal name="Activated" handler="OnMarkBlockActionsActivated" />
+      </action>
+      <action id="MarkTextBetweenBracketsAction">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">Mark Text between Brackets "(...)"</property>
+        <property name="ShortLabel" translatable="yes">Mark Text between Brackets "(...)"</property>
+        <signal name="Activated" handler="OnMarkBlockActionsActivated" />
+      </action>
+      <action id="MarkTextBetweenSquareBracketsAction">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">Mark Text between Square Brackets "[...]"</property>
+        <property name="ShortLabel" translatable="yes">Mark Text between Square Brackets "[...]"</property>
+        <signal name="Activated" handler="OnMarkBlockActionsActivated" />
+      </action>
+      <action id="ListAssignedVariablesAction">
+        <property name="Type">Action</property>
+        <property name="Accelerator">&lt;Control&gt;&lt;Alt&gt;v</property>
+        <property name="Label" translatable="yes">List Assigned Variables</property>
+        <property name="ShortLabel" translatable="yes">List Vars</property>
+        <signal name="Activated" handler="OnListAssignedVariablesActionActivated" />
+      </action>
+      <action id="BlockOfTextActionsAction">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">Block of Text Actions</property>
+        <property name="ShortLabel" translatable="yes">Block of Text Actions</property>
+      </action>
+      <action id="BlockOfTextActionsAction1">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">Block of Text Actions</property>
+        <property name="ShortLabel" translatable="yes">Block of Text Actions</property>
+        <signal name="Activated" handler="OnBlockOfTextActionsAction1Activated" />
+      </action>
+      <action id="ToggleProportionalFontAction">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">Toggle proportional font</property>
+        <property name="ShortLabel" translatable="yes">Toggle proportional font</property>
+        <signal name="Activated" handler="OnToggleProportionalFontActionActivated" />
+      </action>
+      <action id="RemoveAllOfOneBookmarkCtrlShiftX0To9Action">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">Remove all of one Bookmark (Ctrl+Shift+X, 0 to 9)</property>
+        <property name="ShortLabel" translatable="yes">Remove all of one Bookmark (Ctrl+Alt+0 to 9)</property>
+        <signal name="Activated" handler="OnRemoveThisBookmarkActionActivated" />
+      </action>
+    </action-group>
+    <property name="MemberName" />
+    <property name="Title" translatable="yes">MiniMaths</property>
+    <property name="WindowPosition">CenterOnParent</property>
+    <property name="BorderWidth">6</property>
+    <property name="AllowShrink">True</property>
+    <property name="DefaultWidth">625</property>
+    <property name="DefaultHeight">600</property>
+    <signal name="DeleteEvent" handler="OnDeleteEvent" />
+    <child>
+      <widget class="Gtk.VBox" id="vbox10">
+        <property name="MemberName" />
+        <property name="Spacing">6</property>
+        <child>
+          <widget class="Gtk.VBox" id="vbox11">
+            <property name="MemberName" />
+            <property name="Spacing">6</property>
+            <child>
+              <widget class="Gtk.MenuBar" id="menubar3">
+                <property name="MemberName" />
+                <node name="menubar3" type="Menubar">
+                  <node type="Menu" action="FileAction">
+                    <node type="Menuitem" action="NewAction" />
+                    <node type="Menuitem" action="OpenAction" />
+                    <node type="Menuitem" action="SaveAction" />
+                    <node type="Menuitem" action="SaveAsAction" />
+                    <node type="Menuitem" action="LoadFunctionAction" />
+                    <node type="Menuitem" action="SaveFunctionAction" />
+                    <node type="Menuitem" action="SaveArrayOrSystemListAction" />
+                    <node type="Menuitem" action="SaveSettingsForFutureRunsAction" />
+                    <node type="Menuitem" action="NewMonoMathsInstanceAction" />
+                    <node type="Menuitem" action="ReloadPnemonicsAction" />
+                    <node type="Menuitem" action="ExitAction" />
+                  </node>
+                  <node type="Menu" action="ReloadAction">
+                    <node type="Menuitem" action="ReloadAction0" />
+                    <node type="Menuitem" action="ReloadAction1" />
+                    <node type="Menuitem" action="ReloadAction2" />
+                    <node type="Menuitem" action="ReloadAction3" />
+                    <node type="Menuitem" action="ReloadAction4" />
+                    <node type="Menuitem" action="ReloadAction5" />
+                    <node type="Menuitem" action="ReloadAction6" />
+                    <node type="Menuitem" action="ReloadAction7" />
+                    <node type="Menuitem" action="ReloadAction8" />
+                    <node type="Menuitem" action="ReloadAction9" />
+                    <node type="Menuitem" action="ReloadAction10" />
+                    <node type="Menuitem" action="ReloadAction11" />
+                  </node>
+                  <node type="Menu" action="EditAction">
+                    <node type="Menuitem" action="UndoAction" />
+                    <node type="Menuitem" action="RedoAction" />
+                    <node type="Menuitem" action="CopyAction" />
+                    <node type="Menuitem" action="CutAction" />
+                    <node type="Menuitem" action="PasteAction" />
+                    <node type="Separator" />
+                    <node type="Menuitem" action="BlockOfTextActionsAction1" />
+                    <node type="Menuitem" action="CodeCompletionAction" />
+                    <node type="Menuitem" action="SpecialCharactersAction" />
+                    <node type="Menuitem" action="ConformIndentsAction" />
+                  </node>
+                  <node type="Menu" action="SearchAction">
+                    <node type="Menuitem" action="FindAction" />
+                    <node type="Menuitem" action="FindAgainAction" />
+                    <node type="Menuitem" action="ReplaceAction" />
+                    <node type="Menuitem" action="ListAllFindsMoveToAnyAction" />
+                    <node type="Menuitem" action="InsertBookmarkCtrlB0To9Action" />
+                    <node type="Menuitem" action="GoToBookmarkCtrlShift0To9Action" />
+                    <node type="Menuitem" action="RemoveAllOfOneBookmarkCtrlShiftX0To9Action" />
+                    <node type="Menuitem" action="RemoveAllBookmarksCtrlBAction" />
+                    <node type="Separator" />
+                    <node type="Menuitem" action="NavigateBackwardsAction" />
+                    <node type="Menuitem" action="NavigateForwardsAction" />
+                    <node type="Menuitem" action="WhichOccurrenceOfWordAction" />
+                    <node type="Menuitem" action="GoToNthAction" />
+                    <node type="Menuitem" action="GoToThisFunctionSDeclarationAction" />
+                    <node type="Menuitem" action="GoToScreenPosnBeforeLastRunAction" />
+                    <node type="Separator" />
+                    <node type="Menuitem" action="FindLineByNumberAction" />
+                    <node type="Menuitem" action="DisplayLineNosNonEditableModeAction" />
+                    <node type="Separator" />
+                    <node type="Menuitem" action="ColourMatchOfBracesAction" />
+                    <node type="Menuitem" action="ColourMatchOfBracketsAction" />
+                    <node type="Menuitem" action="ColourMatchOfSquareBracketsAction" />
+                    <node type="Menuitem" action="MarkTextBetweenBracesAction" />
+                    <node type="Menuitem" action="MarkTextBetweenBracketsAction" />
+                    <node type="Menuitem" action="MarkTextBetweenSquareBracketsAction" />
+                  </node>
+                  <node type="Menu" action="AppearanceAction">
+                    <node type="Menuitem" action="IndentSelectedLinesAction" />
+                    <node type="Menuitem" action="UnindentSelectedLinesAction" />
+                    <node type="Menuitem" action="RemarkOutSelectedLinesAction" />
+                    <node type="Menuitem" action="UndoRemarkOutOfSelectedLinesAction" />
+                    <node type="Separator" />
+                    <node type="Menuitem" action="ToggleRemarksColouringSystemAction" />
+                    <node type="Menuitem" action="ToggleMarkupTagSystemAction" />
+                    <node type="Separator" />
+                    <node type="Menuitem" action="ChangeAppearanceColoursAction" />
+                    <node type="Menuitem" action="ChangeAppearanceFontsAction" />
+                    <node type="Menuitem" action="ToggleProportionalFontAction" />
+                    <node type="Separator" />
+                    <node type="Menuitem" action="ColourSelectorAction" />
+                  </node>
+                  <node type="Menu" action="ShowAction">
+                    <node type="Menuitem" action="FunctionArgumentsCursorAfterAction" />
+                    <node type="Menuitem" action="FunctionCodeWithCursorAfterAction" />
+                    <node type="Menuitem" action="ListAssignedVariablesAction" />
+                    <node type="Menuitem" action="SystemListContentsAction" />
+                    <node type="Menuitem" action="UnusedVariablesAction" />
+                    <node type="Menuitem" action="ListAllFunctionsAction" />
+                    <node type="Menuitem" action="RunDurationsAction" />
+                    <node type="Menuitem" action="ArrayMemoryUseAction" />
+                    <node type="Menuitem" action="PnemonicsCurrentlyLoadedAction" />
+                  </node>
+                  <node type="Menu" action="RunAction">
+                    <node type="Menuitem" action="GOAction" />
+                    <node type="Separator" />
+                    <node type="Menuitem" action="ToggleBreakPointAction" />
+                    <node type="Menuitem" action="RemoveAllBreakPointsAction" />
+                    <node type="Menuitem" action="KillCurrentGraphsAction" />
+                    <node type="Menuitem" action="DonTClearResultsWindowAtGOAction" />
+                    <node type="Menuitem" action="AbortRunAction" />
+                    <node type="Menuitem" action="ShowSequenceOfFunctionCallsAction" />
+                  </node>
+                  <node type="Menu" action="ExtraAction">
+                    <node type="Menuitem" action="ActionX0" />
+                    <node type="Menuitem" action="ActionX1" />
+                    <node type="Menuitem" action="ActionX2" />
+                    <node type="Menuitem" action="ActionX3" />
+                    <node type="Menuitem" action="ActionX4" />
+                    <node type="Menuitem" action="ActionX5" />
+                    <node type="Menuitem" action="ActionX6" />
+                    <node type="Menuitem" action="ActionX7" />
+                    <node type="Menuitem" action="ActionX8" />
+                    <node type="Menuitem" action="ActionX9" />
+                    <node type="Menuitem" action="ActionX10" />
+                    <node type="Menuitem" action="ActionX11" />
+                    <node type="Menuitem" action="ActionX12" />
+                    <node type="Menuitem" action="ActionX13" />
+                    <node type="Menuitem" action="ActionX14" />
+                    <node type="Menuitem" action="ActionX15" />
+                    <node type="Menuitem" action="ActionX16" />
+                    <node type="Menuitem" action="ActionX17" />
+                    <node type="Menuitem" action="ActionX18" />
+                    <node type="Menuitem" action="ActionX19" />
+                  </node>
+                  <node type="Menu" action="HelpAction">
+                    <node type="Menuitem" action="OverviewAction" />
+                    <node type="Menuitem" action="SyntaxAction" />
+                    <node type="Menuitem" action="ArraysAction" />
+                    <node type="Menuitem" action="ListsAction" />
+                    <node type="Menuitem" action="SystemFunctionsAction" />
+                    <node type="Menuitem" action="FunctionsByCategoryAction" />
+                    <node type="Menuitem" action="UserFunctionsAction" />
+                    <node type="Menuitem" action="LoopsAndInterruptsAction" />
+                    <node type="Menuitem" action="ConditionalsAction" />
+                    <node type="Menuitem" action="DataIOAndDisplayAction" />
+                    <node type="Menuitem" action="GraphingBasicAction" />
+                    <node type="Menuitem" action="GraphingInteractiveAction" />
+                    <node type="Menuitem" action="FormattingWithTextTagsAction" />
+                    <node type="Menuitem" action="MainMenuItemsAction" />
+                    <node type="Menuitem" action="PnemonicsMacrosAction" />
+                    <node type="Menuitem" action="AnonymousFunctionsAction" />
+                    <node type="Menuitem" action="SelfAlteringProgramsAction" />
+                  </node>
+                  <node type="Menu" action="TechnicalAction">
+                    <node type="Menuitem" action="VersionAction" />
+                    <node type="Menuitem" action="InternalDataAction" />
+                  </node>
+                  <node type="Menu" action="ExperimentalAction">
+                    <node type="Menuitem" action="DoIt1Action" />
+                    <node type="Menuitem" action="DoIt2Action" />
+                  </node>
+                </node>
+              </widget>
+              <packing>
+                <property name="Position">0</property>
+                <property name="AutoSize">True</property>
+                <property name="Expand">False</property>
+                <property name="Fill">False</property>
+              </packing>
+            </child>
+            <child>
+              <widget class="Gtk.Label" id="LblAss">
+                <property name="MemberName" />
+                <property name="Xalign">0</property>
+                <property name="LabelProp" translatable="yes">    ASSIGNMENTS:</property>
+              </widget>
+              <packing>
+                <property name="Position">1</property>
+                <property name="AutoSize">True</property>
+                <property name="Expand">False</property>
+                <property name="Fill">False</property>
+              </packing>
+            </child>
+          </widget>
+          <packing>
+            <property name="Position">0</property>
+            <property name="AutoSize">True</property>
+            <property name="Expand">False</property>
+            <property name="Fill">False</property>
+          </packing>
+        </child>
+        <child>
+          <widget class="Gtk.VBox" id="vbox12">
+            <property name="MemberName" />
+            <property name="Spacing">6</property>
+            <child>
+              <widget class="Gtk.EventBox" id="eboxAss">
+                <property name="MemberName" />
+                <child>
+                  <widget class="Gtk.ScrolledWindow" id="GtkScrolledWindow">
+                    <property name="MemberName" />
+                    <property name="ShadowType">In</property>
+                    <child>
+                      <widget class="Gtk.TextView" id="REditAss">
+                        <property name="MemberName" />
+                        <property name="HeightRequest">300</property>
+                        <property name="CanFocus">True</property>
+                        <property name="ShowScrollbars">True</property>
+                        <property name="Text" translatable="yes" />
+                        <property name="WrapMode">Word</property>
+                        <signal name="MoveCursor" handler="OnREditAssMoveCursor" />
+                        <signal name="KeyReleaseEvent" handler="OnREditAssKeyReleaseEvent" />
+                      </widget>
+                    </child>
+                  </widget>
+                </child>
+              </widget>
+              <packing>
+                <property name="Position">0</property>
+                <property name="AutoSize">True</property>
+              </packing>
+            </child>
+            <child>
+              <widget class="Gtk.EventBox" id="eboxLblRes">
+                <property name="MemberName" />
+                <signal name="ButtonPressEvent" handler="OnEventbox1ButtonPressEvent" />
+                <signal name="ButtonReleaseEvent" handler="OnEventbox1ButtonReleaseEvent" />
+                <child>
+                  <widget class="Gtk.Label" id="LblRes">
+                    <property name="MemberName" />
+                    <property name="Xalign">0</property>
+                    <property name="LabelProp" translatable="yes">    RESULTS:</property>
+                  </widget>
+                </child>
+              </widget>
+              <packing>
+                <property name="Position">1</property>
+                <property name="AutoSize">True</property>
+                <property name="Expand">False</property>
+                <property name="Fill">False</property>
+              </packing>
+            </child>
+          </widget>
+          <packing>
+            <property name="Position">1</property>
+            <property name="AutoSize">True</property>
+          </packing>
+        </child>
+        <child>
+          <widget class="Gtk.VBox" id="vbox13">
+            <property name="MemberName" />
+            <property name="Spacing">6</property>
+            <child>
+              <widget class="Gtk.ScrolledWindow" id="GtkScrolledWindow1">
+                <property name="MemberName" />
+                <property name="ShadowType">In</property>
+                <child>
+                  <widget class="Gtk.TextView" id="REditRes">
+                    <property name="MemberName" />
+                    <property name="HeightRequest">150</property>
+                    <property name="CanFocus">True</property>
+                    <property name="ShowScrollbars">True</property>
+                    <property name="Text" translatable="yes" />
+                    <property name="WrapMode">Word</property>
+                  </widget>
+                </child>
+              </widget>
+              <packing>
+                <property name="Position">0</property>
+                <property name="AutoSize">True</property>
+              </packing>
+            </child>
+            <child>
+              <widget class="Gtk.HBox" id="hbox3">
+                <property name="MemberName" />
+                <property name="Homogeneous">True</property>
+                <property name="Spacing">6</property>
+                <child>
+                  <widget class="Gtk.Label" id="LblComments">
+                    <property name="MemberName" />
+                    <property name="WidthRequest">270</property>
+                    <property name="Xalign">0</property>
+                    <property name="UseMarkup">True</property>
+                    <property name="Wrap">True</property>
+                  </widget>
+                  <packing>
+                    <property name="Position">0</property>
+                    <property name="AutoSize">True</property>
+                    <property name="Expand">False</property>
+                    <property name="Fill">False</property>
+                  </packing>
+                </child>
+                <child>
+                  <widget class="Gtk.HBox" id="hbox4">
+                    <property name="MemberName" />
+                    <property name="Spacing">6</property>
+                    <child>
+                      <widget class="Gtk.Button" id="BtnAbort">
+                        <property name="MemberName" />
+                        <property name="WidthRequest">75</property>
+                        <property name="CanFocus">True</property>
+                        <property name="Type">TextOnly</property>
+                        <property name="Label" translatable="yes">ABORT</property>
+                        <property name="UseUnderline">True</property>
+                        <signal name="Clicked" handler="OnBtnAbortClicked" />
+                      </widget>
+                      <packing>
+                        <property name="Position">0</property>
+                        <property name="AutoSize">True</property>
+                        <property name="Expand">False</property>
+                        <property name="Fill">False</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <widget class="Gtk.Button" id="BtnClearRes">
+                        <property name="MemberName" />
+                        <property name="WidthRequest">75</property>
+                        <property name="CanFocus">True</property>
+                        <property name="Type">TextOnly</property>
+                        <property name="Label" translatable="yes">CLEAR</property>
+                        <property name="UseUnderline">True</property>
+                        <signal name="Clicked" handler="OnBtnClearResClicked" />
+                      </widget>
+                      <packing>
+                        <property name="Position">1</property>
+                        <property name="AutoSize">True</property>
+                        <property name="Expand">False</property>
+                        <property name="Fill">False</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <widget class="Gtk.Button" id="BtnGO">
+                        <property name="MemberName" />
+                        <property name="WidthRequest">75</property>
+                        <property name="CanFocus">True</property>
+                        <property name="Type">TextOnly</property>
+                        <property name="Label" translatable="yes">GO</property>
+                        <property name="UseUnderline">True</property>
+                        <signal name="Clicked" handler="OnBtnGOClicked" />
+                      </widget>
+                      <packing>
+                        <property name="Position">2</property>
+                        <property name="AutoSize">False</property>
+                        <property name="Fill">False</property>
+                      </packing>
+                    </child>
+                  </widget>
+                  <packing>
+                    <property name="Position">1</property>
+                    <property name="AutoSize">True</property>
+                    <property name="Expand">False</property>
+                    <property name="Fill">False</property>
+                  </packing>
+                </child>
+              </widget>
+              <packing>
+                <property name="Position">1</property>
+                <property name="AutoSize">True</property>
+                <property name="Expand">False</property>
+                <property name="Fill">False</property>
+              </packing>
+            </child>
+          </widget>
+          <packing>
+            <property name="Position">2</property>
+            <property name="AutoSize">True</property>
+          </packing>
+        </child>
+      </widget>
+    </child>
+  </widget>
+</stetic-interface>
