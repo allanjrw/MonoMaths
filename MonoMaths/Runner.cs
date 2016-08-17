@@ -2028,9 +2028,11 @@ public class R             //run
     string ss="";
     string result = "",  delim = ";   ", equals = " = ";
     bool first = true;
+    if (Assts.Count == 1  &&  V.GetVarUse(0, varCnt-1) == 2) // then the user has entered a one-liner expression with no LHS:
+    { result = "-->  " +  V.GetVarValue(0,varCnt-1).ToString() + delim; }
+    else
     for (int i = 0; i < varCnt; i++)
-    { 
-      if (V.GetVarUse(0, i) != 3 ) continue; // only user scalars allowed here.
+    { if (V.GetVarUse(0, i) != 3 ) continue; // only user scalars allowed here.
       ss = V.GetVarName(0, i);
       if (ss.IndexOf("__") != -1) continue; // some system variables are of type 3, but are differentiated by containing '__' somewhere in the name.
       if (first) {result += "<# black>";  first = false;}

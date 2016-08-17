@@ -12,7 +12,7 @@ namespace MonoMaths
 public partial class MainWindow : Gtk.Window
 {
   // Keep this instance field up the top of the file, for ready access.
-  public string MainWindowTitle = "MonoMaths 0.99.01";// Form title changes during op'n.; when 'File | New' is clicked,
+  public string MainWindowTitle = "MonoMaths 0.99.02";// Form title changes during op'n.; when 'File | New' is clicked,
         // the title is reset to this value. NB: (1) Increment the last 2 digits every time any change is made which would affect
         // future coding by a user; (2) Increment the middle 2 digits whenever code updating would cause existing functions to behave
         // differently in some preexisting user program.
@@ -46,11 +46,12 @@ public partial class MainWindow : Gtk.Window
   public static string CueCharacters = "/*_ "; // **** Used in KeyRelease handler. If changing the above, change this. If allowing user to
         // change cue strings, whatever routine handled that change would also have to reset this as unduplicated set of all cue chars.
   public static bool UseRemarksTags = true, UseMarkUpTags = false;
-  public static string HomeDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Personal) + "/";
-  public static string WorkingDirectory = HomeDirectory + "MonoMaths Code/For_Working_Directory/";
-  public static string SysFn1FilePathName = " "; // *** Point this to where "SysFns1.cs" is stored, if wanting menu item "Show | Function code" to work.
-  public static string SysFn2FilePathName = " "; // *** Ditto, for "SysFns2.cs"
-  public static string CapturedArrayPathName = WorkingDirectory + "Captured Array"; // If you click 'capture' on the variable display,
+  public static string ProgramPath = Environment.GetFolderPath(Environment.SpecialFolder.Personal) + "/MonoMaths/";
+  public static string HomePath = Environment.GetFolderPath(Environment.SpecialFolder.Personal) + "/";
+        // The Environment call always returns "/home/xxx", where typically "xxx" is the nickname of the person logged in.
+  public static string SysFn1FilePathName = "/home/jon/Projects_MonoDevelop/MonoMaths/SysFns1.cs";
+  public static string SysFn2FilePathName = "/home/jon/Projects_MonoDevelop/MonoMaths/SysFns2.cs";
+  public static string CapturedArrayPathName = ProgramPath + "Captured Array"; // If you click 'capture' on the variable display,
                                               // the variable's descriptors and contents are saved in this file; fn. 'captured(.)' reloads it.
   public static string ArrayDisplayFormatStr = ""; // The initial format when you double-click on an array name in Assts. Window, after a run.
   public static int NoRecentFileSlots = 12; // *** Sadly, this is fixed for now. To make this alterable, you will have to
@@ -73,7 +74,6 @@ public partial class MainWindow : Gtk.Window
   public static List<Plot> Plots2D = new List<Plot>();
   public static List<Plot> Plots3D = new List<Plot>();
   private static bool KillOldGraphs = true; // If changing this, change the startup text of Graph_OldGraphs.
-  public static string RuntimeResultData; // runtime-gen'd formatted data for results window.
   public static Duo SelStore; // .X can be used for very temporary storage of REditAss.SelectionStart, .Y do. .SelectionLength.
   public static bool ShutDown = false; // If set to 'true', the instance is closed in method GO().
   public static Strint2 ExitPlus = new Strint2(0); // Used to force actions of 'File | New' or '..| Load' after current user pgm ends.
@@ -110,7 +110,7 @@ public partial class MainWindow : Gtk.Window
   private string[] RawLines; // Will become the contents of REditAss, line by line,
   // with remarks and rem-lines and blank lines removed.
   private bool PreserveResults = false; // If true, REditRes not cleaned at start of a new program run.
-  public string CurrentPath = HomeDirectory; // Set to the home path here at startup, but should be reset by INI file.
+  public string CurrentPath = HomePath; // Set to the home path here at startup, but should be reset by INI file.
   public string CurrentName = "";
   public string PgmFilePath = "", PgmFileName = ""; // refers to user's pgm, not MonoMaths code itself. When GO runs, CurrentP/Nm --> PgmFileP/Nm.
   public string CurrentFnPath = ""; // Location of stored user functions.
@@ -529,14 +529,14 @@ public partial class MainWindow : Gtk.Window
   }
 
   protected virtual void OnSaveSettingsForFutureRunsActionActivated (object sender, System.EventArgs e)
-  { PackParametersIntoINR(false); string ss = WorkingDirectory + INIFileName;
+  { PackParametersIntoINR(false); string ss = ProgramPath + INIFileName;
     SaveINISettings(ss);
     // No check of bool return; fn. would have shown any error msg.
     JD.Msg("INI file saved as '" + ss + "'");
   }
 
   protected virtual void OnNewMonoMathsInstanceActionActivated (object sender, System.EventArgs e)
-  { Quid quid = JS.RunProcess(WorkingDirectory + "MonoMaths.exe", "", 0);
+  { Quid quid = JS.RunProcess(ProgramPath + "MonoMaths.exe", "", 0);
     if (!quid.B) JD.Msg(quid.S);
   }
 
@@ -1892,7 +1892,7 @@ public partial class MainWindow : Gtk.Window
       btn = JD.InputBox(header, preamble, prompts, ref boxtexts, "LIST", "ACCEPT", "CANCEL");
       if (btn == 1)
       { string errmsg;
-        string listing = JTV.ListFontsOnMachine("/tmp/", WorkingDirectory + "allfonts.txt", out errmsg, true);
+        string listing = JTV.ListFontsOnMachine("/tmp/", ProgramPath + "allfonts.txt", out errmsg, true);
         if (errmsg == "")
         {
           JD.Display("FONTS AVAILABLE ON THIS MACHINE", listing, true, false, false, "CLOSE");
@@ -2061,7 +2061,7 @@ public partial class MainWindow : Gtk.Window
       }
       else // Menu item was "Display Fn Arg Description":
        // Get the function args. text:
-      { string FlNm = WorkingDirectory + "FnArgs.txt";
+      { string FlNm = ProgramPath + "FnArgs.txt";
         StringBuilder fileText;
         Boost boodle = Filing.LoadTextFromFile(FlNm, out fileText);
         if (!boodle.B) { JD.Msg("Unable to access function arguments file '"+FlNm+"'"); return; }
@@ -2553,7 +2553,7 @@ public partial class MainWindow : Gtk.Window
   protected virtual void OnHelpMenusActivated (object sender, System.EventArgs e)
   { string cue = "//" + (sender as Gtk.Action).Label.ToUpper() + "//";
     var theLines = new List<string>();
-    Boost boodle = Filing.LoadTextLinesFromFile(WorkingDirectory + "Help.txt", out theLines);
+    Boost boodle = Filing.LoadTextLinesFromFile(ProgramPath + "Help.txt", out theLines);
     if (!boodle.B) { JD.Msg("Unable to load help file. " + boodle.S);  return; }
     // The whole file has been read in, but we only want a part of it.
     int endPtr = -1, startPtr = 1 + theLines.IndexOf(cue);
@@ -3268,7 +3268,7 @@ public partial class MainWindow : Gtk.Window
   public static string RetrieveHint(string Topic)
   { string hintsTextFileContents = "";
     if (!FailedRetrievalOfHintsText)
-    { string FlNm = WorkingDirectory + "Hints.txt";
+    { string FlNm = ProgramPath + "Hints.txt";
       StringBuilder outcome;
       Boost boodle = Filing.LoadTextFromFile(FlNm, out outcome);
       if (!boodle.B) { JD.Msg("Unable to access hints file '"+FlNm+"'");  FailedRetrievalOfHintsText = true;  return ""; }
@@ -3584,8 +3584,7 @@ public partial class MainWindow : Gtk.Window
         if (!quack.B) oopsie = "Parsing failed ";
         // Run the program
         else
-        { RuntimeResultData = "";//data intended for REditRes, developed at runtime.
-          R.StuffupSite = -1; // will hold line of runtime error, if any; but
+        { R.StuffupSite = -1; // will hold line of runtime error, if any; but
           // is used locally there; the req'd locn. to be read here is
           // instead the value returned in quack.I.
           StopNow = ' '; // if set to anything else during a loop execution, bombs the pgm.
@@ -3616,11 +3615,9 @@ public partial class MainWindow : Gtk.Window
           if (BlockFileSave != null) BlockFileSave.Clear();
           // Before checking 'quack' for error or for re-runs, display any material accumulated for the Results Window:
           if (UseREditAss)
-          { JTV.DisplayMarkUpText(REditRes, ref RuntimeResultData, "append");
-            // Prepare string for display:
+          { // Prepare string for display:
             int ln = BuffRes.Text.Length; ss = "";
             if (ln > 0 && BuffRes.Text[ln - 1] >= ' ') ss = "\n";
-//##### TOSS THIS LINE, once happy with the replacement below:            ss += R.VarResults(0, 'X', "__d"); // final CR always added.
             ss += R.DisplayMainPgmUserScalars();
             JTV.DisplayMarkUpText(REditRes, ref ss, "append");
             if (RecordRunTime)
@@ -3877,7 +3874,7 @@ public partial class MainWindow : Gtk.Window
   { Quad result = new Quad(true);
     bool success,  atLeastOneSuccess = false;
     List<string> INIFileImg;
-    Boost outcome = Filing.LoadTextLinesFromFile(WorkingDirectory+INIFileName, out INIFileImg);
+    Boost outcome = Filing.LoadTextLinesFromFile(ProgramPath+INIFileName, out INIFileImg);
     if (!outcome.B) { result.S = outcome.S;  result.B = false;  result.I = 2;  return result; }
     int ptr, INILen = INIFileImg.Count,  INRLen = INR.Length;
     string ININame="", INIPredicate="", INRName="";
@@ -3899,7 +3896,7 @@ public partial class MainWindow : Gtk.Window
           else if (typoe == 'I') rec.I = INIPredicate._ParseInt(out success);
           else if (typoe == 'S')
           { if (INIPredicate._Extent(0, 2) == "~/")
-            { INIPredicate = HomeDirectory + INIPredicate._Extent(2); }
+            { INIPredicate = HomePath + INIPredicate._Extent(2); }
             rec.S = INIPredicate;
             success = true;
           }
@@ -3986,7 +3983,7 @@ public partial class MainWindow : Gtk.Window
     CurrentPath =     INR[1].S;
     CurrentFnPath =   INR[2].S;
     CurrentDataPath = INR[3].S;
-    PnemonicFName =   INR[4].S;  if (PnemonicFName.IndexOf('/') == -1) PnemonicFName = WorkingDirectory + PnemonicFName;
+    PnemonicFName =   INR[4].S;  if (PnemonicFName.IndexOf('/') == -1) PnemonicFName = ProgramPath + PnemonicFName;
 
     if (INR[10].S != "")  FontNameAss = INR[10].S;
     if (INR[10].S != "")  FontNameRes = INR[11].S;
@@ -4034,7 +4031,7 @@ public partial class MainWindow : Gtk.Window
       if (NoRecentFiles < NoRecentFileSlots) NoRecentFiles++;
     }
     PackParametersIntoINR(true); // true = only adjusts the recent files list in INR.
-    SaveINISettings(WorkingDirectory + INIFileName);
+    SaveINISettings(ProgramPath + INIFileName);
     UpdateReloadMenuTexts();
   }
 
@@ -4057,7 +4054,7 @@ public partial class MainWindow : Gtk.Window
 
   private bool SaveINISettings (string INIpathfilename)
   { char c;   string ss;
-    int homelen = HomeDirectory.Length;
+    int homelen = HomePath.Length;
     string[] INISettings = new string[SizeOfINR];
     for (int i = 0; i < SizeOfINR; i++)
     { ss = INR[i].Nm;  if (ss == "") continue; // an INR field which does not yet have a use.
@@ -4065,7 +4062,7 @@ public partial class MainWindow : Gtk.Window
       c = INR[i].Tp;
       if (c == 'S')
       { ss = INR[i].S;
-        if (ss._Extent (0, homelen) == HomeDirectory) ss = "~/" + ss._Extent (homelen); // convert all home dir. intros to "~/", for portability.
+        if (ss._Extent (0, homelen) == HomePath) ss = "~/" + ss._Extent (homelen); // convert all home dir. intros to "~/", for portability.
         INISettings[i] += ss;
       }
       else if (c == 'X')INISettings[i] += INR[i].X.ToString();

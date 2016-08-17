@@ -1624,14 +1624,6 @@ namespace JLib
     protected override bool OnExposeEvent (Gdk.EventExpose args)               //expose  //redraw
     { Gdk.Window win = args.Window;
       Context g = Gdk.CairoHelper.Create (args.Window); // Context being the GRAPHICS DRAWING repository for the instance.
-// *** NB! When switching from MonoDevelop 2.12 to 5.2.1 I noted the comment in the build log to the effect that g.Target is obsolete,
-//  and that I should use 'Get/SetTarget()'. I did so. Result - a MonoMaths instance which works well enough when run from MonoDevelop,
-//  but which crashes untraceably when MonoMaths is run outside of MonoDevelop. The line which seemed to crash it in particular was 
-//  this:
-//    var ThisTarget = g.GetTarget();
-//  I could find absolutely nothing on the Internet after two days of extensive searching; there is simply no documentation.
-//  So the best plan is to go on using the old format below until somebody manages to publish some help.
-
       int x, y, w, h, d; // 'd' - depth - = no. bits used in colour descriptions; always 24 for standard Gdk work.
       win.GetGeometry(out x, out y, out w, out h, out d); // For whole outer window, get top left cnr, width, height.
         // X comes out as 0, as if there were no margin; but H allows for a window margin of a few pixels either side.
@@ -1639,13 +1631,16 @@ namespace JLib
       int boardID = (this.Name.Substring(1))._ParseInt(0);
       Board bordeaux = Board.GetBoardForExpose(this, boardID);  if (bordeaux == null) return false;
       foreach( Graph graph in bordeaux.GraphsExtant) graph.DrawGraph(g, w, h); // Plots will be drawn as well.
+
       if (bordeaux.SaveImagePlease)
       { string fnm = bordeaux.ImageFileName;
-        if (fnm != "") { g.Target.WriteToPng(fnm);  bordeaux.SaveImagePlease = false; }
+        if (fnm != "") { g.GetTarget().WriteToPng(fnm);  bordeaux.SaveImagePlease = false; }
+          // *** "g.GetTarget()" does not create a new instance; it simply gets the instance which g has created. Hence can be
+          //      repeated, as below when disposing.
       }
       bordeaux = null; // The workings of this wrapper class are mysterious and nonstandard, so better dereference the pointer here.
-      ((IDisposable) g.Target).Dispose (); // Everyone does this in Internet examples, so it seems to be essential.
-      ((IDisposable) g).Dispose ();
+      g.GetTarget ().Dispose ();
+      g.Dispose ();
       return true;
     }
 

@@ -201,7 +201,7 @@ internal partial class F
     SysFn[85]  = new TFn("interpolate",2,2,      0,        false,      1);
     SysFn[86]  = new TFn("even",      1, 2,      0,        false,      2);
     SysFn[87]  = new TFn("diffpoly",  1, 1,      0,        false,      1);
-    SysFn[88]  = new TFn("load",      1, 3,      0,        false,      1);
+    SysFn[88]  = new TFn("load",      1, 4,      0,        false,      1);
     SysFn[89]  = new TFn("between",   3, 3,      0,        false,      1);
     SysFn[90]  = new TFn("sign",      1, 5,      0,        false,      1);
     SysFn[91]  = new TFn("integral",  3, 3,      0,        false,      1);
@@ -2648,7 +2648,8 @@ internal partial class F
       // LOAD( 'A', FileName [, ExpectPrefix ] ) -- expect array's data to be in blocks of 8, and return it afte decoded by MONO to double[].
       //                          If ExpectPrefix present and true, expect and parse a prefix block with data about the saved variable.
       // LOAD( 'B', FileName ) -- uncritically loads all data of the file and returns it as a single BYTE ARRAY.
-      // LOAD( 'F', FileName, array VarNameInFile ) -- expect data in human-readable text format, and return the encoded variable.
+      // LOAD( 'F', FileName, array VarNameInFile [, bool ErrorReturnsScalar ] ) -- expect data in human-readable text format,
+      //                         and return the encoded variable. If last is TRUE, failure to load returns scalar NaN, not array [NaN].
       // LOAD( 'T', FileName ) -- load data, convert all bytes to unicodes, and return all data as a chars.-rated list array.
       // LOAD( 'D', FilePath ) -- returns the DIRECTORY NAME ONLY, of the file dialog in which a file (any file) was clicked. Terminal '/' guaranteed.
       // MORE ON ARGS:
@@ -2665,14 +2666,15 @@ internal partial class F
       //  (c) LOAD('F', FN, VarNameInFile ): will return a structured array OR scalar (the others cannot return a scalar).
       // ERRORS FOR ALL: Note that THE ONLY CRASHES that occur are for impossible arguments. All I/O errors set the boolean flag IOError,
       //    tested by fn "iok()"; and place their error message in IOMessage, ready for collection by fn. 'iomessage()'.
-      //    The RETURN is an array of length 1, value NaN (even if, in the case of 'loadfmt(.)', a scalar was expected);
-      //    but always use iok() as the validity test, rather than 'empty(.)'.
-      //    Special cases: (1) User cancels from dialog box: IOError is true, but IOMessage is empty. (2) LOAD with ExpectPrefix TRUE, but no
+      //    The RETURN is an array of length 1, value NaN. (Exception: for 'load('F', ...)', with final arg. TRUE, scalar NaN is returned).
+      //    But always use iok() as the validity test, rather than 'empty(.)'.
+      //   Special cases: (1) User cancels from dialog box: IOError is true, but IOMessage is empty. (2) LOAD with ExpectPrefix TRUE, but no
       //    prefix found, not even an invalid one: IOMessage STARTS WITH a dash '-', but continues with the error message. (In all other
       //    situations, there is no space before an error message.)
       {
         // Reset error flags:
         IOError = false;   IOMessage = "";     IOFilePath = "";
+        bool returnScalarError = (NoArgs > 3  && Args[3].X != 0.0);
         double x;
         char fileType;
         int fileTypeSlot = Args[0].I;
@@ -2704,6 +2706,7 @@ internal partial class F
           if (outcome != (int) Gtk.ResponseType.Accept || filename.Trim() == "")
           { result.I = EmptyArray();
             IOError = true; // BUT IOMessage remains as "", this being the way that cancellation of dialog box is recognized.
+            if (returnScalarError) result.X = double.NaN;   else  result.I = EmptyArray();
             break;
           }
         }
@@ -2730,15 +2733,18 @@ internal partial class F
           if      (filesize ==  0) IOMessage += "empty";
           else if (filesize == -2) IOMessage += "too long (max. allowed: " + Int32.MaxValue.ToString() + ")";
           else                     IOMessage += "inaccessible";
-          result.I = EmptyArray(); IOError = true;
+          IOError = true;
+          if (returnScalarError) result.X = double.NaN;   else  result.I = EmptyArray();
           break;
         }
        // LOAD DATA FROM SPECIALLY FORMATTED TEXT FILE:
         if (fileType == 'F')
-        { if (NoArgs <= 2 || Args[2].I == -1) return Oops(Which, "2nd. arg. must be present, and must be an array (the variable's name)");
+        { 
+          if (NoArgs <= 2 || Args[2].I == -1) return Oops(Which, "2nd. arg. must be present, and must be an array (the variable's name)");
           string varname = StoreroomToString(Args[2].I, true, true);
           if (varname == "")
-          { IOMessage = "variable name arg. is empty";  IOError = true;   result.I = EmptyArray();
+          { IOMessage = "variable name arg. is empty";  IOError = true;   
+            if (returnScalarError) result.X = double.NaN;   else  result.I = EmptyArray();
             break;
           }
           // Retrieve the text file:
@@ -2749,7 +2755,10 @@ internal partial class F
           }
           Strub2 tutu = ExtractFormattedTextVariable(theText, varname); // Sets up the variable as a temporary array
           if (tutu.X == -999.0) // Error:
-          { IOMessage = tutu.SY;  IOError = true;   result.I = EmptyArray();  break; }
+          { IOMessage = tutu.SY;  IOError = true;
+            if (returnScalarError) result.X = double.NaN;   else  result.I = EmptyArray();
+            break;
+          }
           // If no error, then ExtractVariable has been kind enough to set up a new temp. array for us...
           if (tutu.X == -1.0) result.X = tutu.Y; // scalar variable
           else result.I = Convert.ToInt32(tutu.X);

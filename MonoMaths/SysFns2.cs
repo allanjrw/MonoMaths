@@ -4924,7 +4924,7 @@ internal partial class F
         break;      
       }
       case 364: // HOMEDIRECTORY (dummy) -- arg. ignored. Returns the named home directory, e.g. "/home/fred/".
-      { string struedel = MainWindow.HomeDirectory;
+      { string struedel = MainWindow.HomePath;
         result.I = V.GenerateTempStoreRoom(struedel.Length);
         StringToStoreroom(result.I, struedel);
         break;
