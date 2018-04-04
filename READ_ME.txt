@@ -1,6 +1,6 @@
 DESCRIPTION
 "MonoMaths" is a small but powerful mathematical application, quickly loaded, and with relatively simple syntax. It can be run as a simple calculator for quick answers ("What is the square root of 5?"), yet has no problem handling large programs (my source codes are typically around 100K). Some basic facts:
-*  It runs on C# using Mono, the Linux equivalent of the .NET platform. It currently uses Mono 4.2.4, but should run on earlier and later versions of Mono. (For graphics, Mono uses GTK.)
+*  It runs on C# using Mono, the Linux equivalent of the .NET platform. It currently uses Mono 4.8.0, but should run on earlier and later versions of Mono. (For graphics, Mono uses GTK and Cairo.)
 *  The general syntax is a subset of the syntax typically used by C and C-like languages. (There are a few additional syntactical features for specialized tasks.)
 *  The language does not have classes, nor does it have the equivalent of "structures" in C. It also does not allow the use of pointers.
 *  There are many system functions (currently around 450) which can be simply called on for particular computational tasks.
