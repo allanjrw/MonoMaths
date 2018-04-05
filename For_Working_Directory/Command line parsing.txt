@@ -1,56 +1,51 @@
-THE NEW COMMAND LINE PARSING SYSTEM
-⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻
-DIRECTIVES conform to the usual rules of MonoMaths assignments. Notionally the LHS variables given below have all
-	been predefined as scalar or array. (While LHS names not on the list won't crash anything, they will simply be ignored.)
-	As for MM assignments, assignments must be terminated by ';' (though as with MM, the semicolon may be omitted after the last one).
-	Also, spaces are ignored unless they are inside quotes.
+COMMAND LINE PARAMETERS FOR INVOKING A MONOMATHS INSTANCE
+⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻
 
-	Quote mark: Although all 3 are usable from the point of view of MM code, you should always use [`] as (a) with 'exec()' you have
-	to use [`], as the underlying C# routine helpfully removes the other two types of quote; and (b) with Xfce Launchers the same is true.
+GENERAL POINTS
+⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻
+Directives are all followed by a semicolon (like all statements in MonoMaths programs).
+Spaces are ignored, unless inside quote marks (as would be a file name).
+Three quotation mark types are allowed (which must be paired):  "  '  `  (the last is usually on the top left key of the keyboard).
+In general, the third is safest, as some external programs that handle the MonoMaths call (e.g. file browser) may interpret
+	the other two quote marks in their own way, and so divide up your intended command line into segments.
+	Quote marks are only used for character strings; they should not be used around numerical values.
+There are two sets of directives; the first set sizes the MonoMaths instance, and defines how it handles formatted text.
+	The second set deal with loading and possibly running a program in the new MonoMaths instance.
+	The second set MUST follow the first set. Any first set instruction after a second set instruction would simply be ignored.
 
-	As with MM, don't use quote marks for scalars (e.g. not "left = `20`;", as 'left' has been notionally predefined as a scalar).
 
-	As usual for MM, directives are case-sensitive. Note that all abbreviated alternative forms are in capitals,
-	while their expansions are always in small letters.
-The program name itself does not take a semicolon; there is a space after it, and all after that space is parsed as mentioned above.
-
-First Set  (scalar LHS variables)
+First Set  (all arguments are numerical values)
 ⁻⁻⁻⁻⁻⁻⁻⁻
-  ('XX' for a real number; 'TXT' for text)
+Abbreviations used in descriptions below: 'XX' stands for a numerical value; 'TXT' stands for a character string.
+For the first four, values < 1 are taken as proportions of the relevant screen dimension; values > 1 are taken as pixel sizes.
+
 	left = XX;     -- OR --    L = XX;
 	top = XX;     -- OR --    T = XX;
 	width = XX;     -- OR --    W = XX;
 	height = XX;     -- OR --    H = XX;
-	topwindowheight = XX;     -- OR --    TWH = XX;  (NB -- unlike the above four, values below 1 are not taken as ratios. Use pixel size.)
-	formatted;    [No '=', as stands alone; if present, MonoMaths opens in formatted-text mode. Also, no abbreviated form.] 
-		Won't have any effect if there is no text, and consequently if not used in combination with 'load'.
+	topwindowheight = XX;     -- OR --    TWH = XX;  [Use pixel size only.]
+	formatted;    [No argument. If present, MonoMaths opens in formatted-text mode. Only applies if a 'load' instruction follows.] 
 
-Second Set (array LHS variables). One only of these should be supplied. Note that quote marks are essential.
+
+Second Set (One only of these two. Note that quote marks are essential; the back-sloped apostrophe is safest to use.)
 ⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻
-	load = `TXT`; Path must be complete. Any later args. simply ignored.
-	run = `TXT`;  Path must be complete. Any parameters to be passed to the new program must be enclosed  by the same quotes
-	 as the file name. E.g.:
-				run = `/home/jon/Foo/foo and bar.txt TWH = 23; formatted;`; (Any text between the inner " pair would be ignored;
-							you could stick a comma there, if it made you feel better; or you could even do this, for full MM assmt compatibility:)
-				run = text("/home/jon/Foo/foo and bar.txt", "TWH = 23; formatted;");
-	NB - these parameters will be placed as the unicode representation of a string in the internal buffer which is accessed by 
-			function "persistent_array()".
+	load = `TXT`; [Path must be complete.]
+	run = `TXT`;  [Path must be complete.]
+
+In the case of 'run' you can supply command line arguments which the MonoMaths program itself will use.
+E.g.:	run = `/home/jon/Foo/foo and bar.txt TWH = 23; formatted;`; [and when program 'foo and bar' starts up in the new MonoMaths instance,
+							it will read the last two arguments and react accordingly.]
 
 ERRORS
 Any directive not conforming to one of the above will be ignored without raising an error or interrupting parsing of the rest of the line.⁻
 
-TESTED EXAMPLES
-⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻
-1. USING 'EXEC':
-exec("/home/jon/MonoMaths/MonoMaths.exe", "left = 0.05; top = 0.05; width = 0.9;  height = 0.9; topwindowheight = 600; formatted; load = `/home/jon/MonoMaths/Hints.txt`"); // Warning - takes around 10 seconds because of the 'formatted'.
+EXAMPLES OF USE
+⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻⁻
+1. USE INSIDE A MONOMATHS PROGRAM, USING SYSTEM FUNCTION'EXEC':
+exec("/home/jon/MonoMaths/MonoMaths.exe", "left = 0.05; top = 0.05; width = 0.9;  height = 0.9; topwindowheight = 600; formatted; load = `/home/jon/MonoMaths/Hints.txt`"); // Warning - takes around 10 seconds because of the 'formatted' argument, as 'Hints.txt' is a big file.
 
-2. COMMAND FOR XFCE LAUNCHER
-This one is now installed in Panel 2 (the right-hand icon for MonoMaths):
-mono /home/jon/MonoMaths/MonoMaths.exe L=0.085; T=0; W=0.8; H=0.94; TWH=650
-
-3. THUNAR
-In the directory "/home/jon/.local/share/applications/" should be something like "userapp-mono-UESCQX.desktop" to run MonoMaths.
-The following works fine there: 
-	Exec=mono /home/jon/MonoMaths/MonoMaths.exe L=0.115; T=0; W=0.75; H=0.94; load=`%f`
+2. COMMAND FOR DESKTOP APPLICATION LAUNCHER
+This one is now installed in an Xfce desktop panel on my computer; it invokes 'mono' to run a MonoMaths instance with dimensions as given:
+	mono /home/jon/MonoMaths/MonoMaths.exe L=0.085; T=0; W=0.8; H=0.94; TWH=650;
 
 
