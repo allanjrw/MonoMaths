@@ -233,24 +233,8 @@ public class P
     // Initialize V.Vars[,], and give it its constant and readonly members.
     // Also initialize R.Assts[].
     InitializeArrays(RecordParsedAssts);
-
-  //######## TEMPORARY EXPERIMENTAL CODE!!! #################
-  //######## If the MAIN FUNCTION has the cue "DUO" at the start (suggested line: "DUO = 1", which must NOT be remarked out),
-  //########   then there will be a diversion into new experimental territory...
-    int nn = P.UserFn[0].Text.IndexOf("DUO");
-    if (nn >= 0  &&  nn < 10)
-    { bool keepGoing = DM.Experimental(P.UserFn);
-      if (!keepGoing) { result.S = "Experimental code aborted";  return result; }
-    }
-  //######## END OF EXPERIMENTAL CODE #######################
-
     // DEAL WITH STATEMENTS OF THE TYPE "A = exp1 ? exp2 : exp3"  and  "A = exp1 ? exp2 : exp3 : exp4"
     quo = ProcessQueryStatements();
-    nn = P.UserFn[0].Text.IndexOf("DUO");
-    if (nn >= 0  &&  nn < 10)
-    { bool keepGoing = DM.Experimental(P.UserFn);
-      if (!keepGoing) { result.S = "Experimental code aborted";  return result; }
-    }
     if (!quo.B)
     { result.S = C.Legible(quo.S, 2); result.I = quo.I;  return result; }
     // Finish parsing assignments and build the PreFlow string array:
