@@ -9,7 +9,7 @@
     <OutputType>Exe</OutputType>
     <RootNamespace>MonoMaths</RootNamespace>
     <AssemblyName>MonoMaths</AssemblyName>
-    <ApplicationIcon>..\..\MonoMaths\MiniMaths.ico</ApplicationIcon>
+    <ApplicationIcon>..\MonoMaths\MiniMaths.ico</ApplicationIcon>
     <CodePage>65001</CodePage>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <StartupObject>MonoMaths.MainClass</StartupObject>
@@ -104,8 +104,6 @@
     </Compile>
     <Compile Include="SysFns1.cs" />
     <Compile Include="SysFns2.cs" />
-    <Compile Include="..\JonoLib\Printing.cs" />
-    <Compile Include="Duo.cs" />
     <Compile Include="SysFns3.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
