@@ -5,7 +5,6 @@ using System.IO;
 using Gtk;
 using Gdk;
 using JLib;
-using FuncSet;
 
 namespace MonoMaths
 {
