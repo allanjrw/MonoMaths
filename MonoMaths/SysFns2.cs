@@ -9,7 +9,7 @@ namespace MonoMaths
 internal partial class F
 {
 
-  public static Quad Switchboard_B(int Which, int NoArgs, PairIX[] Args, Quad result)
+  public static Quad SystemFunctionSet_B(int Which, int NoArgs, PairIX[] Args, Quad result)
   {
     switch (Which)
    
@@ -271,69 +271,67 @@ internal partial class F
         sitem2.IsChars = isChars;
         break;
       }
-      case 204: case 205: case 63: // FIND / FINDS / FINDALL(ArrayToSearch, scalar StartPtr, (array or scalar) SearchFor [, (scalar) OtherLimit].
-      // All three take the same arguments; they differ only in what they return. 
-      // THE STRUCTURE OF ArrayToSearch IS IGNORED; finds are returned as absolute addresses within its data strip.
-      // Four argument form: 3rd. must be scalar, and represents one limit (e.g. the lower limit) for values
-      // answering to the search; OtherLimit is then the other (e.g. the higher limit). Both inclusive.
-      // RETURNED: For 'find(.)', a scalar - position of the find, or -1 if no find. For 'finds(.)', an
-      //  array of fixed size: [0] = no. finds (0 if none); [1] = locn. of first find (or -1); [2] =
-      //  locn of last find (or -1). For 'findall(.)', a list array of length N, where N is the number of finds; 
-      //  [i] is the locn of the ith. find. (Their values can be accessed using fn. 'select(.)'.) If no finds,
-      //  returns an array of size 1, [0] = -1.
-      { int argtypes = ArgTypesCode(Args);  
-        char findtype = 'D'; if (Which == 205) findtype = 'S'; else if (Which == 63) findtype = 'A'; // (fin)D, (find)S, (find)A(ll).
-        if (argtypes != 211 && argtypes != 212 && argtypes != 2111) return Oops(Which, "arg. types are not correct"); // 2 = array, 1 = scalar
-        int inslot = Args[0].I,  startptr = (int) Args[1].X;
-        if (startptr < 0) return Oops(Which, "the pointer to search start is negative");
-        int inlen = R.Store[inslot].TotSz;  double[] indata = R.Store[inslot].Data;
-        double[] finds = null;  if (findtype == 'S') finds = new double[] {0.0,  -1.0,  -1.0};
-        List<double> findptrs = null; if (findtype == 'A') findptrs = new List<double>();
-        int foundat=-1;
-        if (argtypes == 212) // search for an array:
-        { int soughtslot = Args[2].I;
-          int soughtlen = R.Store[soughtslot].TotSz;  double[] soughtdata = R.Store[soughtslot].Data;
-          int ptr = startptr;
-          while (ptr <= inlen - soughtlen)
-          { foundat = -1;
-            if (indata[ptr] == soughtdata[0])
-            { foundat = ptr;
-              for (int j=1; j < soughtlen; j++){ if (indata[ptr+j] != soughtdata[j]){ foundat = -1; break; } }// break from FOR loop, NOT from fn.
-            }
-            if (foundat >= 0)
-            { if (findtype == 'D') break; // 'finD(.)'  Break from WHILE loop, NOT from fn.
-              else if (findtype == 'S') // 'findS(.)'
-              { finds[2] = (double)ptr;  finds[0] = finds[0] + 1.0;  if (finds[0] == 1.0) finds[1] = finds[2]; }
-              else if (findtype == 'A')findptrs.Add( (double)ptr); // 'findAll(.)':
-              ptr += soughtlen-1; // '-1' because 'ptr++' is coming up real soon now.
-            }
-            ptr++;
+      case 204: // BOOLSTR(any no. arrays or scalars, char. array Key). If last arg. not a char. array, default used for Key.
+     // Key: if [0] is 'T','t', words are 'true'/'false'; if '/', then expects two strings like '/green/brown', the first corresponding
+     // to 'true', the second to 'false'. (If no second, will just use 'false' for it.) Any other Key[0] crashes.
+     // If just one value, returns char. list array a/c to Key. If > 1, returns jagged char. matrix, col. length = length of longest Key word.
+     // Case of Key[0] = 'T' or 't': sets case of first letter, while [1] - if present - sets case of 2nd. letter onwards. Hence,
+     // 'TR' --> 'TRUE/FALSE', 'Tr' --> 'True/False', 'tr' --> the default, which is 'true/false'. Where Key[0] is '/', the outputs
+     // are used exactly as presented after the '/'s.  Key is not trimmed.
+     // The last arg is taken as NOT boolean in all cases where it is a char. array, even if no sense could be made of it as Key.
+      { int lastboolarg = NoArgs-1, keyslot = Args[NoArgs-1].I;
+       // SET 'TRUE' AND 'FALSE' STRINGS:
+        string ss="", Tstr = "true",  Fstr = "false";
+        if (keyslot >= 0 && R.Store[keyslot].IsChars) // then the last arg. is indeed the Key:
+        { lastboolarg--; // i.e. last arg. is not to be checked as a boolean.
+          string keystuff = StoreroomToString(keyslot, false, false); // cannot be empty, as keyslot is valid.
+          // Throughout the next block, IF possibilities not specified end up in the use of above defaults for Tstr +/- Fstr.
+          char ch0 = keystuff[0], ch1 = ' ';  if (keystuff.Length > 1) ch1 = keystuff[1];
+          if (ch0 == 'T') 
+          { if (ch1 == 'r') { Tstr = "True"; Fstr = "False"; }  
+            else if (ch1 == 'R' || ch1 == ' ') { Tstr = "TRUE"; Fstr = "FALSE"; } 
+          }
+          else if (ch0 == 't' && ch1 == 'R'){ Tstr = "tRUE"; Fstr = "fALSE"; } // bit silly, but let it be possible.
+          else if (ch0 == '/') // look for the user's own creations:
+          { string[] foo = keystuff.Split('/');
+            if (foo.Length >= 2) Tstr = foo[1]; // foo[0] will always be an empty string.
+            if (foo.Length >= 3) Fstr = foo[2]; // '>' allows for silly user inserting a terminal '/'.
           }
         }
-        else
-        { foundat = -1;
-          double searchlo = Args[2].X, searchhi = searchlo;  
-          if (NoArgs == 4) searchhi = Args[3].X;
-          if (searchhi < searchlo){ double x = searchlo;  searchlo = searchhi;  searchhi = x; }
-          for (int i=startptr; i < inlen; i++)
-          { if (indata[i] >= searchlo && indata[i] <= searchhi) 
-            { foundat = i;  
-              if (findtype == 'D') break; // 'finD(.)'    Break from FOR loop, NOT from fn.
-              else if (findtype == 'S')
-              { finds[2] = (double)i;  finds[0] = finds[0] + 1.0;  if (finds[0] == 1.0) finds[1] = finds[2]; }
-              else if (findtype == 'A') findptrs.Add((double)i); // 'findAll(.)'
-            }
-          }
+       // EVALUATE BOOLEANS         
+       // Case 1 -- just one scalar to evaluate, so return a list array (no padding).
+        if (lastboolarg == 0 && Args[0].I == -1) // only one boolean arg., and it is scalar:
+        { if (Args[0].X == 0.0) ss = Fstr;  else ss = Tstr;
+          if (ss == "") ss = " "; // in case user entered e.g. "//yak".
+          result.I = V.GenerateTempStoreRoom(ss.Length);
+          StringToStoreroom(result.I, ss);
         }
-        if (findtype == 'D') result.X = (double)foundat;
-        else if (findtype == 'S') { result.I = V.GenerateTempStoreRoom(3); R.Store[result.I].Data = finds; }
-        else if (findtype == 'A') 
-        { int n = findptrs.Count;
-          if (n == 0){ result.I = V.GenerateTempStoreRoom(1); R.Store[result.I].Data[0] = -1.0; }
-          else { result.I = V.GenerateTempStoreRoom(n); findptrs.CopyTo(R.Store[result.I].Data); }
-        }  
-        break; // The ONLY break which is a break from this fn.        
+        else 
+       // Case 2 -- just one array, or more than one args. (they being of any type):
+        { double[] values = AccumulateValuesFromArgs(Args, 0, lastboolarg);
+          // Give the two strings have their equal final length:
+          int nocols = Tstr.Length; if (Fstr.Length > nocols) nocols = Fstr.Length;
+          while (Tstr.Length < nocols) Tstr += " ";    while (Fstr.Length < nocols) Fstr += " ";
+          double[] troo = StringToStoreroom(-1, Tstr),   forls = StringToStoreroom(-1, Fstr);
+          int outslot = V.GenerateTempStoreRoom(nocols, values.Length);  
+          R.Store[outslot].IsChars = true;
+          List<double> outlist = new List<double>();
+          for (int i=0; i < values.Length; i++)
+          { if (values[i] == 0.0) outlist.AddRange(forls);  else outlist.AddRange(troo); }
+          if (outlist.Count != R.Store[outslot].TotSz) return Oops(Which, "unexpected error. Call the programmer");
+          R.Store[outslot].Data = outlist.ToArray();
+          result.I = outslot;                              
+        }        
+        break;
       }
+      case 205: // REVERSE(Named Array) - VOID; reverses contents of the array. (For nonvoid function, see REVERSED(..).)
+         // No accessing of structure or chars. rating.
+      { int slot = Args[0].I; if (slot == -1) return Oops(Which, "an array arg. is required");
+        int len = R.Store[slot].TotSz;
+        double[] oldstuff = R.Store[slot].Data;   double[] newstuff = new double[len];
+        for (int i = 0; i < len; i++) newstuff[i] = oldstuff[len-i-1];
+        R.Store[slot].Data = newstuff;  break; 
+      }  
       case 206: case 207: // SELECTROWS / SELECTCOLS (Matrix, array Where) -- structure of Where ignored, but must consist of 
       // valid row or col nos. Fn. returns a matrix of as many rows/cols as there are indices of rows/cols in Where.
       { int sourceslot = Args[0].I, whereslot = Args[1].I; 
@@ -623,10 +621,12 @@ internal partial class F
         break;
       }
       case 222: // PLOTBINS(Three equal-sized arrays - LeftEdges, array RightEdges, array Heights - OR  one 3xN matrix FillBinsOutput...
-      //               THEN: [, scalar BarWidth [, scal/arr LnShape [, scalar LnWidth[ , scal/arr LnColour [, scal/arr FillColour ]]]]] )
+      //               THEN: [, scalar BarWidth [, scal/arr LnShape [, scalar LnWidth[ , scal/arr LnColour [, scal/arr FillColour [,
+      //                        scalar BaseYCoord ] ]]]]] )
       // Args. from LnShape on are as for 'plot', except that there is no equivalent to LnWeight, so all arguments apply to the whole graph.
       // 'BarWidth' is the ratio of (drawn bar's width) / (data bin's X-axis extent). The default is 1 (so that bars are touching).
       //   If set to 0 or a negative value, or if > 1, it also defaults to 1.
+      // 'BaseYCoord': Normally bars are drawn from Y = 0 upwards (the default). If you want otherwise, supply the Y coord. of the bar bases.
       {
         int slot0 = Args[0].I;  if (slot0 == -1) return Oops(Which, "1st. arg. must be an array");
         StoreItem It0 = R.Store[slot0];
@@ -679,6 +679,8 @@ internal partial class F
         Gdk.Color fillClr;
         if (NoArgs > ndx) fillClr = InterpretColourReference(Args[ndx], JTV.White, out filled); // this time, 'out' return is used
         else { fillClr = JTV.Yellow;  filled = true; }
+        ndx++;
+        double Ybaseline = (NoArgs > ndx) ? Args[ndx].X : 0.0;
         // Work up the plots
         double[] plotNos = new double[arrayLen];
         double barInset = (1 - barWidth) * (rightEdges[0] - leftEdges[0]) / 2.0;
@@ -686,7 +688,7 @@ internal partial class F
         for (int i=0; i < arrayLen; i++) // we rotate clockwise around the rectangle, from bottom left corner:
         { p = leftEdges[i] + barInset;  q = rightEdges[i] - barInset;
           double[] xx = new double[] { p, p, q, q };
-          double[] yy = new double[] { 0, Heights[i], Heights[i], 0 };
+          double[] yy = new double[] { Ybaseline, Heights[i], Heights[i], Ybaseline };
           Shape ship = new Shape('P', xx, yy, lnShapeArray, lnWidthArray, lnClrArray, fillClr);
           if (!filled) ship.FillShape = false; // transparent shape, if FillColour is scalar or is invalid
           plotNos[i] = (double) ship.ArtID;
@@ -894,7 +896,7 @@ internal partial class F
       //  ('-' = no default; if it will be accessed (e.g. PtWidth when PtShape is valid), arg. must be supplied with a sensible value.
       case 231: // PLOT3D(ZCoords, YCoords, XCoords, rest as above)
       // Creates a Plot object, puts that Plot onto MainWindow.Plots2D/3D and return its ID. (Use 'graph(.)' then to insert it into a graph.)
-      // COORDS - 2D: If there is only one arg. (must be an array), then that is graphed against a matching X-axis array { 0, 1, 2, ...}.
+      // COORDS - 2D: If there is only one arg. (must be an array), then that is graphed against a matching X-axis array [ 0, 1, 2, ... ].
       //   This is only intended for a quick look at the shape of data in the array; you obviously cannot set sizes, colours etc. To do that,
       //   instead use the method below with Args[1] scalar and set (perhaps) to 0.
       // If Args[0] and [1] are both scalar, they represent a single point (being converted into 1D arrays, length 1).
@@ -914,8 +916,9 @@ internal partial class F
       //  a chars. matrix in which each row is a hex no. ("0xRRGGBB") or a standard colour name (no '|' recognized here).
       // PT/LN WEIGHT, if present and is an array, is transferred directly to the plot's PtWeight property.
       // TEXTS is ignored if scalar, otherwise treated without regard to its structure as a chars. array. The delimiter between texts
-      // (if more than one) is '|'; spaces are significant. Examples: "A" recurrently plots A; "A|B|C" plots A,B,C,A,B,C,..
-      //   If you don't like this delimiter, prefix the string with "}c{", where c is the delimiter character to be used instead of '|'.
+      // (if more than one) is '|'; spaces are significant. Examples: "A" recurrently plots A; "A|B|C" plots at successive points A,B,C,A,B,C,..
+      // There is also an angle delimiter, '@', which must be followed by a numerical value (degrees rotation clockwise): "Going up!@60".
+      // If you want to use '|' or '@' as a literal, prefix it with '\'. (Any other occurrence of '\' will be taken as a literal character.)
       // FONT NAME(s) is either a single font name (no size) - "Sans" - or a series of font names in order of preference, sep'd by commas:
       // "Arial, Verdana, Ubuntu, Sans". (Spaces INSIDE a font name are significant.)
       { bool is3D = (Which == 231);
@@ -926,7 +929,7 @@ internal partial class F
         double[] ptwidth = null,  lnwidth = null;
         Gdk.Color[] ptclr = null, lnclr = null; // Parsing errors below will --> black points or lines, rather than the default colour.
         int[] ptweight = null, lnweight = null; // Parsing errors below will --> black points or lines, rather than the default colour.
-        string[] texts = null;
+        Strub[] textuality = null;
         string fontname = "";
         if (!is3D) // 2D CASE:
         { inslotY = (int) Args[0].I;
@@ -959,17 +962,25 @@ internal partial class F
             }
           }
         }
+
         else // 3D CASE:
         { inslotZ = (int) Args[0].I;  inslotY = (int) Args[1].I;  inslotX = (int) Args[2].I;
           offset = 3;
-          bool oops = (inslotX == -1 || inslotY == -1 || inslotZ == -1);
-          int len = 0;
-          if (!oops)
-          { XX = R.Store[inslotX].Data;  len = XX.Length;
+          if (inslotX == -1 || inslotY == -1 || inslotZ == -1)
+          { if (inslotX == -1 && inslotY == -1 && inslotZ == -1) // Three scalars is allowed: plotting of a single pt.
+            { XX = new double[] { Args[2].X };
+              YY = new double[] { Args[1].X };
+              ZZ = new double[] { Args[0].X };
+            }
+            else return Oops(Which, "the 1st. 3 args. must be all scalars or all arrays");
+          }
+          else
+          { int len = 0;
+            XX = R.Store[inslotX].Data;  len = XX.Length;
             YY = R.Store[inslotY].Data;
             ZZ = R.Store[inslotZ].Data;
+            if (YY.Length != len || ZZ.Length != len) return Oops(Which, "the first 3 args. must have equal length");
           }
-          if (oops || YY.Length != len || ZZ.Length != len) return Oops(Which, "the first 3 args. must be arrays of equal length");
         }
 
       // PROCESS PARAMETER ARGUMENTS:
@@ -985,24 +996,50 @@ internal partial class F
         if (NoArgs > offset + 5) lnclr = Plot_Colour(Args[offset+5].I, Args[offset+5].X, ref longestLnArray, JTV.Black);
        // Point and line weight:
         int slit; double[] dumdum = null;
-        if (NoArgs > offset + 6) { slit = Args[offset+6].I;  if (slit >= 0) dumdum = R.Store[slit].Data; }
-        if (dumdum == null) ptweight = new int[longestPtArray]; // No special need to make it this length; it just cuts down on modulos
-                                                                //  in Board.cs's drawing methods; but this is of extremely little advantage.
+        if (NoArgs > offset + 6)
+        { slit = Args[offset+6].I;  if (slit >= 0) dumdum = R.Store[slit].Data; }
+        if (dumdum == null)
+        { ptweight = new int[longestPtArray];
+          for (int i=0; i < longestPtArray; i++) ptweight[i] = i; // If no point weight was supplied, or if it is scalar,
+                                  // then if any or all of the point characteristics were of length > 1, they will be rotated through in order.
+        }          
         else ptweight = dumdum._ToIntArray();
         dumdum = null;
         if (NoArgs > offset + 7) { slit = Args[offset+7].I;  if (slit >= 0) dumdum = R.Store[slit].Data; }
-        if (dumdum == null) lnweight = new int[longestLnArray];
+        if (dumdum == null)
+        { lnweight = new int[longestLnArray];
+          for (int i=0; i < longestLnArray; i++) lnweight[i] = i; // If no line weight was supplied, or if it is scalar,
+                                  // then if any or all of the line characteristics were of length > 1, they will be rotated through in order.
+        }
         else lnweight = dumdum._ToIntArray();
        // Texts:
         if (NoArgs > offset + 8)
         { string stroo = StoreroomToString(Args[offset+8].I); // returns "" if arg. was scalar
           if (stroo.Length > 0)
-          { char delimiter = '|'; // the default.
-            if (stroo.Length > 3 && stroo[0] == '}' && stroo[2] == '{')
-            { delimiter = stroo[1]; // E.g. "}#{..." changes delimiter to '#'.
-              stroo = stroo.Substring(3);
+          { // Allow for a backslashed '|' character, before using '|' as the delimiter:
+            stroo = stroo.Replace("\\|", "\uf000");
+            string[] texts = stroo.Split(new char[] {'|'}, StringSplitOptions.None); // allow empty entries - where two delimiters are adjacent.
+            // Now that we have a string array, go through the entries one by one:
+            int texLen = texts.Length;
+            textuality = new Strub[texLen]; // the angles will start out as 0 (horizontal text).
+            for (int i = 0; i < texLen; i++)
+            { string ss = texts[i];
+              ss = ss.Replace("\uf000", "|"); // so backslashed '|' is now dealt with.
+              // Any angle?
+              int n = ss.LastIndexOf('@'); // Even if there are backslashed @s, for an angle to be defined the last one must be unbackslashed.
+              if (n > 0)
+              { if (ss[n-1] != '\\') // then an angle indicator has been found:
+                { string angl = ss._Extent(n+1);
+                  double ang = angl._ParseDouble(0.0); // Any parsing error results in an angle of 0, i.e. gives horizontal text.
+                  ang *= -Math.PI/180.0; // as the angle entered by the user is required to be in degrees, and +ve anticlockwise (as not in Cairo).
+                  textuality[i].X = ang;
+                  ss = ss._FromTo(0, n-1);
+                }
+                // Deal with any backslashed @ in the non-angle text
+                ss = ss.Replace("\\@", "@");
+              }
+              textuality[i].S = ss;
             }
-            texts = stroo.Split(new char[] {delimiter}, StringSplitOptions.None); // allow empty entries - where two delimiters are adjacent.
           }
         }
         if (NoArgs > offset + 9) fontname = StoreroomToString(Args[offset+9].I);
@@ -1010,7 +1047,7 @@ internal partial class F
         Plot pollute;
         if (is3D) pollute = new Plot(XX, YY, ZZ, ptshape, ptwidth, ptclr, lnshape, lnwidth, lnclr);
         else      pollute = new Plot(XX, YY, ptshape, ptwidth, ptclr, lnshape, lnwidth, lnclr);
-        pollute.Texts = texts;   pollute.PtWeight = ptweight;    pollute.LnWeight = lnweight;
+        pollute.Texts = textuality;   pollute.PtWeight = ptweight;    pollute.LnWeight = lnweight;
         if (fontname != "") pollute.FontName = fontname;
         if (is3D) MainWindow.Plots3D.Add(pollute);  else MainWindow.Plots2D.Add(pollute);
         result.X = (double) pollute.ArtID;
@@ -1439,7 +1476,7 @@ internal partial class F
         double[] ptwidth = null,  lnwidth = null;
         Gdk.Color[] ptclr = null, lnclr = null; // Parsing errors below will --> black points or lines, rather than the default colour.
         int[] ptweight = null, lnweight = null, xlnweight = null; // Parsing errors below will --> as above.
-        string[] texts = null;
+        Strub[] textuality = null;
         string fontname = "";
        // Point and line shape:
         if (NoArgs > offset)     ptshape = Plot_Shape(Args[offset].I, Args[offset].X, ref longestPtArray); // If scalar, taken as a unicode value.
@@ -1474,25 +1511,61 @@ internal partial class F
           }
         }
        // Texts:
-        if (NoArgs > offset + 10)
-        { string stroo = StoreroomToString(Args[offset+10].I); // returns "" if arg. was scalar
-          if (stroo.Length > 0) texts = stroo.Split(new char[] {'|'}, StringSplitOptions.RemoveEmptyEntries);
+        if (NoArgs > offset + 8)
+        { string stroo = StoreroomToString(Args[offset+8].I); // returns "" if arg. was scalar
+          if (stroo.Length > 0)
+          { char delimiter = '|',   angle_indicator = '@';
+            bool is_backslash = (stroo.IndexOf('\\') >= 0);
+            if (is_backslash) // Then there is at least one escaped character. If so, substitute for conventional delimiter and angle indicator:
+            {  stroo = stroo.Replace("\\" + delimiter, "\uf000");
+               stroo = stroo.Replace("\\" + angle_indicator, "\uf001");
+            }
+            string[] texts = stroo.Split(new char[] {delimiter}, StringSplitOptions.None); // allow empty entries - where two delimiters are adjacent.
+            int texLen = texts.Length;
+            textuality = new Strub[texLen];
+            for (int i = 0; i < texLen; i++)
+            { string ss = texts[i];
+              int n = ss.IndexOf(angle_indicator);
+              if (n == -1)
+              { textuality[i].S = ss;  textuality[i].X = 0.0; } // the angle for the text
+              else
+              { string angl = ss._Extent(n);
+                textuality[i].X = angl._ParseDouble(0.0); // Any parsing error results in an angle of 0 - horizontal text.
+                textuality[i].S = ss._FromTo(0, n-1);
+              }
+              if (is_backslash) // then reinstate the literal versions of the codes:
+              { ss = ss.Replace("\uf000", delimiter.ToString());
+                ss = ss.Replace("\uf001", angle_indicator.ToString());
+              }
+            }
+          }
         }
+
         if (NoArgs > offset + 11) fontname = StoreroomToString(Args[offset+11].I);
       // PLOT IT ALL:
         Mesh mishmash = null;
         mishmash = new Mesh(dataX, dataY, dataZ, ptshape, ptwidth, ptclr, lnshape, lnwidth, lnclr);
             // If this is a 2D mesh, dataZ will be null, which signals to the constructor that it is a 2D mesh.
         mishmash.FdCloseLoop = loops[0];  mishmash.TrvCloseLoop = loops[1];
-        mishmash.Texts = texts;   mishmash.FdPtWeight = ptweight;
+        mishmash.Texts = textuality;   mishmash.FdPtWeight = ptweight;
         mishmash.FdLnWeight = lnweight;  mishmash.TrvLnWeight = xlnweight;
         if (fontname != "") mishmash.FontName = fontname;
         if (is3D) MainWindow.Plots3D.Add(mishmash);  else MainWindow.Plots2D.Add(mishmash);
         result.X = (double) mishmash.ArtID;
         break;
       }
-   // case 254: // ARRAY( list of names) - has exactly the same effect as 'DIM(list of names, 1)'. See case 1.
-
+      case 254: // SQR (scalar / array XX)
+      { int slot = Args[0].I;
+        if (slot == -1) { result.X = Args[0].X * Args[0].X;  break; }
+        var sitem = R.Store[slot];
+        var indata = sitem.Data;
+        int len = indata.Length;
+        var outdata = new double[len];
+        for (int i = 0; i < len; i++)  outdata[i] = indata[i] * indata[i];       
+        result.I = V.GenerateTempStoreRoom(sitem.DimSz);
+        R.Store[result.I].Data = outdata;
+        break;
+      }
       case 255: // FINDDUP(array Subject, bool OfEarlierValue  [, scalar FromPtr [, scalar ToPtr ] ] ) -- if bool is false, finds
       // the first value which is LATER duplicated; if true, finds the first value which is the duplicate of an EARLIER value. 
       // Returns an array of size 3: [The value duplicated; the index of instance sought; the index of the match found in the process].
@@ -1624,9 +1697,6 @@ internal partial class F
         }       
         break;
       }  
-//#######vvvvvvvvvvvv
-//########^^^^^^^^^^^
-   // case 257: MESHZ(.) - see 256: MESHX.
       case 258: // __SCALAR(List of names, which must not be previously reg'd as array names)
       // **** NB: If you change the name of this function, also change the ref. to it in unit Parser,
       //               where along with 'unpack' it is preprocessed.
@@ -2054,70 +2124,78 @@ internal partial class F
         }
         result.I = outslot;  break;
       }
+//############ TEMPORARY. (1) Awaits a PLU version of the M2 method called. (2) Awaits error handling. (3) Doubtful if a separate function
+//############ for this should exist. Perhaps the rewritten "solvesim" could have a version which returns the PLU data when no RHS is supplied?
 
-      case 274: case 275: // UNUSED
-      {
-
+      case 274: // LUFACT(Square matrix AA, Dummy1, Dummy2) // VOID; Pivots the matrix. 
+      // RETURNS: 0 for success, otherwise whatever is the error code from the M2 method.
+      { int slotAA = Args[0].I;
+        if (slotAA == -1) return Oops(Which, "scalar 1st. arg. not allowed");
+        StoreItem sitemAA = R.Store[slotAA];
+        int[] dimsAA = sitemAA.DimSizes;
+        int norows = dimsAA[0];
+        if (dimsAA.Length != 2 || dimsAA[1] != norows) return Oops(Which, "1st. arg. must be a square matrix");
+        // All checks done, so call the method:
+        var mxdata = sitemAA.Data; // NB! This is, and remains, a pointer, so the method below is actually altering the matrix's data strip.
+        int[] row_order, col_order;
+        int errcode = M2.RookPivotting(ref mxdata, out row_order, out col_order, 1e-10);
+        result.X = (double) errcode;
         break;
       }
-//      case 274: case 275: // FINDROW( Matrix,  array Row [, scalar FromRowNo [, scalar ToRowNo [, scalar ExceptRowNo ]]]);
-//      //                     FINDCOL( Matrix,  array Col [, scalar FromColNo [, scalar ToColNo [, scalar ExceptColNo ]]]);
-//      // Explained for FINDROW:
-//      // Look for array Row in the matrix; return -1 (no find) or the row no. The fifth arg. is useful where you are looking
-//      // for any duplication of a given row (so want that given row excluded). FromRowNo and ToRowNo will be adusted to 
-//      // matrix limits if negative, or if ToRowNo exceeds end of matrix; e.g. use -1 if you want to supply ExceptRowNo for a complete mx. 
-//      // No error raised for crossed pointers; simply no find.
-//      { bool isrows = true;   string watzit = "row";    if (Which == 275) { isrows = false;  watzit = "column"; }
-//        int mxslot = Args[0].I, rowlen = 0, collen = 0, n;     bool booboo = false;
-//        if (mxslot == -1) booboo = true;
-//        else
-//        { n = R.Store[mxslot].DimCnt;
-//          if (n != 2) booboo = true;
-//          else 
-//          { rowlen = R.Store[mxslot].DimSz[0];   collen = R.Store[mxslot].DimSz[1];
-//        } }
-//        if (booboo) return Oops(Which, "the first arg. must be a matrix");
-//        int soughtslot = Args[1].I;   
-//        double[] mxdata = R.Store[mxslot].Data, soughtrow = null, soughtcol = null;
-//        if (soughtslot == -1) booboo = true;
-//        else if (isrows){ soughtrow = R.Store[soughtslot].Data;  if (soughtrow.Length != rowlen) booboo = true; }
-//        else { soughtcol = R.Store[soughtslot].Data; if (soughtcol.Length != collen) booboo = true; }
-//        if (booboo) return Oops(Which, "The second arg. must be an array with length = the length of a {0} in the matrix", watzit);
-//        int foundat = -1;
-//        if (isrows)
-//        { // Adjust arguments:
-//          int startrow = 0, endrow = collen-1, excluderow = -1;
-//          if (NoArgs > 2) { startrow = (int) Args[2].X;  if (startrow < 0) startrow = 0; }
-//          if (NoArgs > 3) { endrow   = (int) Args[3].X;  if (endrow < 0 || endrow >= collen) endrow = collen-1; }
-//          if (NoArgs > 4) excluderow = (int) Args[4].X;
-//          // Search:
-//          int offset; // value of foundat critical, as the loop below may not be entered (silly args.)
-//          for (int i = startrow; i <= endrow; i++)
-//          { if (i == excluderow) continue;
-//            offset = i*rowlen;  foundat = i;
-//            for (int j = 0; j < rowlen; j++)
-//            { if (soughtrow[j] != mxdata[offset + j]) { foundat = -1;  break; } }
-//            if (foundat != -1) break;
-//          }
-//        }
-//        else // columns:
-//        { int startcol = 0, endcol = rowlen - 1,   excludecol = -1;
-//          if (NoArgs > 2) { startcol = (int)Args[2].X; if (startcol < 0) startcol = 0; }
-//          if (NoArgs > 3) { endcol = (int)Args[3].X; if (endcol < 0 || endcol >= collen) endcol = collen - 1; }
-//          if (NoArgs > 4) excludecol = (int)Args[4].X;
-//          // Search:
-//          for (int i = startcol; i <= endcol; i++)
-//          { if (i == excludecol) continue;
-//            foundat = i;
-//            for (int j = 0; j < collen; j++)
-//            { if (soughtcol[j] != mxdata[j*rowlen + i]) { foundat = -1;  break; } }
-//            if (foundat != -1) break;
-//          }
-//        }  
-//        result.X = foundat;  break;
-//      }  
+
+//      case 274: // LUFACT(Square matrices AA, LL, UU) -- all arrays must be named arrays, and must have the same dimensions, at least 2x2.
+//      // LL and UU will be filled by the function. AA will not be altered. The return is an error code: 0 if no error, ###########.
+//      {
+//        int slotAA = Args[0].I,  slotLL = Args[1].I,  slotUU = Args[2].I;
+//        if (slotAA == -1  ||  slotLL == -1  ||  slotUU == -1) return Oops(Which, "scalar args. not allowed");
+//        StoreItem sitemAA = R.Store[slotAA],  sitemLL = R.Store[slotLL],  sitemUU = R.Store[slotUU];
+//        int[] dimsAA = sitemAA.DimSizes;
+//        int norows = dimsAA[0];
+//        if (dimsAA.Length != 2 || dimsAA[1] != norows) return Oops(Which, "1st. arg. must be a square matrix");
+//        if (norows < 2) return Oops(Which, "Matrix dimensions must be at least 2x2");
+//        // All checks done, so call the method:
+//        double[] AA = sitemAA.Data;
+//        double[] LL = null,  UU = null;
+//        int errcode = M2.LUFactorization(ref AA, out LL,  out UU);
+//        if (errcode != 0) return Oops(Which, "error code ", errcode, " happened");
+//        // We have the data for LL and UU; now we have to assign them to slotLL and slotUU.
+//        int newslotLL = V.GenerateTempStoreRoom(norows, norows);
+//        R.Store[newslotLL].Data = LL;
+//        int Fn = REFArgLocn[1].Y, At = REFArgLocn[1].X;
+//        V.TransferTempArray(newslotLL, Fn, At); // This vital step takes care of everything - don't try to do its work by hand!!
+//        int newslotUU = V.GenerateTempStoreRoom(norows, norows);
+//        R.Store[newslotUU].Data = UU;
+//        int Fn1 = REFArgLocn[2].Y, At1 = REFArgLocn[2].X;
+//        V.TransferTempArray(newslotUU, Fn1, At1); // This vital step takes care of everything - don't try to do its work by hand!!
+//        break; // with result.X left at 0, the code for success.
+//      }
 
 
+
+//######### TEMPORARY: Awaits PLU factorization version of M2.LUFactorization(.), and also awaits handling of error states.
+//#########   Then this should replace existing function "determinant"; though possibly it should treat 2x2 and 3x3 matrices separately.
+      case 275: // DETERM(Square matriX AA) [, Scalar AboutZero]). If 2nd. arg., anything below this (e.g. 1e-10) will be taken as zero.
+      { int slotAA = Args[0].I; 
+        if (slotAA == -1)  return Oops(Which, "1st. arg. must be a matrix");
+        double almostZero = 0.0;
+        if (NoArgs > 1) almostZero = Math.Abs(Args[1].X);
+        StoreItem sitemAA = R.Store[slotAA];
+        int[] dimsAA = sitemAA.DimSizes;
+        int norows = dimsAA[0];
+        if (dimsAA.Length != 2 || dimsAA[1] != norows) return Oops(Which, "1st. arg. must be a square matrix");
+        if (norows < 2) return Oops(Which, "Matrix dimensions must be at least 2x2");
+        // All checks done, so call the method:
+        double[] AA = sitemAA.Data;
+        double[] LL = null,  UU = null;
+        int errcode = M2.LUFactorization(ref AA, out LL,  out UU);
+        if (errcode != 0) return Oops(Which, "error code ", errcode, " happened");
+        // Calculate the determinant:
+        double determination = 1.0;
+        for (int i=0; i < norows*norows; i += norows+1) determination *= UU[i];
+        if (Math.Abs(determination) <= almostZero) determination = 0.0;
+            result.X = determination;
+        break; // with result.X left at 0, the code for success.
+      }
 
 
       case 276:  // COMPARE(Array1, Array2 [, scalar cutoff [, scalar FromPtr [, scalar Extent]]]).
@@ -2179,11 +2257,33 @@ internal partial class F
       //  the separator between number strings is ", ". If a 2nd. argument supplied, it is passed to C# without checks. If C#
       //  chooses to ignore it, or to return rubbish - usually just 'formatHow' itself - or in some cases to crash MonoMaths, be it upon the user's head!
       { string ss="", formatHow = "";
-        if (NoArgs > 1) formatHow = StoreroomToString(Args[1].I, 0, -1, true, true, true);
+        bool integer_formatting = false;
+        if (NoArgs > 1)
+        { formatHow = StoreroomToString(Args[1].I, 0, -1, true, true, true);
+          if (formatHow.Length > 1)
+          { char c = formatHow[0];
+            if (c == 'D' || c == 'd')
+            { if (formatHow[1] >= '0' && formatHow[1] <= '9')
+              { integer_formatting = true;  }
+            }
+          }
+        }
         if (Args[0].I == -1) // a scalar argument:
-        { ss = Args[0].X.ToString(formatHow); }
+        { if (integer_formatting)
+          { int n = Convert.ToInt32(Args[0].X);
+            ss = n.ToString(formatHow);
+          }
+          else ss = Args[0].X.ToString(formatHow); 
+        }
         else // an array:
-        { ss = R.Store[Args[0].I].Data._ToString(", ", "", formatHow); }
+        { 
+          if (integer_formatting)
+          { int[] interesting = R.Store[Args[0].I].Data._ToIntArray();
+            ss = interesting._ToString(", ", "", formatHow);
+          }
+          else
+          { ss = R.Store[Args[0].I].Data._ToString(", ", "", formatHow); }
+        }
         int slot = V.GenerateTempStoreRoom(ss.Length);
         double[] slotdata = R.Store[slot].Data;
         for (int i = 0; i < ss.Length; i++)
@@ -2616,63 +2716,77 @@ internal partial class F
         R.Store[result.I].Data = outdata;
         break;
       }
-      case 287: // CAP ( scalar / array Values,  scalar CriticalValue,  scalar Asymptote) -- Values below CriticalValue remain as is;
-      // values above this are reduced to lie between CriticalValue and Asymptote. The closer the two values, the sharper will be the knee
-      // of the curve of returned values v. input values. No error detection - GIGO.
-      { 
-        double E, CritValue = Args[1].X,  Asymp = Args[2].X;
-        double Gap = Asymp - CritValue; // if neg, no damage - just GIGO.
+      case 287: case 288: // CAP / CAPPED ( array Values,  scalar CriticalValue,  scalar Asymptote, [...] )
+      // Re the two functions: 'CAP' returns a copy of 'Values' (same structure) which has been capped; 'CAPPED' is VOID, directly changing Values.
+      // Re the next two arguments:
+      //  Case 1: CriticalValue ≤ Asymptote: Values below CriticalValue remain as is, but higher values are altered to lie between
+      //    CriticalValue and Asymptote. The closer the two values, the sharper will be the knee of the curve of returned values v. input values.
+      //  Case 2: CriticalValue > Asymptote: values LOWER than CriticalValue are altered, and no value goes below Asymptote.
+      // Re the remaining arguments, if any:
+      //  (1) If none, the whole array is capped, whatever its structure. But if arguments are supplied...
+      //  (2) If Values is a LIST ARRAY, there must be exactly two extra args: StartPtr and EndPtr, defining the range that will be capped.
+      //  (3) If Values is a MATRIX, there must be exactly four extra args, which together define a SUBMATRIX, within which capping will happen.
+      //        The args. are: StartRow, StartCol, EndRow, EndCol.
+      // Re pointers: they must be legal values, or crasho. The single exception is EndPtr for list arrays: if this is negative or ≥ data size,
+      //    it is corrected to point to the end of the array. (StartPtr must however be specific.)
+      { bool isCapped = (Which == 288);
         int valueslot = Args[0].I;
-        if (valueslot == -1) // Do scalar case separately, to save time.
-        { result.X = Args[0].X;
-          if (result.X > CritValue)
-          { E = Math.Exp(2 * (CritValue - result.X) / Gap);
-            result.X = CritValue + Gap * (1 - E) / (1 + E);
-          }
-          break;
-        }
-        // To get here, Values must be an array:
+        if (valueslot == -1) return Oops(Which, "1st. arg. cannot be scalar");        
         StoreItem inItem = R.Store[valueslot];
-        var indata = inItem.Data;
-        int inlen = indata.Length;
-        var outdata = indata._Copy(); // Copied because we will only change values above CriticalValue.
-        for (int i=0; i < inlen; i++)
-        { if (indata[i] > CritValue)
-          { E = Math.Exp(2 * (CritValue - indata[i]) / Gap);
-            outdata[i] = CritValue + Gap * (1 - E) / (1 + E);
+        double[] outdata;
+        if (isCapped)
+        { outdata = inItem.Data; } // data will be directly altered in the store
+        else 
+        { outdata = inItem.Data._Copy(); }
+        int datalen = outdata.Length;
+        int[] dimensions = inItem.DimSizes;
+        double Z, CritValue = Args[1].X,  Asymp = Args[2].X; // too bad if they are arrays
+        double Gap = Asymp - CritValue;
+        bool isUpperLimit = (Gap >= 0);
+        bool isMatrix = (dimensions.Length == 2);
+        if (dimensions.Length > 2) return Oops(Which, "only list arrays and matrices are handled by this fn.");
+        // 3- arg. versions + 5-arg list arrays first...
+        if (NoArgs == 3 || !isMatrix)
+        { if (NoArgs != 3 && NoArgs != 5) return Oops(Which, "wrong no. of args.");
+          int StartPtr = (NoArgs == 3) ? 0 : Convert.ToInt32(Args[3].X);
+          if (StartPtr < 0 || StartPtr >= datalen) return Oops(Which, "start pointer is out of range");
+          int EndPtr = (NoArgs == 3) ? datalen-1 : Convert.ToInt32(Args[4].X);
+          if (EndPtr >= datalen || EndPtr < 0) EndPtr = datalen-1;
+          if (EndPtr < StartPtr) return Oops(Which, "end pointer is earlier than the start pointer");
+          for (int i = StartPtr; i <= EndPtr; i++)
+          { if (isUpperLimit ^ outdata[i] < CritValue)
+            { Z = Math.Exp(2 * (CritValue - outdata[i]) / Gap);
+              outdata[i] = CritValue + Gap * (1 - Z) / (1 + Z);
+            }
           }
         }
-        result.I = V.GenerateTempStoreRoom(inItem.DimSz);
-        R.Store[result.I].Data = outdata;
-        break;
-      }  
-      case 288: // LIST_OPN( scalar ListNo, scalar Pointer, array Operation, scalar SecondValue [, DontAlterList] )
-      // Operates on this list's [Pointer] value, using Second Value if a binary operation (ignored, for unary ops, but a dummy must go there).
-      // Op.[0] must be one of: " + - * / ^ A B S " (A = Absolute value;  B = Boolean value;  S = Sign(zero --> I.V.).
-      // If final arg. missing or zero, replaces the old value in the list with the new; in any case, it returns the new value.
-      // Crashes if ListNo doesn't exist or if Pointer is out of range or Opn[0] unrecognized.
-      { int listno = (int) Args[0].X;
-        if (Sys == null || listno < 0 || listno >= NoSysLists) return Oops(Which, "list {0} does not exist", listno);
-        int listlen = Sys[listno].LIST.Count,  ptr = (int) Args[1].X;
-        if (ptr < 0 || ptr >= listlen) return Oops(Which, "the pointer is out of range");
-        int opslot = Args[2].I; if (opslot == -1) return Oops(Which, "the third arg. must be an array");
-        int n = (int) R.Store[opslot].Data[0];
-        char Op = (char) n;
-        double X = Sys[listno].LIST[ptr];
-        double Y = Args[3].X,  Z=0;
-        if (Op == '+') Z = X+Y;  else if (Op == '-') Z = X-Y;  else if (Op == '*') Z = X*Y;
-        else if (Op == '/') { if (Y == 0.0) { result.S = "divn. by 0"; result.B = false; } else Z = X/Y; }
-        else if (Op == '^') 
-        { if ( X < 0 && Y != Math.Round(Y) ) { result.S = "improper power opn."; result.B = false; } 
-          else Z = Math.Pow(X,Y); 
+        else // is a matrix, with a submatrix defined within it:
+        { if (NoArgs != 7) return Oops(Which, "wrong number of args.");
+          int StartRow = Convert.ToInt32(Args[3].X);
+          int StartCol = Convert.ToInt32(Args[4].X);
+          int EndRow = Convert.ToInt32(Args[5].X);
+          int EndCol = Convert.ToInt32(Args[6].X);
+          if (StartRow < 0 || StartRow >= dimensions[1]) return Oops(Which, "start row is out of range");
+          if (EndRow < StartRow || EndRow >= dimensions[1]) return Oops(Which, "end row is out of range or is less than start row");
+          if (StartCol < 0 || StartCol >= dimensions[0]) return Oops(Which, "start column is out of range");
+          if (EndCol < StartCol || EndCol >= dimensions[0]) return Oops(Which, "end column is out of range or is less than start column");
+          int rowlen = dimensions[0], offset;
+          for (int rw = StartRow; rw <= EndRow; rw++)
+          { offset = rw * rowlen;
+            for (int cl = StartCol; cl <= EndCol; cl++)
+            { if (isUpperLimit ^ outdata[offset + cl] < CritValue)
+              { Z = Math.Exp(2 * (CritValue - outdata[offset + cl]) / Gap);
+                outdata[offset + cl] = CritValue + Gap * (1 - Z) / (1 + Z);
+              }
+            }
+          }
         }
-        else if (Op == 'A' || Op == 'a') Z = Math.Abs(X);
-        else if (Op == 'B' || Op == 'b') { if (X == 0.0) Z = 0.0; else Z = 1.0; }
-        else if (Op == 'S' || Op == 's') { if (X > 0.0) Z = 1.0; else if (X < 0.0) Z = -1.0; else Z = Y; }
-        else { result.S = "'list_opn': operation not identified"; result.B = false; return result; }
-        if (!result.B) { result.S = "'list_opn': " + result.S; return result; }
-        if (NoArgs > 4 && Args[4].X != 0.0) Sys[listno].LIST[ptr] = Z;
-        result.X = Z;  break; 
+        if (!isCapped) // if it is 'capped(.)', there is nothing more to do, as it is a void function.
+        { result.I = V.GenerateTempStoreRoom(dimensions);
+          R.Store[result.I].Data = outdata;
+          R.Store[result.I].IsChars = inItem.IsChars;
+        }
+        break;
       }
       case 289: // HSL (colour argument) -- returns the HSL value for a colour, as an array of size 3, values being 0 to 1 inclusive. 
       // See 'InterpretColourReference(.)' for the various allowed argument deployments. Failed colour parsing returns black (no error state).
@@ -2723,20 +2837,6 @@ internal partial class F
         }
         break;
       }
-
-
-//      case 290: // HSL_TO_RGB(array) -- If the array is of length 3, and has elements in the range 0 to 1, an array of 3 containing
-//      // RGB values (red is [0]) is returned. If any error in the argument, black is returned - [0,0,0]. (Hue is low - array[0].)
-//      { result.I = V.GenerateTempStoreRoom(3);
-//        int inslot = Args[0].I;  if (inslot == -1) break; // exit, returning an empty array.
-//        double[] hsl = R.Store[inslot].Data;  if (hsl.Length != 3) break; // ditto.
-//        byte red, green, blue;
-//        JS.HSLtoRGB(hsl[0], hsl[1], hsl[2], out red, out green, out blue);
-//        R.Store[result.I].Data = new double[] { (double) red, (double) green, (double) blue };
-//        break;
-//      }
-
-
       case 291: case 292: // SCALEJUMPX, SCALEJUMPY (GraphID, scalar FirstLabelled, scalar JumpSize // 2D only.
       // Dictates which hairlines will not have tick strings printed opposite them.
       // GraphID cannot be omitted. Suppose we have SCALEJUMPX(g,0,3); then the axis intercept would be labelled, and thereafter
@@ -2871,12 +2971,16 @@ internal partial class F
         }
         break;
       }
-      case 300: // JOIN(Matrix, scalar / array Delimiter,  scalar / array Padder [, scalar / array EmptyRowCue ] -- Joins rows of matrix, --> list array out.
-      // Padder: If an array, only the first element is accessed.
+      case 300: // JOIN(Matrix, scalar / array Delimiter [, scalar / array Padder [, scalar / array EmptyRowCue ] ] -- Joins rows of matrix,
+      // --> list array out.
       // Delimiter: Will be put between material from successive rows. If an array, the whole contents is taken as the delimiter.
-      // EmptyRowCue: If absent, empty rows (i.e. containing only Padder) will be ignored; if included, this virtual row will go in.
-      //  If absent, and Mx is nothing but padders, the return is the empty array.
-      // If Mx is a list array, it will be treated as if it were a 1 x N matrix.
+      // Padder: (If an array, only the first element is used.) If present, (a) all terminal instances of it will be removed from each row;
+      //   (b) if that leaves a row empty, either the row will be omitted, or - if there is a 4th. argument - it will be replaced by
+      //    a single instance of that argument.
+      //   If absent, the matrix will be saved as is, with each row occupying the same length between delimiters.
+      //   (If all rows are empty, and there is no 4th. argument, the array {NaN} is returned.)
+      // EmptyRowCue: Explained above.
+      // If 'Matrix' is a list array, it will be treated as if it were a 1 x N matrix.
       { 
         int mxslot = Args[0].I;  if (mxslot == -1) return Oops(Which, "1st. arg. cannot be scalar");
         StoreItem mxIt = R.Store[mxslot];
@@ -2886,26 +2990,36 @@ internal partial class F
         double[] delimiter;
         if (Args[1].I == -1) delimiter = new double[] { Args[1].X };
         else delimiter = R.Store[Args[1].I].Data;
-        double padder;
-        if (Args[2].I == -1) padder = Args[2].X;
-        else padder = R.Store[Args[2].I].Data[0];
+        double padder = 0.0; // dummy value for the compiler.
+        bool isPadder = NoArgs > 2;
+        if (isPadder)
+        { if (Args[2].I == -1) padder = Args[2].X;
+          else padder = R.Store[Args[2].I].Data[0];
+        }
         double[] emptyRowCue = null;
         if (NoArgs > 3)
         { if (Args[3].I == -1) emptyRowCue = new double[] { Args[3].X };
           else emptyRowCue = R.Store[Args[3].I].Data;
         }
         List <double> outstuff = new List<double>(mxIt.TotSz);
-        double[] thisRow;  int lastPadder;
+        double[] thisRow;
         for (int i=0; i < noRows; i++)
         { thisRow = indata._Copy(i*rowLen, rowLen);
-          lastPadder = 0; // Will be thisRow.Length, if no terminal padder found.
-          for (int j = thisRow.Length - 1; j >= 0; j--)
-          { if (thisRow[j] != padder) { lastPadder = j+1; break; } }
-          if (lastPadder == 0)
-          { if (emptyRowCue == null) continue; // ignore an empty row, if 3rd. argument absent.
-            outstuff.AddRange(emptyRowCue);
+          if (isPadder)
+          { int validDataLen = rowLen;
+            for (int j = thisRow.Length - 1; j >= 0; j--)
+            { if (thisRow[j] == padder) validDataLen--;
+              else break;
+            }
+            if (validDataLen == 0) // then this was a row filled with just padders.
+            { if (emptyRowCue == null) continue; // Simply leave this row off the output list.
+              thisRow = emptyRowCue._Copy(0);
+            }
+            else
+            { if (validDataLen < rowLen) thisRow = thisRow._Copy(0, validDataLen);
+            }
           }
-          else outstuff.AddRange(thisRow._Copy(0, lastPadder));
+          outstuff.AddRange(thisRow);
           // Tack on the delimiter after every row contribution:
           outstuff.AddRange(delimiter);
         }        
@@ -3144,13 +3258,13 @@ internal partial class F
       // If 'Mx' is in fact a simple list array, it will simply be trimmed of the padder. This is necessary because some functions, e.g. 'request(.)',
       // may return either a list array or a jagged matrix, depending on circumstances.
       { int mxslot = Args[0].I;   int[] dims = null;
-        int rowno = Convert.ToInt32(Args[1].X); // too bad if it was an array by mistake.
         if (mxslot == -1) return Oops(Which, "the first arg. must be a matrix or a list array");
+        int rowno = Convert.ToInt32(Args[1].X); // too bad if it was an array by mistake.
         StoreItem sitem = R.Store[mxslot];
         dims = sitem.DimSz._Copy(); // Nec., as DimSz is a field, and we are going to alter 'dims'.
         if (dims[2] != 0) return Oops(Which, "the first arg. cannot be a structure of more than 2 dimensions");
         if (dims[1] == 0) dims[1] = 1; // We will pretend a list array is a jagged array with one row.
-        if (rowno >= dims[1]) return Oops(Which, "the supplied row index exceeds the no. of rows in the first argument");
+        if (rowno < 0 || rowno >= dims[1]) return Oops(Which, "2nd. arg. (row index) is out of bounds");
         int rowlen = dims[0];
         double[] therow = new double[rowlen];   
         Array.Copy(R.Store[mxslot].Data, rowno*dims[0], therow, 0, rowlen);
@@ -3173,66 +3287,79 @@ internal partial class F
         R.Store[outslot].IsChars = R.Store[mxslot].IsChars;
         result.I = outslot;   break;
       }  
-      case 308: // JAG(Matrix, array Operation, array NewRow, [, scalar RowNo [, scalar Length [, scalar Filler ]]]) NONVOID.
-      // Returns a copy of Matrix with a new row appended / inserted / overwriting an old one. What happens is determined by Opn[0].
-      // 'I' or 'i' causes insertion; 'O' or 'o' causes overwriting; 'A' or 'a' causes appending.
-      // The WHOLE matrix will be padded / amputated as indicated by scalar args. 
-      // The 3-arg. version is allowed only for operation 'A(ppend)'. For 'A', if RowNo supplied, it is ignored.
-      // (a) No Length, no Filler: If the new row is longer than existing rows, they will be padded to its length with zeroes).
-      //       If it is shorter, it will instead be padded to the existing row length of the matrix.
-      // (b) Length supplied and >= 1: All rows will be conformed to the prescribed length. (Neg. values ignored - the above then happens.)
-      // (c) Filler supplied: If rows are to be padded, this value is always used, replacing the default system mentioned above.
-      // RowNo must be valid EXCEPT for the Append operation, in which case it is simply ignored.      
-      // If 'Matrix' is a list array it will be treated as if it were a 1xN matrix, so you can use 'jag' to build a mx. from nothing.
-      { int mxslot = Args[0].I,  opslot = Args[1].I,  newrowslot = Args[2].I;
-        if (mxslot == -1 || opslot == -1 || newrowslot == -1) return Oops(Which, "the first three args. must be arrays");
-       // Deal with the Matrix argument.
-        int[] dims = R.Store[mxslot].DimSz;  int oldnorows = dims[1], oldrowlen = dims[0];
-        if (oldnorows == 0) oldnorows = 1; // treat a list array as if it were a matrix with one row (i.e. a row vector).
-        bool ischars = R.Store[mxslot].IsChars;
-        double[] mxdata = R.Store[mxslot].Data;
-       // Deal with the Operation argument.
-        char opn = char.ToUpper(R.Store[opslot].Data[0]._ToChar(' '));
-        if (opn != 'A' &&  opn != 'I' &&  opn != 'O')
-        { return Oops(Which, "unrecognized operation code '{0}' in the second argument", opn); }
-        // Deal with the NewRow argument.
-        double[] newrowdata = R.Store[newrowslot].Data;  int newrowdatalen = newrowdata.Length;
-        // Deal with the RowNo argument. 
-        int rowno = -1;
-        if (opn != 'A') 
-        { if (NoArgs == 3) return Oops(Which, "no row no. was supplied");
-          rowno = Convert.ToInt32(Args[3].X);
-          if (rowno < 0 || rowno >= oldnorows) return Oops(Which, "the row no. (i.e. the 4th. arg.) is out of range");
+      case 308: // LINEFIT ( array XCoords, array YCoords [, scalar virtual_zero] ) -- Finds either the exact straight line fit
+      // (where there are just two points) or the line found by linear regression (least squares method).
+      // 'virtual_zero': where the numerator or the denominator used to calculate the slope of the final line has an absolute value
+      // at or below this, it will be reset to 0. The default is 0. (A negative input value would be reset to 0.) 
+      // RETURNED: An array of 5:  [Slope, YAxisCut, XAxisCut, Angle, Code]. (I chose this order because most times you only want the first 2.)
+      //  Codes are: 0 = a single point, or points evenly arranged around a single point, so that linear regression does not yield a line;
+      //  1 = oblique line (the usual case); 2 = horizontal line; 3 = vertical line. Where no finite value exists, POSINF is always used.
+      //  E.g. with vertical lines, YAxisCut and Slope are both POSINF. 'Angle' is in radians, and always lies in the range -π/2 ≤ Angle ≤ π/2.
+      // CRASHING ERROR: Only occurs if XCoords and YCoords are not equal-length arrays. (But they can have length 1.)
+      // DESIGN POINT: If there are more than 2 points, and they are evenly distributed around some single point, a horizontal line will result,
+      //   even if the Y direction is more extensive than the X direction. Sorry about that, but it is a consequence of the standard linear
+      //   regression algorithm. 
+     {
+        int Xslot = Args[0].I,  Yslot = Args[1].I;
+        if (Xslot == -1 || Yslot == -1) return Oops(Which, "1st. two args. must be arrays");
+        double[] Xdata = R.Store[Xslot].Data,  Ydata = R.Store[Yslot].Data;
+        int dataLen = Xdata.Length;
+        if (Ydata.Length != dataLen) return Oops(Which, "the two arrays must have equal length");
+        double virt_zero = (NoArgs > 2  &&  Args[2].X > 0.0) ?  Args[2].X  :  0.0;
+        double infin = Double.PositiveInfinity;
+        // Find the line:
+        double numerator, denominator;
+        double Xcut, Ycut, Angle, Slope, Code;
+        if (dataLen == 1)
+        { Xcut = infin;  Ycut = infin;  Angle = infin;  Slope = infin;  Code = 0.0;
         }
-       // Deal with the Length argument.
-        int finalrowlen = 0; if (NoArgs > 4) finalrowlen = Convert.ToInt32(Args[4].X);
-        if (finalrowlen < 1) { finalrowlen = oldrowlen; if (finalrowlen < newrowdatalen) finalrowlen = newrowdatalen; }
-       // Deal with the Filler argument.
-        double padvalue = 0.0;  if (NoArgs > 5) padvalue = Args[5].X; // no check for scalarity.
-       // Set up the shell of the new structure:
-        int finalnorows = oldnorows; if (opn != 'O') finalnorows++;
-        int outslot = V.GenerateTempStoreRoom(finalrowlen, finalnorows);
-        R.Store[outslot].IsChars = ischars;
-        double[] outdata = R.Store[outslot].Data;
-        if (padvalue != 0.0) { for (int i=0; i < outdata.Length; i++) outdata[i] = padvalue; }
-       // Copy existing data into outdata: 
-        int copyrowlen = oldrowlen;  if (copyrowlen > finalrowlen) copyrowlen = finalrowlen; // length of old mx. rows to copy.
-        int copyarraylen = newrowdatalen; if (copyarraylen > finalrowlen) copyarraylen = finalrowlen; // length of new row data to copy.
-        if (opn == 'A')
-        { for (int i=0; i < oldnorows; i++) Array.Copy(mxdata, i * oldrowlen, outdata, i*finalrowlen, copyrowlen);
-          Array.Copy(newrowdata, 0, outdata, oldnorows * finalrowlen, copyarraylen);
+        else // 2 or more points:
+        {
+          double avX = 0.0, avY = 0.0;
+          if (dataLen == 2)
+          { numerator = Ydata[1] - Ydata[0];
+            denominator = Xdata[1] - Xdata[0];
+            avX = (Xdata[0] + Xdata[1]) / 2.0;
+            avY = (Ydata[0] + Ydata[1]) / 2.0;
+          }
+          else
+          { double avXX = 0.0, avXY = 0.0;
+            for (int i = 0; i < dataLen; i++)
+            { double xi = Xdata[i], yi = Ydata[i];
+              avX += xi;      avY += yi;
+              avXX += xi*xi;  avXY += xi*yi;
+            }
+            avX /= dataLen;  avY /= dataLen;  avXX /= dataLen;  avXY /= dataLen;  
+            numerator = avXY - avX*avY;
+            denominator = avXX - avX*avX;
+          }
+          // From here on, it is the same for 2 as for more than 2 points.
+          bool numr_is_0  = (numerator <= virt_zero    &&  numerator >= -virt_zero);
+          bool denom_is_0 = (denominator <= virt_zero  &&  denominator >= -virt_zero);
+          if (denom_is_0)
+          { // Vertical line, or no line:
+            if (numr_is_0)
+            { // No line, because points coincide:
+              Xcut = infin;  Ycut = infin;  Slope = infin;  Angle = infin;  Code = 0.0;
+            }
+            else // Vertical line:
+            { Xcut = avX;  Ycut = infin;  Slope = infin;  Angle = Math.PI;  Code = 3.0;
+            }
+          }
+          else if (numr_is_0) // Horizontal line:
+          { Xcut = infin;  Ycut = avY;  Slope = 0.0;  Angle = 0.0;  Code = 2.0;
+          }
+          else // an oblique line:
+          { Slope = numerator / denominator;
+            Ycut = avY - Slope * avX;
+            Xcut = - Ycut / Slope;
+            Angle = Math.Atan(Slope);
+            Code = 1.0;
+          }
         }
-        else if (opn == 'O')
-        { for (int i=0; i < rowno; i++) Array.Copy(mxdata, i * oldrowlen, outdata, i*finalrowlen, copyrowlen);
-          Array.Copy(newrowdata, 0, outdata, rowno * finalrowlen, copyarraylen);
-          for (int i=rowno+1; i < oldnorows; i++) Array.Copy(mxdata, i*oldrowlen, outdata, i*finalrowlen, copyrowlen);
-        }          
-        else // opn == 'I':        
-        { for (int i=0; i < rowno; i++) Array.Copy(mxdata, i * oldrowlen, outdata, i*finalrowlen, copyrowlen);
-          Array.Copy(newrowdata, 0, outdata, rowno * finalrowlen, copyarraylen);
-          for (int i=rowno; i < oldnorows; i++) Array.Copy(mxdata, i*oldrowlen, outdata, (i+1)*finalrowlen, copyrowlen);
-        }          
-        result.I = outslot;   break;
+        result.I = V.GenerateTempStoreRoom(dataLen);
+        R.Store[result.I].Data = new double[] { Slope, Ycut, Xcut, Angle, Code };
+        break;
       }
       case 309: // DIFFERENCES( InArray ) -- Suppose InArray is [a, b, c, d]. Then the return is [b-a, c-b, d-c].
       // Thus, return is one shorter than InArray; it is always a list array, irrespective of structure of InArray.
@@ -3434,21 +3561,22 @@ internal partial class F
       }
 
       case 318: // READTABLE(..) Two versions, differing only in whether args. start with a single 2_row matrix or with two equal list arrays:
-      //  READTABLE( Mx Table,                                 scalar / array InputValue(s), array LookupRule [, scalar StartPtr] ); 
-      //  READTABLE( array InRowOfTable, array OutRowOfTable,  scalar / array InputValue(s), array LookupRule [, scalar StartPtr] ); 
+      //  READTABLE( Mx Table,                                 scalar / array InputValue(s), array LookupRule [, scalar StartPtr [, scalar ErrCode] ); 
+      //  READTABLE( array InRowOfTable, array OutRowOfTable,  scalar / array InputValue(s), array LookupRule [, scalar StartPtr [, scalar ErrCode] ); 
       //  If starts with a 2_row matrix, then row 0 ("in_row") is the row for the input value, and row 1 ("out_row") holds the corresponding
       //    output values; length >= 2. If not, the 1st. arg. is taken as "in_row", the 2nd. (same length) as "out_row".
       //  RETURNS structure of the same dimensionality as InputValue(s), containing table output values.
       //  "InputValues" - if array, any length. (Unlike the next arg., values need not be sorted
       //  "LookupRule" - only the first char. is examined. Allowed values: "=" - returns an out_row value only if the input value exactly matches
-      //     an in_row value; otherwise returns MINREAL. "~" - returns the out_row value corresponding to the nearest in_row value
-      //     to the input; if input is midway between two in_row values, the lower one is used. "L" - linear interpolation; e.g. if input
-      //     is 1/3 between in_row[i] and in_row[i+1], the output will be 1/3 between out_row[i] and out_row[i+1].
+      //     an in_row value; otherwise returns MINREAL (or as below under arg. "ErrCode"). "~" - returns the out_row value corresponding to
+      //     the nearest in_row value to the input; if input is midway between two in_row values, the lower one is used. "L" - linear interpolation;
+      //     e.g. if input is 1/3 between in_row[i] and in_row[i+1], the output will be 1/3 between out_row[i] and out_row[i+1].
       //    If the input value is outside the range of in_row values, extrapolation occurs using the same rule, based on the nearest in_row value(s).
       //  "StartPtr" - If omitted, every search for every input value always starts from first element of in_row (i.e. default StartPtr is 0).
       //    If supplied: (a) if >= 0, is the start pointer in in_row for the search for every element of InputValues.(b) If NEGATIVE, then
       //    it is ASSUMED that InputValues is sorted (duplicates allowed), and every search for InputValues[i] will start from the floor of the
       //    index in in_row that was identified for InputValues[i-1].
+      //  "ErrCode" - Currently the only use of this is for lookup rule '='; if this arg. is present, unmatched values return this rather than MINREAL.
       //  NB: GIGO APPLIES, without error detection, if: (1) in_row is not in ascending order, without duplications; (2) StartPtr is supplied
       //    and is negative, but InputValues is not sorted.
       { int NoArgsForTable;
@@ -3513,7 +3641,8 @@ internal partial class F
           }
           // Assign a return value based on the arguments.
           if (isExact) { floorIndex = firstAtOrAbove;  outputValue = outrowData[firstAtOrAbove + rowOffset]; }   // Same for all lookup rules.
-          else if (lookupRule == 61) outputValue = double.MinValue; // Lookup rule is "=". Note that 'floorIndex' is left as is.
+          else if (lookupRule == 61) // Lookup rule is "=". Note that 'floorIndex' is left as is.
+          { outputValue = (NoArgs > NoArgsForTable + 3) ?  Args[NoArgsForTable + 3].X : double.MinValue; }
           else if (lookupRule == 126) // lookup rule "~" - find nearest value in in_row:
           { if (firstAtOrAbove == StartPtr) // input value below lowest table element consulted
             { floorIndex = StartPtr;  outputValue = outrowData[StartPtr + rowOffset]; }
@@ -3744,9 +3873,7 @@ internal partial class F
         // Valid value from binary operation:
         result.X = (double) lng;   break;
       }
-      //case 326: // EXEC (array FileAndPath [, one or more chars. arrays Arguments [, scalar WaitingMsecs ] ] ). ####OLD
-
-      case 326: // EXEC (.) - Starts a new process, optionally either letting it run independently or waiting for it to colse. Two modes,
+       case 326: // EXEC (.) - Starts a new process, optionally either letting it run independently or waiting for it to colse. Two modes,
       // which differ only in the way in which command line arguments are presented:
       // Mode 1: EXEC(single array WholeCommand [, scalar WaitingMsecs ] ). The one chars. array gets very little parsing here - just
       //   dissects out the file path-and-name, which is delimited by the first space(s) (or by the end of the array, if no such space);
@@ -3840,500 +3967,321 @@ internal partial class F
              // a keypress, the rest of the keypress handler runs; if from the menu, the rest of the menu handler.
              // This is not my fault; this is just how C# works. It then closes down the main form, before finally shutting.
       }  
-      case 328: 
-//////       TABLE: Two different versions, distinguished by the no. of arguments:
-//////       (1) TABLE(scalar TableID, array FileName) -- tries to load a properly formatted Grid and Table from a file.
-//////       (2) TABLE(scalar TableID, matrix Data, array ColumnHeaders) -- sets up a new table with given column headers and table data.
-//////       In both cases, if TableID exists, that form's previous occupant is executed and the new grid and table go into it; otherwise
-//////        a new form is created. Either way, TableID returns.
-//////       CASE 1: The file must be properly formatted - see J_Grid.cs for formatting details. If you saved the table via the grid form's
-//////        menu, it is properly formatted.
-//////       CASE 2: The rows of Data will be the rows of the table, so dimension 0 sets the number of columns. If the third argument is
-//////        scalar, column headings will be blank; if a list array, it will be converted to a string and then split around the TAB character
-//////        (\u0008). If a matrix, rows will be taken as separate column headers (after trimming of chars. 0 to 32). 
-//////        If the number of column headers either way is not exactly right, any shortfall will be replaced by blank headers, any excess 
-//////        will be ignored (no error raised).
-// ############ THE ABOVE IS OF HISTORIC INTEREST ONLY, as the new version is being written...
-      // TABLE (chars. array LayoutString) -- returns table ID.
-      // LayoutStr: E.g. "LL|#[27,10]|LL". Spaces ignored. '|' starts a new horizontal layer. 'L' is label with wrap, 'l' with no wrap.
-      // 'T' an entry box. '#' a table, which must be followed by "[<no. rows>, <no. cols>]". 
+      case 328: // EXPECT_SD(array XX, array YY) -- Given a distribution curve described by these coordinates, return its expectation value and its SD.
+      // To be meaningful, the distribution should look at least vaguely like a Gaussian curve, in particular with proportionately 
+      // few outlying values, or else GIGO applies.
       {
-//        string layoutStr = StoreroomToString(Args[0].I);   if (layoutStr == "") return Oops(Which, "1st. arg. must be an array");
-//        layoutStr = layoutStr._Purge();
-//        string[] layout = layoutStr.Split(new char[] {'|'}, StringSplitOptions.RemoveEmptyEntries);
-//        // Elements of 'layout' are now guaranteed to be nonempty and to contain no chars. below unicode 33.
-//        Tablet Mensa = null;
-//        try
-//        { Mensa = new Tablet("THIS IS THE TITLE", layout, true, -1, -1, "FOO|BAR");  }
-//        catch (Exception e)
-//        { string ss = CleanThrowOutput(e.ToString()); // amputate unnec. junk supplied by Mono.
-//          return Oops(Which, "could not create table: " + ss);
-//        }
-//      
-//
-//        result.X = (double) Mensa.TabletID;
+        int xxslot = Args[0].I, yyslot = Args[1].I;
+        if (xxslot == -1 || yyslot == -1) return Oops(Which, "array args. are required");
+        double[] xxdata = R.Store[xxslot].Data,  yydata = R.Store[yyslot].Data;
+        int datalen = xxdata.Length;
+        if (yydata.Length != datalen) return Oops(Which, "args. must be arrays of equal length");
+        double[] outdata = new double[2];
+        // Compute the expectation value:
+        double sum_numr = 0.0, sum_denom = 0.0;
+        for (int i = 0; i < datalen; i++)
+        { sum_numr += xxdata[i] * yydata[i];
+          sum_denom += yydata[i];
+        }
+        double expecn = sum_numr / sum_denom;        
+        outdata[0] = expecn;        
+        // Compute the standard deviation:
+        double x, sum_numr1 = 0.0;
+        for (int i = 0; i < datalen; i++)
+        { x = xxdata[i] - expecn; 
+          sum_numr1 += yydata[i] * x * x;
+        }
+        outdata[1] = Math.Sqrt(sum_numr1 / sum_denom);
+        result.I = V.GenerateTempStoreRoom(2);
+        R.Store[result.I].Data = outdata;
         break;
       }
-        
-//        Mensa.ShowMe();
-
-//        Tablet Mensa = new Tablet(0, 0, 3, "This is the Window Header", "The Left Header", "The Right Header", 0);
-/*
-        Tabula Mensa = Tabula.GrabTabula(tableID); // If the Tabula form does not yet exist, Mensa will be NULL. We wait
-        if (NoArgs == 2)
-        { int filenmSlot = (int) Args[1].X;
-          if (filenmSlot == -1){ result.S="'table', file-loading version: no file name has been supplied."; result.B = false; return result; }
-          string flnm = StoreroomToString(filenmSlot, true, true);
-          if (Mensa == null)
-          { try { Mensa = new Tabula(MainWindow.ThisWindow, flnm); }
-            catch { result.S = "'table', file-loading version: could not load file."; result.B = false; return result; }
-          }
-          else
-          { result.B = Mensa.ReplaceGrid(flnm);
-            if (!result.B) { result.S = "'table', file-loading version: could not load file.";  return result; }
-          }
+      case 329: // EXPUNGE(array InArray, scalar or array Target [, scalar FromPtr [, scalar Extent ] ] -- in a copy, remove all instances of
+      // Target from the indicated extent of InArray. RETURNS a list array, whatever the input array type; [NaN], if would be an empty array.
+      // No Extent --> go to end of InArray; no FromPtr --> whole array processed.
+      // If only part of a target instance occurs within the indicated range, that instance will not be removed.
+      // Errors: crash if InArray scalar, or FromPtr or Extent negative. No check on arrayhood of last two args. Ranges partly or
+      // wholly out of range --> whatever is in range is processed, without error message; so nothing happens, if all out of range, or Extent 0.
+      {
+        int inSlot = Args[0].I;  if (inSlot == -1) return Oops(Which, "1st. arg. must be an array");
+        StoreItem sitem = R.Store[inSlot];
+        double[] inData = sitem.Data;
+        bool isChars = sitem.IsChars;
+        int inLen = inData.Length;
+        int targetSlot = Args[1].I;
+        // Sort out fromPtr and extent, and only go to the next section if a valid segment of inData is indicated by them:
+        int fromPtr = 0;     if (NoArgs > 2) fromPtr = Convert.ToInt32(Args[2].X);
+        int extent = inLen;  if (NoArgs > 3) extent  = Convert.ToInt32(Args[3].X);
+        if (fromPtr < 0 || extent < 0) return Oops(Which, "start pointer and extent must be nonnegative");
+        Trio tree = JS.SegmentData(inLen, true, fromPtr, extent); // sorts out the various oddities, and leaves you with valid values.
+        if (tree.X == -1) // impossible extent of array, so just return the input data (as a list array).
+        { result.I = V.GenerateTempStoreRoom(inLen);  R.Store[result.I].Data = inData._Copy();  R.Store[result.I].IsChars = isChars;
+          break;
         }
-        else // NoArgs is 3:
-        { int dataSlot = Args[1].I;
-          if (dataSlot == -1 || R.Store[dataSlot].DimCnt != 2){ result.S="'table' 2nd. argument must be a matrix"; result.B = false; return result; }
-          int[] dataDims = R.Store[dataSlot].DimSz;
-          int noRows = dataDims[1],  noCols = dataDims[0];
-          if (noCols < 2 || noCols > 50){ result.S="'table': no. columns must lie between 2 and 50"; result.B = false; return result; }
-          double[] inData = R.Store[dataSlot].Data;
-//############## REWRITE THIS METHOD to allow for string columns, and in the process ADAPT Table.RowFromNumbersOnly, called 26 lines below
-          Table table = new Table(noCols, null);//#######Eh? What's this NULL bit?
-          string[] colHeadings = new string[noCols];
-          for (int i=0; i < noCols; i++) table.ColDataType[i] = 'N';
-          if (NoArgs > 2)
-          { int hdgSlot = Args[2].I;
-            int dim1 = R.Store[hdgSlot].DimSz[1];
-            bool isListArray = (dim1 == 0);
-            string[] hdgs;
-            if (isListArray)
-            { string stroo = StoreroomToString(hdgSlot); // untrimmed string.
-              hdgs = stroo.Split(new char[] {'\t'}); // there will be one almighty long heading if there are no tabs in the string.
-            }
-            else // assume a matrix: (too bad, if there are more than 2 dims.)
-            { int dim0 = R.Store[hdgSlot].DimSz[0];
-              hdgs = new string[dim1];
-              for (int i=0; i <dim1; i++)
-              { hdgs[i] = StoreroomToString(hdgSlot, i*dim0, dim0, true, true); // bools = headings are trimmed of chars. 0 to 32.
+        fromPtr = tree.X;   int toPtr = tree.Y;   extent = tree.Z;
+        // Valid segment of array. If there is data before fromPtr, stick it in:
+        List<double> outList = new List<double>(inLen);
+        if (fromPtr > 0) outList.AddRange(inData._Copy(0, fromPtr));
+
+        // Scalar target:
+        if (targetSlot == -1)
+        { double targ = Args[1].X;
+          for (int i=fromPtr; i <= toPtr; i++)
+          { if (inData[i] != targ) outList.Add(inData[i]); }
+        }
+        // Array target:
+        else
+        { double[] target = R.Store[targetSlot].Data;
+          int targLen = target.Length;
+          double firstVal = target[0];
+          int ptr = fromPtr;
+          while (ptr <= toPtr - targLen + 1)
+          { if (inData[ptr] == firstVal)
+            { bool isMatch = true;
+              for (int j = 1; j < targLen; j++)
+              { if (inData[ptr+j] != target[j]) { isMatch = false;  break; }
+              }
+              if (isMatch) ptr += targLen; // skip over the matching length, recording nothing in outList.
+              else // not a find, so add it to outList:
+              { outList.Add(inData[ptr]);
+                ptr++;
               }
             }
-            int minnow = Math.Min(hdgs.Length, noCols);
-            for (int i=0; i < minnow; i++) colHeadings[i] = hdgs[i];
+            else // not a find, so add it to outList:
+            { outList.Add(inData[ptr]);
+              ptr++;
+            }
           }
-          Boost outcome;
-          double[] rowData = new double[noCols];
-          for (int i=0; i < noRows; i++)
-          { Array.Copy(inData, i*noCols, rowData, 0, noCols);
-            table.Data.SetRow(Table.RowFromNumbersOnly(table, rowData, out outcome), -1, 'A'); // append the new row
-          }
-          table.ColHdrText = colHeadings;
-          DGVClass DGV = new DGVClass(noCols, ref table);
-          if (Mensa == null)
-          { Mensa = new Tabula(MainWindow.ThisWindow, DGV, "C:/MiniMaths/Tables");
-          }
-          else // table identified:
-          { Mensa.ReplaceGrid(DGV);
+          // Now add on any nonmatch characters left at the end of the string:
+          for (int i = ptr; i <= toPtr; i++)
+          { outList.Add(inData[i]); }
+
+        }
+        // If there is data after the segment of the input array, tack it onto the end:
+        if (toPtr < inLen-1) outList.AddRange(inData._Copy(toPtr+1));
+        // Set up the output and go home:
+        double[] outData = null;
+        if (outList.Count == 0) outData = new double[] { double.NaN };
+        else outData = outList.ToArray();
+        result.I = V.GenerateTempStoreRoom(outData.Length);
+        R.Store[result.I].Data = outData;
+        R.Store[result.I].IsChars = isChars;
+        break;
+      }
+      case 330: // EXPUNGE_RANGE (array InArray, scalar LowestToGo, scalar HighestToGo) --
+      // Return a list array, being a copy of InArray's data with all values within the given range (inclusive of limits) removed.
+      // If all values have been removed, instead return the array [NaN].
+      {
+        int inSlot = Args[0].I;  if (inSlot == -1) return Oops(Which, "1st. arg. must be an array");
+        StoreItem sitem = R.Store[inSlot];
+        double[] inData = sitem.Data;
+        bool isChars = sitem.IsChars;
+        int inLen = inData.Length;
+        if (Args[1].I >= 0  ||  Args[2].I >= 0) return Oops(Which, "2nd. and 3rd. args. must be scalars");
+        double x,  LimitLo = Args[1].X,  LimitHi = Args[2].X;
+        List<double> foo = new List<double>(inLen);
+        for (int i=0; i < inLen; i++)
+        { x = inData[i];
+          if (x < LimitLo  ||  x > LimitHi) foo.Add(x);
+        }
+        double[] outdata;
+        if (foo.Count == 0) outdata = new double[] {double.NaN};
+        else outdata = foo.ToArray();
+        result.I = V.GenerateTempStoreRoom(outdata.Length);
+        R.Store[result.I].Data = outdata;
+        R.Store[result.I].IsChars = isChars;
+        break;
+      }
+      case 331: // SWING(.) - Three forms. In each case, ALL args must either be scalar or be arrays (any structure) all of the same length.
+      // (1) SWING(Xto, Yto): the angle(s) of rotation made by the unit vector on the X axis to position vector {origin to (Xto,Yto)}.
+      // (2) SWING(Xto, Yto, Xfrom, Yfrom): the angle(s) of rotation from the vector(s) {origin to Xfrom, Yfrom} 
+      //        to the vector(s) {origin to Xto, Yto}.
+      // (3) SWING(Xto, Yto, Xfrom, Yfrom, Xpivot,Ypivot): as (2), replacing origin by (Xpivot,Ypivot).
+      { if (NoArgs % 2 != 0) return Oops(Which, "there must be exactly 2, 4 or 6 arguments");
+        bool isScalar = (Args[0].I == -1);
+        // check that all args. are either scalar or arrays:
+        for (int i=1; i < NoArgs; i++) { if (isScalar ^ Args[i].I == -1) return Oops(Which, "The args. must be either all scalar or all arrays"); }
+           // No test for equal lengths; this is done inside all versions of JM.RotationAngles(.) called below.
+        // Arguments are OK:
+        if (isScalar) 
+        { double toX = Args[0].X,  toY = Args[1].X;
+          if (NoArgs == 2) {  result.X = Math.Atan2(toY, toX);  break; }
+          double fromX = Args[2].X, fromY = Args[3].X, pivotX = 0.0, pivotY = 0.0;
+          if (NoArgs == 6) { pivotX = Args[4].X;  pivotY = Args[5].X; }
+          result.X = JM.RotationAngle(fromX, fromY, toX, toY, pivotX, pivotY); break;
+        }
+       // If got here, the args. are all arrays:
+        double[] Xto, Yto, Xfrom, Yfrom, Xpivot, Ypivot;
+        double[] outdata;
+        Xto = R.Store[Args[0].I].Data; Yto = R.Store[Args[1].I].Data; 
+        if (NoArgs == 2) outdata = JM.RotationAngles(Xto, Yto);
+        else
+        { Xfrom = R.Store[Args[2].I].Data;    Yfrom = R.Store[Args[3].I].Data;
+          if (NoArgs == 4) outdata = JM.RotationAngles(Xfrom, Yfrom, Xto, Yto);
+          else // 6 args:
+          { Xpivot = R.Store[Args[4].I].Data;    Ypivot = R.Store[Args[5].I].Data; 
+            outdata = JM.RotationAngles(Xfrom, Yfrom, Xto, Yto, Xpivot, Ypivot);
+        } }
+        if (outdata == null) return Oops(Which, "the array args. must all have the same length");
+        result.I = V.GenerateTempStoreRoom(outdata.Length);
+        R.Store[result.I].Data = outdata;
+        break;
+      }
+      case 332: // LIST_OPN( scalar ListNo, scalar Pointer, array Operation, scalar SecondValue [, DontAlterList] )
+      // Operates on this list's [Pointer] value, using Second Value if a binary operation (ignored, for unary ops, but a dummy must go there).
+      // Op.[0] must be one of: " + - * / ^ A B S " (A = Absolute value;  B = Boolean value;  S = Sign(zero --> I.V.).
+      // If final arg. missing or zero, replaces the old value in the list with the new; in any case, it returns the new value.
+      // Crashes if ListNo doesn't exist or if Pointer is out of range or Opn[0] unrecognized.
+      { int listno = (int) Args[0].X;
+        if (Sys == null || listno < 0 || listno >= NoSysLists) return Oops(Which, "list {0} does not exist", listno);
+        int listlen = Sys[listno].LIST.Count,  ptr = (int) Args[1].X;
+        if (ptr < 0 || ptr >= listlen) return Oops(Which, "the pointer is out of range");
+        int opslot = Args[2].I; if (opslot == -1) return Oops(Which, "the third arg. must be an array");
+        int n = (int) R.Store[opslot].Data[0];
+        char Op = (char) n;
+        double X = Sys[listno].LIST[ptr];
+        double Y = Args[3].X,  Z=0;
+        if (Op == '+') Z = X+Y;  else if (Op == '-') Z = X-Y;  else if (Op == '*') Z = X*Y;
+        else if (Op == '/') { if (Y == 0.0) { result.S = "divn. by 0"; result.B = false; } else Z = X/Y; }
+        else if (Op == '^') 
+        { if ( X < 0 && Y != Math.Round(Y) ) { result.S = "improper power opn."; result.B = false; } 
+          else Z = Math.Pow(X,Y); 
+        }
+        else if (Op == 'A' || Op == 'a') Z = Math.Abs(X);
+        else if (Op == 'B' || Op == 'b') { if (X == 0.0) Z = 0.0; else Z = 1.0; }
+        else if (Op == 'S' || Op == 's') { if (X > 0.0) Z = 1.0; else if (X < 0.0) Z = -1.0; else Z = Y; }
+        else { result.S = "'list_opn': operation not identified"; result.B = false; return result; }
+        if (!result.B) { result.S = "'list_opn': " + result.S; return result; }
+        if (NoArgs > 4 && Args[4].X != 0.0) Sys[listno].LIST[ptr] = Z;
+        result.X = Z;  break; 
+      }
+      case 333: // ICON (array / scalar FileName) -- VOID. Tries to load icon to top left of the main window of the running program.
+      //   FileName - If no path, CurrentDataPath will be applied. Path shortcuts recognized: "~/", "./", "../".
+      //     Leading and trailing white spaces and char. '\u0000' are trimmed off FileName before use.
+      //     If FileName is scalar, or just space(s) OR "?", opens a file-chooser dialog box at current path. If FileName is a directory,
+      //     opens dialog box there. Does not crash; displays a dialog box if file can't be loaded.
+      { string filename = StoreroomToString(Args[0].I, true, true);
+        string finalFolder = " ";
+        string[] flame = filename._ParseFileName(MainWindow.ThisWindow.CurrentPath);
+        if (filename == "" || filename[0] == '?' || flame[1] == "") // Then a dialog box is required:
+        { Gtk.FileChooserAction action = Gtk.FileChooserAction.Open;
+          string filepath = flame[0]; if (filepath == "") filepath = MainWindow.ThisWindow.CurrentPath;
+          Gtk.FileChooserDialog fc = new Gtk.FileChooserDialog("SEEK ICON FILE", null,
+               action, "Cancel", Gtk.ResponseType.Cancel, "Open", Gtk.ResponseType.Accept);
+          fc.SetCurrentFolder(filepath);
+          int outcome = fc.Run();
+          filename = fc.Filename;
+          finalFolder = fc.CurrentFolder;
+          if (finalFolder._Last() != '/') finalFolder += '/';
+          fc.Destroy(); // Without this, the FileChooserDialog window won't get closed.
+          if (outcome != (int) Gtk.ResponseType.Accept || filename.Trim() == "")
+          { break;
           }
         }
-        Mensa.Visible = true;
-        result.X = Mensa.ID;
-        */
-
-      case 329: // TABLEGET: Two forms, based on the no. of args., 3 or 6 (always scalar):
-      // Case 1 - TABLEGET(scalar TableID, scalar Row, scalar Column):
-      //  Always returns a list array. For cells of type 'N' or 'D', it always has length 1; for the remaining types 'S' and '=',
-      //  it always has length 2 or more (empty or single-char. strings being padded with terminal space(s)).
-      //  NO latitude allowed for Row / Col args, which MUST refer to an existing location.
-      // Case 2 - TABLEGET(scalar TableID, scalar FirstRow, scalar LastRow, scalar FirstColumn, scalar LastColumn, scalar StringMarker):
-      // Always returns a matrix, being a subset of the table. If the whole table, it will be the table reproduced as a matrix. If a
-      //  rectangular subset of the table, it will be a matrix of the size of the rectangle. If a single column of length N, it will be
-      //  an Nx1 matrix; if a single row, a 1xN matrix; if a single cell, a 1x1 matrix. Any cell that is of type 'S' or '=' will have
-      //  StringMarker substituted for its contents. The literal contents cannot be retrieved using this version; case 2 must be used.
-      //  Row / Col args: LastRow excessive or negative (usually use -1), sets to the last row of the table; LastColumn analogously.
-      //   but FirstRow or firstCol out of range is not tolerated (error).
-      // For both cases, dates are returned as the double version of what JS.DateToString(.) produces.
-      // ERRORS raised if (1) arguments are not scalar; (2) the table is not identifiable; (3) pointers cross; (4) [in case 2, after 
-      //  automatic row/col adjustments:] Row or Col arg. is out of range.
-      { break; //########### NOTHING DOING AT PRESENT ###########
-//  int n = F.ArgTypesCode(Args);
-//        bool isShortForm = (n == 111);
-//        if (!isShortForm && n != 111111) {result.S = "'tableget': must be exactly 3 or 6 args. which are all scalar"; result.B = false; return result; }
-//        Tabula Mensa = Tabula.GrabTabula( (int) Args[0].X);
-//        if (Mensa == null) { result.B = false;  result.S = "'tableget': can't identify the table"; return result; }
-//        Table table = Mensa.DGV.CurrentTable;
-//        if (isShortForm)
-//        { int thisRow = (int) Args[1].X,  thisCol = (int) Args[2].X;
-//          if (thisRow < 0 || thisRow >= table.Data.DataLength)
-//          { result.B = false;  result.S = "'tableget': row arg. (" + thisRow.ToString() + ") out of range"; return result; }
-//          if (thisCol < 0 || thisCol >= table.NoCols)
-//          { result.B = false;  result.S = "'tableget': column arg. (" + thisCol.ToString() + ") out of range"; return result; }
-////############## Skip the above tests, using the tests of 'GetData' below, instead.
-//          double[] outstuff = TCell.ToDoubleArray(table.Data.GetData(thisRow, thisCol) );
-//          result.I = V.GenerateTempStoreRoom(outstuff.Length);
-//          R.Store[result.I].Data = outstuff;
-//          break;
-//        }
-//        // To get here, this must be Case 1 - the 'long form':
-//        int firstRow = (int) Args[1].X,  lastRow = (int) Args[2].X, firstCol = (int) Args[3].X,  lastCol = (int) Args[4].X;
-//        int rowCount = table.Data.DataLength,  colCount = table.NoCols;
-//       // adjust errant arguments as possible:
-//        if (firstRow < 0 || firstCol < 0)
-//        { result.B = false;
-//          result.S = "'tableget': either FirstRow (" + firstRow.ToString() + ") or FirstCol(" + firstCol.ToString() + ") is negative"; return result;
-//        }
-//        if (lastRow < 0 || lastRow >= rowCount) lastRow = rowCount-1;
-//        if (lastCol < 0 || lastCol >= colCount) lastCol = colCount-1;
-//        int extentRows = lastRow - firstRow + 1,   extentCols = lastCol - firstCol + 1;
-//        if (extentRows < 1)
-//        { result.B = false;  result.S = "'tableget': row pointers (" + firstRow + ", " + lastRow + ") cross"; return result; }
-//        if (extentCols < 1)
-//        { result.B = false;  result.S = "'tableget': column pointers (" + firstCol + ", " + lastCol + ") cross"; return result; }
-//        double[] data = new double[extentRows * extentCols];
-//        int offset;
-//        double stringMarker = Args[5].X;
-//        for (int rw = firstRow; rw <= lastRow; rw++)
-//        { offset = extentCols * (rw - firstRow); // offset relative to the output matrix, not to the table
-//          for (int cl = firstCol; cl <= lastCol; cl++)
-//          { TCell cell = table.Data.GetData(rw, cl);
-//            n = offset + cl - firstCol;
-//            if      (cell.Kind == 'N')  data[n] = cell.N;
-//            else if (cell.Kind == 'D')  data[n] = (double) JS.DateToInteger(cell.D);
-//            else                        data[n] = stringMarker;
-//          }
-//        }
-//        int outslot = V.GenerateTempStoreRoom(extentCols, extentRows);
-//        data.CopyTo(R.Store[outslot].Data, 0);
-//        result.I = outslot;  break;
-      }
-      case 330: // TABLESET: Two forms, based on form of last arg. Both forms VOID. This is because in both forms, ALL ARG. ERRORS CRASH;
-      // no arg. adjustments are made. So you don't need a boolean return for 'success' - if the program is still going, you had success!
-      // Case 1 - TABLESET(scalar TableID, scalar Row, scalar Column, scalar/array Value):
-      // Distinguished by the last arg. being EITHER a scalar OR one of: (list array, 1xN vector, Nx1 vector).
-      // No latitude for incorrect arguments, which always cause a crash. 'Value' must fit the cell type. If 'D' or 'N', it must
-      // be scalar; if 'S' or '=', it must be an array (whatever its form, it is taken as a list array of chars. type). If 'D',
-      // it must be convertible to a date using JS.DateFromInteger(.).
-      // Case 2 - TABLESET(scalar TableID, scalar FirstRow, scalar FirstColumn, matrix Data )
-      // Distinguished by the last arg. being a MATRIX MxN where BOTH M and N are 2 or more:
-      // the matrix must be able to overlay the table without overlap. If cell type is 'D' or 'N', data is handled as for Case 1. If cell
-      // type is '=' or 'S', however, the datum - a single element of the input matrix - is interpreted as a character, and that char.
-      // is implanted. (There is no way of implanting, say, a column of strings, other than by recurrently calling the Case 1 form.
-      // MiniMaths really isn't about to be optimized for string-handling - it is a maths program.)
-      // NB - Case 2 can't be used to append data to the table.
-      { // ################ NOTHING DOING AT PRESENT ###########################
-//      {// Collect all the arguments up front:
-//        Tabula Mensa = Tabula.GrabTabula( (int) Args[0].X);
-//        if (Mensa == null) { result.S = "'tableset': can't identify the table";  result.B = false;  return result; }
-//        int n = F.ArgTypesCode(Args);
-//        if (n > 1112) // only possibilities not included are 1111 and 1112
-//        { result.S = "'tableset': argument scalar/array typing is wrong somewhere";  result.B = false;  return result; }
-//        int row = (int) Args[1].X, column = (int) Args[2].X;
-//        Table table = Mensa.DGV.CurrentTable;
-//        int rowCount = table.Data.DataLength,  colCount = table.NoCols;
-//        if (row < 0 || row >= rowCount){ result.S = "'tableset': row number (" + row.ToString() + ") is out of range";  result.B = false;  return result; }
-//        if (column < 0 || column >= colCount){ result.S = "'tableset': column number (" + column.ToString() + ") is out of range";  result.B = false;  return result; }
-//        int dataSlot = Args[3].I;
-//        // Decide between case types:
-//        double datum=0;
-//        int[] dims = null;
-//        bool isCase1 = (Args[3].I == -1); // will end up TRUE if 4th. arg is scalar OR list array or 1xN or Nx1.
-//        if (isCase1) datum = Args[3].X;
-//        else
-//        { dims = R.Store[dataSlot].DimSz;
-//          if (dims[2] != 0){ result.S = "'tableset': data array cannot have more than 2 dimensions";  result.B = false;  return result; }
-//          isCase1 = (dims[1] <= 1 || dims[0] == 1);
-//          datum = R.Store[dataSlot].Data[0];
-//        }
-//        double n_data;  DateTime d_data;  string s_data;  Boost boo;
-//        // CASE 1:
-//        if (isCase1)
-//        { char kind = table.Data.GetData(row, column).Kind;
-//          n_data = 0;  d_data = DateTime.MinValue;  s_data = null; // needed as dummy args. for .Implant(.) below.
-//          if (dataSlot == -1) // scalar argument:
-//          { if (kind == 'N') n_data = datum;
-//            else if (kind == 'D')
-//            { d_data = JS.DateFromInteger( (int) datum, out result.B);
-//              if (!result.B) { result.S = "'tableset': could not translate " + datum.ToString() + " to a date"; return result; }
-//            }
-//            else { result.B = false; result.S = "'tableset': data mismatch (scalar data for a string-type table cell)"; return result; }
-//          }
-//          else // array supplied:
-//          { if (kind == 'S' || kind == '=') s_data = StoreroomToString(dataSlot, true, true); // bools = trim both ends.
-//            else { result.B = false; result.S = "'tableset': data mismatch (array data for a numerical or date-type table cell)"; return result; }
-//          }
-////######## REPLACE THIS WITH A CALL TO OTHER METHODS FOR INSTALLING CELL OR ROW DATA (table.Data.SetRow, SetData).
-//////          boo = Mensa.DGV.Implant(n_data, d_data, s_data, kind, row, column);
-//boo.B = true; boo.S = ""; //############### To stop the compiler complaining till I can get back to repair this stuff.
-//          if (!boo.B) { result.B = false; result.S = "'tableset': " + boo.S; return result; } // should never occur, after above checks.
-//          break;
-//        }
-//        // CASE 2: (if got here)
-//        double[] MxData = R.Store[dataSlot].Data;
-//        int firstTableRow = row, firstTableCol = column; // just to make the program more readable below.
-//        int cellRow, cellCol;
-//        int noMxRows = dims[1], noMxCols = dims[0];
-//        if (firstTableRow + noMxRows > rowCount){ result.B = false; result.S = "'tableset': data would exceed last row of table"; return result; }
-//        if (firstTableCol + noMxCols > rowCount){ result.B = false; result.S = "'tableset': data would exceed last column of table"; return result; }
-//        for (int rw = 0; rw < noMxRows; rw++)
-//        { int MxOffset = rw * noMxCols;
-//          for (int cl=0; cl < noMxCols; cl++)
-//          { n_data = 0;  d_data = DateTime.MinValue;  s_data = null; // needed as dummy args. for .Implant(.) below.
-//            datum = MxData[MxOffset + cl];
-//            cellRow = firstTableRow + rw;   cellCol = firstTableCol + cl;
-//            TCell cell = table.Data.GetData(cellRow, cellCol);
-//            char kind = cell.Kind;
-//            if (kind == 'N') n_data = datum;
-//            else if (kind == 'D')
-//            { d_data = JS.DateFromInteger( (int) datum, out result.B);
-//              if (!result.B) { result.S = "'tableset': could not translate " + datum.ToString() + " to a date"; return result; }
-//            }
-//            else s_data = ( ( (int) datum)._ToChar(32) ).ToString(); // type 'S' or '='. Values outside the range 0 to 0xffff default to space (char. 32).
-////######## REPLACE THIS WITH A CALL TO OTHER METHODS FOR INSTALLING CELL OR ROW DATA (table.Data.SetRow, SetData).
-//////            boo = Mensa.DGV.Implant(n_data, d_data, s_data, kind, cellRow, cellCol);
-//boo.B = true; boo.S = ""; //############### To stop the compiler complaining till I can get back to repair this stuff.
-//            if (!boo.B) { result.B = false; result.S = "'tableset': " + boo.S; return result; } // should never occur, after above checks.
-//          }
-//        }
-        break;
-      }  
-      case 331: // PLACETABLE(scalar TableID , One value [, a 2nd. value] ) -- two forms, depending on the number of values:
-      // Form (1): 'placetables(TableID, any value)' - only one value after the ID. If that value is nonzero, the table is maximized;
-      //  if zero, it is put into 'normal' mode and goes wherever Windows feels like putting it.
-      // Form (2):  'placegraphs(TableID, X, Y)' - two values after the ID. They decree the table form's top left corner. 
-      //  If either value is negative, the form is centred in that dimension; e.g. "(placegraphs(ID, -1, 50)" centres it horizontally 
-      //  and puts the top edge 50 pixels from the screen top; (..-1, -1) centres the form in the screen.
-      // No errors crash. If X or Y are too high, they are adjusted back to put the box at the extreme left and/or bottom.      
-      { // ################ NOTHING DOING AT PRESENT ###########################
-//      { double[] values = AccumulateValuesFromArgs(Args);
-//        Tabula Mensa = Tabula.GrabTabula( (int) values[0]);  if (Mensa == null) break;
-//        if (values.Length == 2) // maximize or 'normalize':
-//        { if (values[1] != 0.0) Mensa.WindowState = System.Windows.Forms.FormWindowState.Maximized;
-//          else Mensa.WindowState = System.Windows.Forms.FormWindowState.Normal;
-//        }
-//        else
-//        { Mensa.WindowState = System.Windows.Forms.FormWindowState.Normal;
-//          int X = (int) values[1], Y = (int) values[2];
-//          int hSlack = MainWindow.ScreenWidth - Mensa.Width, vSlack = MainWindow.ScreenHeight - Mensa.Height;
-//          if (X < 0) X = hSlack / 2;  else if (X > hSlack) X = hSlack;
-//          if (Y < 0) Y = vSlack / 2;  else if (Y > vSlack) Y = vSlack;
-//          Mensa.StartPosition = System.Windows.Forms.FormStartPosition.Manual;
-//          Mensa.Location = new Point(X, Y);
-//        }
-        break;
-      }  
-      case 332: // KILLTABLE(any no. values as scalars or arrays) -- For every value that can be identified, that table will be slaughtered.
-      // Values not corresponding to table IDs are ignored, EXCEPT that if there is a single scalar argument 0 - usually invoked by
-      // "killtable();" - then ALL tables extant will be destroyed.
-      { // ################ NOTHING DOING AT PRESENT ###########################
-//      { double[] doomed = AccumulateValuesFromArgs(Args);
-//        if (doomed.Length == 1 && doomed[0] == 0.0) // then kill the lot:
-//        { Tabula.DisposeOfAll();  break; }
-//        // List of the doomed supplied:
-//        for (int i=0; i < doomed.Length; i++)
-//        { Tabula.DisposeOf( (int) doomed[i]); } // no need to get the boolean return; if no such tabula form, no harm done.
-        break;
-      }  
-      case 333: // TABLEAPPEND(scalar TableID, variable Dummy) -- If one argument, appends a data row to the table; if two, appends a
-      // subheading row, independent of the type or value of that second argument. If the table exists, returns 1; otherwise 0 (and
-      // does nothing). Note that there is no function (yet) for appending a row filled with data; you have to add an empty row, then
-      // fill it using 'tableset(.)'.
-      { break; // ################ NOTHING DOING AT PRESENT ###########################
-//      { Tabula Mensa = Tabula.GrabTabula( (int) Args[0].X);   if (Mensa == null) break;
-//        if (NoArgs == 1) Mensa.DGV.SetGridAndTableRow(null, -1, 'A'); // empty data row appended
-//        else Mensa.DGV.SetGridAndTableRow(Mensa.DGV.CurrentTable.Data.EmptySubheadingRow(), -1, 'A'); // empty subheading row appended.
-//        result.X = 1.0;    break;
-//      }
-//      case 334: //TABLECALL(scalar TableID) -- If the table does not exist, returns an array of size 1, value 0, isDummyArray TRUE.
-//      // If the table exists but there have been no calls, it still returns an array of size 1, but [0] is -1, and isDummyArray remains false.
-//      // If a call found on stack, an array is returned of length at least , and with the following elements:
-//      // [0] = action no. (an integer  >= 1); [1] = row no., [2] = column no.; [3] = no. calls remaining on the stack (this one having
-//      //  been automatically removed by this call); [4] = cell kind: 0 for string, 1 for number, 2 for date. If a number or date,
-//      // [5] is that number or date (the date being translated into an integer by JS.DateToInteger(.)). If a string, [5] onwards contains
-//      // the string (i.e. its unicode values). If the table contained an empty string, [5] will be 0.
-//      // Note that subheading rows don't raise edit calls.
-//      { int outslot;
-//        Tabula Mensa = Tabula.GrabTabula( (int) Args[0].X);
-//        if (Mensa == null) { result.I = V.GenerateTempStoreRoom(1);  IsDummyArray = true;  break; }
-//        int row, column, action;  TCell cell;
-//        int noLeft = Mensa.DGV.PopOnEditCall(out row, out column, out cell, out action);
-//        if (noLeft == -1) { result.I = V.GenerateTempStoreRoom(1);  R.Store[result.I].Data[0] = -1;  break; }
-//        // A call found on the stack:
-//        if (cell.Kind == 'N' || cell.Kind == 'D')
-//        { outslot = V.GenerateTempStoreRoom(6);
-//          double[] doo = R.Store[outslot].Data;
-//          doo[0] = action;  doo[1] = row;  doo[2] = column;  doo[3] = noLeft;
-//          if (cell.Kind == 'N'){ doo[4] = 1.0;  doo[5] = cell.N; }
-//          else { doo[4] = 2.0;  doo[5] = JS.DateToInteger(cell.D); }
-//        }
-//        else // kind 'S':
-//        { string ss = cell.S;  if (ss == "") ss = ('\u0000').ToString();
-//          double[] diddle = StringToStoreroom(-1, ss);
-//          outslot = V.GenerateTempStoreRoom(5 + diddle.Length);
-//          double[] doo = R.Store[outslot].Data;
-//          doo[0] = action;  doo[1] = row;  doo[2] = column;  doo[3] = noLeft;  doo[4] = 0.0;
-//          Array.Copy(diddle, 0, doo, 5, diddle.Length);
-//        }
-//        result.I = outslot;  break;
-      }
-      case 335: //TABLEINFO(scalar TableID, array WhichInfo) -- Always returns an array. If the table does not exist, returns an array 
-      // of size 1, value 0, isDummyArray TRUE. If WhichInfo not a legitimate value, simply crashes. In all other cases returns the
-      // array dictated by WhichInfo. Values give the following returns ('[..]' indicates optional extensions; only the part before this
-      // is checked). All are case-sensitive, sadly.
-      // 'a[ccess]' -- array of letters, no delimiters ('N', 'E' 'F')
-      // 'd[imensions]' -- [0] = no. rows, [1] = no. columns in the table (one less than in the visible grid).
-      // 'e' -- OnEdit cues for column entries (0 = no cue; 1+ = no. of cue)
-      // 'f[ormat]' -- column formatting strings,  delimited by '\t' (char. 9).
-      // 'h[eadings]' -- array of chars., delimited by '\t' (char. 9).
-      // 'iv' [indent values] -- array of DGV.Indent[col].I integers; to be coupled with...
-      // 'is' [indent strings] -- array of DGV.Indent[col].S strings, delimited by the TAB char.; to be coupled with the above.
-      // 's[uppress default]' -- array of 1 (true) and 0 (false).
-      // 't[runcate]' -- array copying the integers from table's ColTruncate array; truncates in the table proper (not just the display).
-      // 'w' -- column width ratios.
-      { break; // ################ NOTHING DOING AT PRESENT ###########################
-//      { Tabula Mensa = Tabula.GrabTabula( (int) Args[0].X);
-//        if (Args[1].I == -1 || Mensa == null) { result.I = V.GenerateTempStoreRoom(1);  IsDummyArray = true;  break; }
-//        double[] whichInfo = R.Store[Args[1].I].Data;
-//        int c1 = (int) whichInfo[0];
-//        double c2;
-//        if (whichInfo.Length > 0) c2 = whichInfo[1]; else c2 = 0.0;      
-//        string ss;  int n;
-//        double[] outdata = null;
-//        Table table = Mensa.DGV.CurrentTable;
-//        bool allOk = true; // NB: Put in 'allOk = false;' at the end of each 'case' containing options based on c2.
-//        switch (c1)
-//        { case 97: // 'a': column access
-//            ss = Mensa.DGV.ColumnEditable._ToString();
-//            outdata = StringToStoreroom(-1, ss);   break;
-//          case 100: // 'd':
-//            if      (c2 == 105.0) outdata = new double[] {table.Data.DataLength, table.NoCols}; // "di[mensions of the table]"
-//            else if (c2 == 97.0) outdata = StringToStoreroom(-1, table.ColDataType._ToString());// "da[ta type}"
-//            else allOk = false; 
-//            break;
-//          case 101: // 'e': OnEdit cues (0 = no cue, 1+ is cue no.)
-//            outdata = Mensa.DGV.OnEdit._ToDubArray();  break;
-//          case 102: //'f': Format strings for grid display of data
-//            ss = String.Join("\t", table.ColFmt);
-//            outdata = StringToStoreroom(-1, ss);   break;
-//          case 104: // 'h': Column headings
-//            ss = String.Join("\t", table.ColHdrText);
-//            outdata = StringToStoreroom(-1, ss);   break;
-//          case 105: // 'i': Indenting data;
-//            if (c2 == 118.0)  // "i[ndent] v[alue]": .I fields of the Strint objects
-//            { outdata = new double[table.NoCols];
-//              for (int i=0; i < outdata.Length; i++) outdata[i] = (double) Mensa.DGV.Indent[i].I;
-//            }
-//            else if (c2 == 115.0) //"i[ndent] s[tring]": .S fields of the Strint objects
-//            { string[] stroo = new string[table.NoCols];
-//              for (int i=0; i < stroo.Length; i++) stroo[i] = Mensa.DGV.Indent[i].S;
-//              outdata = StringToStoreroom(-1, String.Join("\t", stroo));
-//            }
-//            else allOk = false; 
-//            break;
-//          case 115: // 's' : Suppress default (true = don't show the value in the grid, if it is the default value)
-//            bool[] sup = table.SuppressDef;  n = sup.Length;
-//            outdata = new double[n];
-//            for (int i=0; i < n; i++) if (sup[i]) outdata[i] = 1.0;
-//            break;
-//          case 116: // 't': Truncating of table data
-//            outdata = table.ColTruncate._ToDubArray();  break;
-//          case 119: // 'w': column width ratios
-//            outdata = Mensa.DGV.WidthFraction; break;
-//            
-//            
-//          default: allOk = false; break;
-//        }
-//        if (!allOk) { result.I = V.GenerateTempStoreRoom(1);  IsDummyArray = true;  break; }
-//        result.I = V.GenerateTempStoreRoom(outdata.Length);
-//        R.Store[result.I].Data = outdata;  break;
-      }
-      case 336: // TABLESETPARAM(scalar TableID, array WhichParam, values NewValues) -- VOID.
-      // Sets a parameter. Errors all crash, so it may be helpful to use 'errortrap(.)' to avoid a program crash.
-      // NewValues will be collected into a single double array. It must have the length required by the parameter. Its char. rating
-      //  is not checked; values are interpreted in the way that WhichParams dictates.
-      // WhichParam values are as follows. ('[..]' indicates optional extensions; only the part before this is checked. Case-sensitive.)
-      // 'a[ccess]' -- NewValues = array made up of letter unicodes of 'N', 'E' 'F' only (no delimiter).
-      // 'e' -- NewValues = OnEdit cues for column entries (0 = no cue; 1+ = no. of cue)
-      // 'f[ormat]' -- NewValues = column formatting strings,  delimited by '\t' (char. 9).
-      // 'h[eadings]' -- NewValues = array of chars., delimited by '\t' (char. 9).
-      // 'i'[indent] -- NewValues = array made up as follows: there are as many sequences as there are columns, the sequences being
-      //    delimited by '|' (character 124); each sequence starts with an integer (would rarely be more than 10, should never anywhere near
-      //    124) - Indent[i].I - and continues with Indent[i].S chars. (The usual delim '\t' can't be used, as Indent[i].I can be 9.)
-      // 's[uppress default]' -- NewValues = array of 1 (true) and 0 (false).
-      // 't[runcate]' -- NewValues = array of integers, defining how the table proper will truncate numbers (not just the display).
-      // 'w' -- NewValues = column width ratios (the sum of all values can be any no.){
-      { // ################ NOTHING DOING AT PRESENT ###########################
-//      {
-//        Tabula Mensa = Tabula.GrabTabula( (int) Args[0].X);   
-//        if (Mensa == null) { result.S = "'tablesetparam': cannot identify table";  result.B = false;  return result; }
-//        DGVClass grid = Mensa.DGV;
-//        Table table = Mensa.DGV.CurrentTable;
-//        int noCols = table.NoCols;
-//        double[] values = AccumulateValuesFromArgs(Args, 2);
-//        int valuesLen = values.Length;
-//        bool wrongWhichParam = (Args[1].I == -1); // error message further down, as later steps may also set this boolean to true.
-//        int errno = 0;  string ss;
-//        if (!wrongWhichParam) 
-//        { int ch = (int) R.Store[Args[1].I].Data[0]; // first letter of the 3rd. arg. (char. array)
-//          switch (ch)
-//          {
-//            case 119: // 'w' -- column width ratios
-//              if (valuesLen != noCols) { errno = 10; break; }
-//              for (int i=0; i < valuesLen; i++) { if (values[i] <= 0.0) { errno = 20; break; } }
-//              Mensa.DGV.ChangeParameter("width ratios", values); // ignore return value, as we have sifted out possible errors.
-//              break;
-//            case 104: // 'h' -- column headings
-//              int[] delims = values._FindAll(9.0);
-//              if (delims.Length != noCols-1) { errno = 30; break; }
-//              ss = DubArrToChars(values, -1, 0); //######### rework args., as this method now takes different args.
-//              Mensa.DGV.ChangeParameter("headings", ss); // ignore return value, as we have sifted out possible errors.
-//              break;
-//
-//            default: wrongWhichParam = true; break;
-//          }
-//        }  
-//        if (wrongWhichParam) { result.S = "'tablesetparam': cannot identify the type of parameter (2nd. argument)"; return result; }  
-//        if (errno != 0)
-//        { result.S = "'tablesetparam': ";
-//          if      (errno == 10) result.S += "values argument should have length = no. columns";
-//          else if (errno == 20) result.S += "values argument should not contain zero or neg. values";
-//          else if (errno == 30) result.S += "values argument should contain (no. columns - 1) delimiters";
-//          result.B = false;  return result;
-//        }
+        else filename = flame[0]+ flame[1]; // Nec. where user has used an allowed abbreviation, handled by ._ParseFileName(.).
+        try
+        { MainWindow.ThisWindow.Icon = new Gdk.Pixbuf(filename);
+        }
+        catch 
+        { JD.Msg("Unable to load icon file");
+        }
         break;
       }
-      case 337: // ISTABLE(scalar TableID) -- returns 1.0 if the table exists, otherwise 0.0.
-      { // ################ NOTHING DOING AT PRESENT ###########################
-//      { if (Tabula.GrabTabula( (int) Args[0].X) != null) result.X = 1.0;
+      case 334:  case 335: // REVOLVE / REVOLVED (array InArray [, scalar NoTimes [, scalar / array Filler ] ] -- contents of InArray[i]
+      // is moved to InArray[i+NoTimes]. NB: if a structured array, the structure is ignored; the revolving uses the absolute address.
+      // "NoTimes" is rounded; may be negative or zero. Default for omission: +1.
+      // If third argument omitted, wraparound occurs, so that all values are conserved. If a third argument, its value fills
+      //  locations at the start/end of the array which are emptied by the rotation. (If an array, only 1st. element is used.)
+      // "REVOLVED" RETURNS the result of revolving the array. "REVOLVE" is VOID, directly altering InArray. (No check for whether
+      //  the argument of 'revolve' is a named array; if it is a temporary array, that array will be rotated, but then lost forever.)
+      { bool isVoidForm = (Which == 334);
+        int inslot = Args[0].I;   if (inslot == -1) return Oops(Which, "1st. arg. must be an array");        
+        StoreItem sitem = R.Store[inslot];
+        double[] indata = sitem.Data;
+        int inlen = indata.Length;
+        double[] outdata = new double[inlen];
+        int no_times = (NoArgs > 1)  ?  Convert.ToInt32(Args[1].X)  :  1;
+        bool wraparound = (NoArgs <= 2);
+        if (wraparound)
+        { no_times = no_times % inlen; 
+          if (no_times < 0) no_times += inlen; // Now no_times is guaranteed 0 or positive, and < inlen.
+          if (no_times == 0)
+          { if (isVoidForm) break; // Change nothing.
+            else indata.CopyTo(outdata, 0);
+          }
+          else // 1 <= no_times < inlen:
+          { double[] diddly = new double[2*inlen]; // This approach is faster than a FOR loop for longer arrays
+            indata.CopyTo(diddly, 0);
+            indata.CopyTo(diddly, inlen);
+            outdata = diddly._Copy(inlen - no_times, inlen);
+          }
+        }
+        else // No wraparound, so must use filler
+        { if (no_times == 0)
+          { if (isVoidForm) break; // Change nothing. *** Duplicates the above, but dup'n is unavoidable, as the above follows a modulo operation.
+            else indata.CopyTo(outdata, 0);
+          }
+          else // nonzero no_times
+          { double filler = (Args[2].I == -1) ? Args[2].X  :  R.Store[Args[2].I].Data[0];
+            if (no_times > 0)
+            { if (no_times > inlen) no_times = inlen;
+              for (int i=0; i < no_times; i++)
+              { outdata[i] = filler; }
+              if (no_times < inlen) // if is inlen, then the whole array was just filled with the filler.
+              { Array.Copy(indata, 0, outdata, no_times, inlen - no_times); }
+            }
+            else // no_times is negative:
+            { int abs_times = -no_times; // to work with a positive value
+              if (abs_times > inlen) abs_times = inlen;
+              for (int i = inlen - abs_times; i < inlen; i++)
+              { outdata[i] = filler; }
+              if (abs_times < inlen) // if is -inlen, then the whole array was just filled with the filler.
+              { Array.Copy(indata, abs_times, outdata, 0, inlen - abs_times); }
+            }  
+          }
+        }
+        if (isVoidForm)
+        { sitem.Data = outdata; }
+        else
+        { result.I = V.GenerateTempStoreRoom(sitem.DimSz);
+          R.Store[result.I].Data = outdata;
+          if (sitem.IsChars) R.Store[result.I].IsChars = true;
+        }
         break;
-      }        
-      case 338: // TABLISTGET(scalar TableID, scalar/array ListID, scalar ItemNo, scalar/array FieldID):
-      //  Always returns a list array. For cells of type 'N' or 'D', it always has length 1; for the remaining type 'S',
-      //  it always has length 2 or more (empty or single-char. strings being padded with terminal space(s)).
-      //  NO latitude allowed for errors in any of the arguments; no internal adjustments.
-      { // ################ NOTHING DOING AT PRESENT ###########################
-//      { Tabula Mensa = Tabula.GrabTabula( (int) Args[0].X);
-//        if (Mensa == null) { result.B = false;  result.S = "'tablistget': can't identify the table"; return result; }
-//        Table table = Mensa.DGV.CurrentTable;
-//        TList lystery;
-//        if (Args[1].I == -1)
-//        { int n = (int) Args[1].X;
-//          if (n >= 0 && n < table.RefList.Count) lystery = table.RefList[n];
-//          else
-//          { result.B = false;
-//            result.S = String.Format("'tablistget': there is no list {0}. (No. table lists: {1})", n, table.RefList.Count); return result;
-//          }
-//        }
-        ////else 
-        ////int thisRow = (int) Args[1].X,  thisCol = (int) Args[2].X;
-        ////if (thisRow < 0 || thisRow >= table.Rows.Count) 
-        ////{ result.B = false;  result.S = "'tableget': row arg. (" + thisRow.ToString() + ") out of range"; return result; }
-        ////if (thisCol < 0 || thisCol >= table.NoCols) 
-        ////{ result.B = false;  result.S = "'tableget': column arg. (" + thisCol.ToString() + ") out of range"; return result; }
-        ////double[] outstuff = TCell.ToDoubleArray(table.Rows[thisRow][thisCol]);
-        ////result.I = V.GenerateTempStoreRoom(outstuff.Length);
-        ////R.Store[result.I].Data = outstuff;
+      }
+      case 336: // GRAPHFONT( GraphID, array FontName, scalar LabelSize, scalar NumberSize) -- VOID. alters font and sizing for axis labelling.
+      // LabelSize applies to the axis label (e.g. "Speed (km/s)"), NumberSize to the axis scale nos.
+      // To use the default(s), use any scalar for default font name; a value ≤ 0 for either / both of the other two.
+      // You cannot set different font details for separate axes; any call to this fn. will produce changes instantly in all axes,
+      //   whether before or after calls to 'labelx' etc.
+      // This fn. has no effect on 'header' and 'footer' font details.
+      { int graphslot = Args[0].I;
+        if (graphslot >= 0) break; // No graph ID, so no dice.
+        int graphID = 0;
+        Graph graf = null;
+        Trio trill = new Trio();
+        graphID = (int) Args[0].X;
+        trill = Board.GetBoardOfGraph(graphID, out graf);
+        if (graf == null) break; // Do nothing, if supplied graph not identified.
+        string ss = StoreroomToString(Args[1].I, true, true, true);
+        if (ss.Length > 1) // If it had been scalar, length would have been 0. No font has length 1.
+        { graf.FontName = ss; }
+        int lblsize = Convert.ToInt32(Args[2].X);
+        if (lblsize > 0  && lblsize <= 32)        
+        { graf.NameFontSize = lblsize; }
+        int numsize = Convert.ToInt32(Args[3].X);
+        if (numsize > 0  && numsize <= 32)        
+        { graf.UnitsFontSize = numsize; }
+        graf.LastGraphRecalcn = DateTime.Now.Ticks;
+        Board.ForceRedraw(trill.X, true);
+        break;
+      }
+      case 337: // __UNUSED
+      {
+        break;
+      }
+      case 338: // __UNUSED
+      {
         break;
       }
       case 339: // UNICODE(scalar / array unicode nos.) -- returns a 'chars' array of the chars. whose unicodes are as given.
@@ -4351,22 +4299,20 @@ internal partial class F
         R.Store[outslot].IsChars = true;
         result.I = outslot;  break;
       }  
-      case 340: // OVERLAY(UnderArray, OverArray, array Operation [, startPtr1 [, startPtr2] ]) -- NONVOID. The square-bracket
-      // args. are not really optional; they are fixed in number for any particular behaviour. Behaviours are:
+      case 340: // OVERLAY(UnderArray, OverArray, array Operation [, startPtr1 [, startPtr2] ]) -- NONVOID: returns altered copy of UnderArray.
+      case 341: // OVERLAID(same args., but UnderArray is a REF array, and is altered in situ. VOID.
+      //  The square-bracket args. are not really optional; they are fixed in number for any particular behaviour. Behaviours are:
       // (1) Two structures of the same dimensionality (list array or matrix): There must be one pointer for two list
       // arrays, two pointers for matrices (including vectors). The overlaid array starts its overlaying from
       // the indicated element of UnderArray, and continues overlaying till either it runs out of data or it exceeds the bounds of UnderArray.
       // (Note that the function only works for 1D and 2D structures.)
       // (2) The first structure is a matrix, the second a vector (column or row), and there are NO pointers: If a column vector, then it
       // replicates its action over each column of the matrix; and analogously for a row vector.
-      // In both cases the return is a structure of the same type and dimensions as UnderArray.
+      // In both cases, for 'overlay' the RETURN is a structure of the same type and dimensions as UnderArray; and for 'overlaid', structure unchanged.
       // 'Operation' is always an array; it stores the operation code(s); an operation code is always just one character (but see 'heritage' bit
       //   below). In the case of LIST ARRAY - LIST ARRAY combinations only, the operation applying at OverArray element t
       //   is always Operation[t modulo length-of-Operation-Array]. For all other combinations only one operation is allowed for the function call,
       //   and that is the one in Operation[0].
-      //   Heritage adjustment: In the old days, there were three operations with codes of several characters, all beginning with '&'. As the
-      //   code '&' no longer has any other significance, we will allow these codes to persist; hence, if Operation[0] is '&', the heritage code
-      //   spread over the next few elements will apply as the function's sole operation.
       //  Operation codes: All apply with OverArray[i] to the LEFT of the operator and UnderArray[i] to the RIGHT.
       //   '+','-', '*', '/' have their natural meanings, as "UnderArray OPN OverArray".
       //   Overwriting operations: OverArray[i] overwrites UnderArray[i] under the following conditions:
@@ -4376,7 +4322,8 @@ internal partial class F
       //    'u' = "overwrites if UnderArray[i] is nonzero"  (Heritage code: "&under".) Case-sensitive.
       //    'b' = "overwrites if both OverArray[i] and UnderArray[i] are nonzero"  (Heritage code: "&both".) Case-sensitive.
       // It is allowable for either or both pointers to be negative, in which case the underlap is ignored.
-      { int underslot = Args[0].I,  overslot = Args[1].I,  opslot = Args[2].I;
+      { bool isVoidVersion = (Which == 341);
+        int underslot = Args[0].I,  overslot = Args[1].I,  opslot = Args[2].I;
         if (underslot == -1 || overslot == -1 || opslot == -1) return Oops(Which, "the first three args. must all be arrays");
         // Check for the right number of args., and for conformity of the first two:
         StoreItem underItem = R.Store[underslot],  overItem = R.Store[overslot],  opItem = R.Store[opslot];
@@ -4404,11 +4351,10 @@ internal partial class F
         }
       // Operation(s):
         double[] surgery = opItem.Data._Copy();
-        // Heritage case: if 'surgery' begins with '&', make it an array of length 1, based on its second character:
-        if (surgery[0] == 38 && surgery.Length > 1) surgery = new double[] { surgery[1] };
         // No errors, so go ahead.
         double operation = surgery[0]; // value not used, if isLiLi.
-        double[] overdata = overItem.Data,  underdata = underItem.Data._Copy(); // only 'underdata' is a copy.
+        double[] overdata = overItem.Data, underdata;
+        underdata = isVoidVersion ?  underItem.Data  :  underItem.Data._Copy();
         int colUnder=-1;
       // Two list arrays:
         if (isLiLi)
@@ -4438,7 +4384,9 @@ internal partial class F
             // That's all the legal operations...
             else return Oops(Which, "unrecognized operation");
           }
-          result.I = V.GenerateTempStoreRoom(noUnder);   R.Store[result.I].Data = underdata;  break;
+          if (!isVoidVersion) // if it is the void version, do nothing, just return the default, as UnderArray has already been altered.
+          { result.I = V.GenerateTempStoreRoom(noUnder);   R.Store[result.I].Data = underdata; }
+          break;
         }
        // Both args. 2-dimensional:
         int norowsUnder = underDims[1], nocolsUnder = underDims[0];
@@ -4483,45 +4431,10 @@ internal partial class F
             else return Oops(Which, "unrecognized operation");
           }
         }
-        result.I = V.GenerateTempStoreRoom(nocolsUnder, norowsUnder);   R.Store[result.I].Data = underdata;  break;
-
-      }
-      case 341: // SWING(.) - Three forms. In each case, ALL args must either be scalar or be arrays (any structure) all of the same length.
-      // (1) SWING(Xto, Yto): the angle(s) of rotation made by the unit vector on the X axis to position vector {origin to (Xto,Yto)}.
-      // (2) SWING(Xto, Yto, Xfrom, Yfrom): the angle(s) of rotation from the vector(s) {origin to Xfrom, Yfrom} 
-      //        to the vector(s) {origin to Xto, Yto}.
-      // (3) SWING(Xto, Yto, Xfrom, Yfrom, Xpivot,Ypivot): as (2), replacing origin by (Xpivot,Ypivot).
-      { if (NoArgs % 2 != 0) return Oops(Which, "there must be exactly 2, 4 or 6 arguments");
-        bool isScalar = (Args[0].I == -1);
-        // check that all args. are either scalar or arrays:
-        for (int i=1; i < NoArgs; i++) { if (isScalar ^ Args[i].I == -1) return Oops(Which, "The args. must be either all scalar or all arrays"); }
-           // No test for equal lengths; this is done inside all versions of JM.RotationAngles(.) called below.
-        // Arguments are OK:
-        if (isScalar) 
-        { double toX = Args[0].X,  toY = Args[1].X;
-          if (NoArgs == 2) {  result.X = Math.Atan2(toY, toX);  break; }
-          double fromX = Args[2].X, fromY = Args[3].X, pivotX = 0.0, pivotY = 0.0;
-          if (NoArgs == 6) { pivotX = Args[4].X;  pivotY = Args[5].X; }
-          result.X = JM.RotationAngle(fromX, fromY, toX, toY, pivotX, pivotY); break;
-        }
-       // If got here, the args. are all arrays:
-        double[] Xto, Yto, Xfrom, Yfrom, Xpivot, Ypivot;
-        double[] outdata;
-        Xto = R.Store[Args[0].I].Data; Yto = R.Store[Args[1].I].Data; 
-        if (NoArgs == 2) outdata = JM.RotationAngles(Xto, Yto);
-        else
-        { Xfrom = R.Store[Args[2].I].Data;    Yfrom = R.Store[Args[3].I].Data;
-          if (NoArgs == 4) outdata = JM.RotationAngles(Xfrom, Yfrom, Xto, Yto);
-          else // 6 args:
-          { Xpivot = R.Store[Args[4].I].Data;    Ypivot = R.Store[Args[5].I].Data; 
-            outdata = JM.RotationAngles(Xfrom, Yfrom, Xto, Yto, Xpivot, Ypivot);
-        } }
-        if (outdata == null) return Oops(Which, "the array args. must all have the same length");
-        result.I = V.GenerateTempStoreRoom(outdata.Length);
-        R.Store[result.I].Data = outdata;
+        if (!isVoidVersion) // if it is the void version, do nothing, just return the default, as UnderArray has already been altered.
+        { result.I = V.GenerateTempStoreRoom(nocolsUnder, norowsUnder);   R.Store[result.I].Data = underdata; }
         break;
       }
-
       case 342: // KEYDOWN(bool asCharArray). Returns the key value of the key currently down (with provisos - see below).
       // If 'asCharArray' FALSE, simply returns the key value as a scalar (which is 0, if no key down). If TRUE, returns a char. array
       //  (see body of method JTV.KeyDenomination() for values), or "null" if no key down.
@@ -4655,7 +4568,118 @@ internal partial class F
         }
         break;
       }
-  //  case 348: DIMLIKE(load of arrays) -- see case 1 - "DIM(.)"
+      case 348: // ROTATE(.) --  a void function which alters its first argument. There are THREE versions, differentiated by the
+      // mix of arrays and scalars. FOR ALL VERSIONS, the POSITIVE DIRECTION of rotation is mvmt of data from lower index to higher index.
+      // Version 1: ROTATE(variables A, B, C, ... M): all of same size (scalar or array), though structure not accessed. The WHOLE
+      //    contents of A goes to B, of B goes to C, ... and finally of M goes to A.
+      // Version 2: ROTATE(Array [, scalar NoTimes]): contents of ABSOLUTE addresses in Array rotate up: [n] --> [n+1]; last --> [0].
+      //    At least, that's what happens if NoTimes is absent or 1; otherwise it rotates that no. times; if neg., in the opposite
+      //    direction. (If zero, simply nothing happens.) Structure is ignored.
+      // Version 3: ROTATE(Matrix, bool IsRows, scalar NoTimes [, scalar / array NewEndValue] ) -- Note: 3 args at least, array + 2 scalars.
+      //    Rotates rows or columns, dependent on IsRows. NoTimes as for version 2. If no 4th. argument, wrapping occurs as for the
+      //    other 2 versions. If a scalar, a row / column full of this value goes on one end as the other end drops off into eternity.
+      //    If an array, it MUST size-match the matrix, or crasho.
+      // NB: In this version (rewritten May 2014) the arrays do NOT have to be named arrays; e.g. you could do "rotate(aa, bb+1, cc)"
+      //    (all being arrays), in which case bb is unaltered afterwards, but cc = bb+1, and aa = old value of cc.
+      //    It remains true that SCALARS MUST BE NAMED. This could be changed with some effort, but at present I have no motivation to do so.
+      {
+        // Deal with the case of all-scalar args. first:
+        if (Args[0].I == -1)
+        { int n, p;
+          for (int i = 0; i < NoArgs; i++)
+          { if (Args[i].I != -1) return Oops(Which, "if the 1st. arg. is scalar, then all args. must be scalar");
+            if (i == 0) p = NoArgs-1; else p = i-1;
+            n = V.SetVarValue(REFArgLocn[i].Y, REFArgLocn[i].X, Args[p].X);
+            if (n < 0) // variable value refuses to be set (i.e. is a constant):
+            { if (n == -1) return Oops(Which, "some unexpected program error - hope it never happens");
+              else return Oops(Which, "cannot change the value of a constant");
+            }
+          }
+          break;
+        }
+        // Now the first arg. is guaranteed to be an array
+        int NoTimes = 1;
+        StoreItem firstIt = R.Store[Args[0].I];
+        double[] indata = firstIt.Data;
+        double[] outdata = null;
+        int inlen = indata.Length;
+        // Either Array alone, or Array + scalar + no more args.; therefore version 2:
+        if (NoArgs == 1 || (NoArgs == 2 && Args[1].I == -1) )
+        { if (NoArgs == 2)
+          { NoTimes = Convert.ToInt32(Args[1].X);   if (NoTimes == 0) break; } // Nothing doing, for rotating zero times.
+          int indx;
+          outdata = new double[inlen];
+          for (int i = 0; i < inlen; i++)
+          { indx = (i - NoTimes) % inlen;  if (indx < 0) indx += inlen;
+            outdata[i] = indata[indx];
+          }
+          firstIt.Data = outdata;
+          break;
+        }
+        if (NoArgs == 2  || Args[2].I != -1) 
+        // either two arrays, or 3+ arrays:
+        { StoreItem[] allIts = new StoreItem[NoArgs];
+          for (int i = 0; i < NoArgs; i++)
+          { if (Args[i].I == -1) return Oops(Which, "if the 1st. 2 args. are arrays, then all args. must be arrays");
+            allIts[i] = R.Store[Args[i].I];
+            if (allIts[i].TotSz != inlen) return Oops(Which, "arrays must have equal total size");
+          }
+          double[] holdstuff = allIts[NoArgs - 1].Data._Copy();
+          for (int i = NoArgs-1; i > 0; i--)
+          {  allIts[i].Data = allIts[i-1].Data._Copy(); }
+          allIts[0].Data = holdstuff;
+          break;
+        }
+        // VERSION 3 is all that remains possible; guaranteed to be at least three arguments.
+        int[] dims = firstIt.DimSz;
+        int noRows = dims[1];  if (noRows == 0) return Oops(Which, "This deployment of args. requires that the 1st. be a matrix");
+        int noCols = dims[0];
+        if (Args[1].I != -1  ||  Args[2].I != -1) return Oops(Which, "wrong deployment of args.");
+        NoTimes = Convert.ToInt32(Args[2].X);
+        bool isRows = (Args[1].X != 0.0);
+        int noStrips = (isRows) ? noRows : noCols;
+        int stripLen = (isRows) ? noCols : noRows;
+        List<double> outlist = new List<double>(inlen);
+        double[] holdings = null;
+        int donor;
+        if (NoArgs > 3)
+        { if (Args[3].I == -1) // fill the row/col with this scalar:
+          { holdings = new double[stripLen];
+            double x = Args[3].X;
+            for (int i=0; i < stripLen; i++) holdings[i] = x;
+          }
+          else
+          { holdings = R.Store[Args[3].I].Data._Copy();
+            if ( holdings.Length != stripLen )
+            { string ss = (isRows) ? "row" : "column";
+              return Oops(Which, "for matrix {0} operation, the size of the 4th. argument must equal the {0} size of the matrix", ss);
+            }
+          }
+        }
+        if (isRows)  
+        { for (int recipient = 0; recipient < noStrips; recipient++)
+          { donor = recipient - NoTimes;
+            if (NoArgs == 3) // then wrapping is required, so guarantee that the donor is an existing row:
+            { donor = donor % noStrips;  if (donor < 0) donor += noStrips; }
+            if (donor < 0 || donor >= noRows) outlist.AddRange(holdings);
+            else outlist.AddRange(indata._Copy(donor * noCols, noCols));
+          }
+        }
+        else // columns:
+        { for (int i = 0; i < noRows; i++)
+          { for (int recipient = 0; recipient < noCols; recipient++)
+            { donor = recipient - NoTimes;
+              if (NoArgs == 3) // then wrapping is required, so guarantee that the donor is an existing row:
+              { donor = donor % noStrips;  if (donor < 0) donor += noStrips; }
+              if (donor < 0 || donor >= noCols) outlist.Add(holdings[i]);
+              else outlist.Add(indata[i * noCols + donor] );
+            }
+          }             
+        }      
+        if (outlist.Count != inlen) return Oops(Which, "some awful programming mistake - better complain to the management");
+        firstIt.Data = outlist.ToArray();
+        break;
+      }
       case 349: case 350: // COPYMX / COPYMXTO: 
       // COPYMX  (Matrix, scalar FromRow, scalar FromCol [, scalar NoRows [, scalar NoCols] ])
       // COPYMXTO(Matrix, scalar FromRow, scalar FromCol,   scalar ToRow,    scalar ToCol    )
@@ -4701,16 +4725,23 @@ internal partial class F
         result.I = newslot;  break;
       }
      // case 351, 352 -- TOZERO, FROMZERO -- see Hybrids
+
       case 353: case 354: case 355: case 356: // MIN / MINAT / MINABS / MINABSAT(Var,Var,Var,....) - arrays and scalars can be mixed.
-      // Gives min. / min. absolute value within all scalars and all array elements. MINAT returns an array, with information about
-      // the FIRST find of the minimum: [0] = min. value; [1] = which arg. holds it (to base 0); [2] = its absolute position within
-      // that argument (to base 0).
-      { double mino = double.MaxValue, minabso = mino;  int slot;
-        int argno = 0, pos = 0; // locators of the max. value (for MAXAT(.))
+      // MIN returns a scalar, the signed minimum value.  MINAT returns a scalar, the ABSOLUTE value of the element with the minimum ABSOLUTE value;
+      //   that is, the sign is lost. If you want the sign, you have to use 'minabsat(.)' instead.
+      // MINAT returns an array of size 3:
+      //     [0] = signed minimum value; [1] = no. of argument containing it (to base 0);  [2] = ABSOLUTE index within that argument.
+      // MINAT returns an array of size 4:
+      //     [0] = the minimum absolute value - ALWAYS POSITIVE; [1] = no. of argument containing it (to base 0);  
+      //     [2] = ABSOLUTE index within that argument;  [3] = the SIGNED version of [0]; i.e. the actual element indicated by [1] and [2].
+      { int slot;
+        double x, mino, minosigned = 0.0; // 'mino' is used in the algorithm; 'minosigned' simply holds a return value.
+        int argno = 0, pos = 0; // locators of the min. value (for MINAT(.))
           // Set to 0, in the unlikely event that all values of all args. are
-          //  double.MinValue, so that loops below do not reset them.
+          //  double.MaxValue, so that loops below do not reset them.
         if (Which <= 354) // MIN, MINAT:
-        { for (int var = 0; var < NoArgs; var++)
+        { mino = double.MaxValue;
+          for (int var = 0; var < NoArgs; var++)
           {//If a scalar, check .X field against current mino:
             if (Args[var].I == -1)
             { if (Args[var].X < mino)
@@ -4720,29 +4751,47 @@ internal partial class F
               double[] xx = R.Store[slot].Data;
               for (int i = 0; i < totSz; i++)
               { if (xx[i] < mino) { mino = xx[i];  argno = var;  pos = i; } }
-        } } }
+            }
+          }
+        }
         else // MINABS, MINABSAT:
-        { for (int var = 0; var < NoArgs; var++)
+        { mino = double.MaxValue;
+          for (int var = 0; var < NoArgs; var++)
           {//If a scalar, check .X field against current mino:
             if (Args[var].I == -1)
-            { if (Args[var].X < minabso && Args[var].X > -minabso)
-              { mino = Args[var].X;  minabso = Math.Abs(mino);  argno = var;  pos = 0; } }
+            { x = Args[var].X;
+              if (x > -mino && x < mino)
+              { minosigned = x;  mino = Math.Abs(minosigned);  argno = var;  pos = 0; }
+            }
             else //If an array, check through its entries:
             { slot = Args[var].I;   int totSz = R.Store[slot].TotSz;
               double[] xx = R.Store[slot].Data;
               for (int i = 0; i < totSz; i++)
-              { if (xx[i] < minabso && xx[i] > -minabso) { mino = xx[i];  minabso = Math.Abs(mino);  argno = var;  pos = i; } }
-        } } }
-        // Set up the return values
-        if (Which == 353 || Which == 355) result.X = mino; // MIN(.), MINABS(.); the latter returns the signed value with least abs. value.
+              { x = xx[i];
+                if (x > -mino && x < mino)
+                { minosigned = x;  mino = Math.Abs(minosigned);  argno = var;  pos = i; }
+              }
+            }
+          } 
+        }
+       // Set up the return values
+        if (Which == 353 || Which == 355) result.X = mino; // MIN(.), MINABS(.); the latter always returns a positive value, as explained in header.
         else // MINAT(.) and MINABSAT(.) returns array with localizing data as well:
-        { int newslot = V.GenerateTempStoreRoom(3);  double[] yy = R.Store[newslot].Data;
-          yy[0] = mino;
-          yy[1] = argno; // to base 0.
-          yy[2] = pos; // to base 0, as usual for arrays.
+        { 
+          double[] outdata;
+          if (Which == 354) // MINAT
+          { outdata = new double[] {mino, argno, pos};
+          }
+          else // MINABSAT
+          { outdata = new double[] {mino, argno, pos, minosigned};
+          }
+          int newslot = V.GenerateTempStoreRoom(outdata.Length);
+          R.Store[newslot].Data = outdata;
           result.I = newslot;
         }
-        break; }
+        break;
+      }
+
       case 357: case 358: case 359: case 360: // 357 = AND;  358 = OR;  359 - XOR;  360 - XORCOMP.
       // All take arguments: FUNCTION((Variable1, Variable2 [, Scalar Tolerance]); all return an object of the same structure as Variable1. 
       // Allowed combinations: scalar-scalar; array-array (must have same total length); array-scalar (scalar --> virtual array of same
@@ -5082,9 +5131,17 @@ internal partial class F
       }
       case 370: // FILESIZE(array PathAndName) -- Returns file size, or -1 if unsuccessful (e.g. file name no good).
       // PathAndName has to be complete, starting from the root: "/...". Abbreviations handled by extension method
-      // "_ParseFileName" are valid.
+      // "_ParseFileName" are valid. (If the whole of PathAndName is enclosed within a single set of quotes - chars.
+      //   ["] or ['] or [`] - the two enclosing characters will be removed before testing.)
       { int slot = Args[0].I;
-        string filename = StoreroomToString(slot, true, true); // will be trimmed.
+        string filename = StoreroomToString(slot, true, true); // The method removes leading and trailing spaces.
+        // Remove any enclosing quote marks:
+        if (filename.Length > 2)
+        { char c_start = filename[0],  c_end = filename[filename.Length-1];
+          if (c_start == c_end  &&  (c_start == '\"'  ||  c_start == '\''  ||  c_start == '`') )
+          { filename = filename.Substring(1, filename.Length-2);
+          }
+        }
         if (filename == "") { result.X = -1.0;  break; } // scalar arg or all-spaces array
         // This bit is here mainly to deal with abbreviations like "~/" and "./":
         string[] fillet = filename._ParseFileName(MainWindow.ThisWindow.CurrentPath);
@@ -5476,19 +5533,21 @@ internal partial class F
         }
         break;
       }
-      case 382: // WINDOW(array WhichWindow, array Action [, array TheText, array Where [, bool Formatted OR scalar NoCharsToDelete ]]).
+      case 382: // WINDOW(array WhichWindow, array Action [, array TheText, array Where [, bool Formatted OR scalar NoCharsToDelete
+      //                                                        [, bool HaveInsertedTextSelected ]]]).
       // Action[0]: 'C'(clear all window text), 'R'(read all window text), 'W' (write to window), 'M' (set MarkUpTags status for
       //   Asst Window - ignored if WhichWindow is not 'A'), 'D' (delete chars.), 'F'(ocus the window)
       // There must be 2 args for Action = 'C', 'F' or 'R', 3 for 'M', at least 4 for Action = 'W', and 5 for 'D'.
       // WhichWindow[0]: 'A' or 'R' (case-insensitive).
       // TheText - in the particular case of Action 'M', this must be '+' (for switching it on) or '-' (off) or '?' (status).
       //  For action 'D' it is ignored (so may be scalar).
-      // Where: scalar, or case-sensitive array. Values: "fill" = replace any current text with this text; "cursor" = at current cursor position;
-      //   "start" = at start (moving existing text up);  "append" = append (i.e. at end of existing text); "1234" (or scalar 1234) = start at
-      //   the specific character position 1234 (adjusted back to text extreme, if outside of existing text). Any other
-      //   value aborts the method. In the case of action 'D', only (e.g.) array "1234" or scalar 1234 would have any effect.
+      // Where: scalar, or case-sensitive array. Values: "fill" = replace any current text with this text; "cursor" = at current cursor position
+      //  (overwriting any selected text); "start" = at start (moving existing text up);  "append" = append (i.e. at end of existing text);
+      //  "1234" (or scalar 1234) = start at the specific character position 1234 (adjusted back to text extreme, if outside of existing text).
+      //  Any other value aborts the method. In the case of action 'D', only (e.g.) array "1234" or scalar 1234 would have any effect.
       // Formatted (only for action 'A'): Default is FALSE. If TRUE, formatting tags are processed.
       // NoCharsToDelete (only for action 'D'): no action if rounds to 0 or negative, or if Where out of range.
+      // HaveInsertedTextSelected: If present and TRUE, the inserted text will be selected after operation is complete. Only used for action 'W'.
       // RETURNED: VOID for actions 'C','W','D'; TEXT for action 'R' (a space, if no text in the window); array '+' or '-' for action 'M'.
       // ERRORS: No crashes; simply nothing happens if an argument is silly, apart from the last (if action ='W') which is always interpreted.
       {
@@ -5547,7 +5606,8 @@ internal partial class F
           int textSlot = Args[2].I;  if (textSlot == -1) break;
           string texty = StoreroomToString(textSlot);
           bool formatted = (NoArgs > 4 && Args[4].X != 0.0);
-          MainWindow.ThisWindow.WriteWindow(windowID, texty, whither, formatted); // No action, if arguments faulty.
+          bool leaveSelected = (NoArgs > 5 && Args[5].X != 0.0);
+          MainWindow.ThisWindow.WriteWindow(windowID, texty, whither, formatted, leaveSelected); // No action, if arguments faulty.
         }
         // DELETE:
         else if (action == 'D')
@@ -5745,23 +5805,22 @@ internal partial class F
         }
         break;
       }
-
       case 390: // LOOKUP (Chars Array VarName [, ReturnIfNotFound, ReturnIfUnassigned ] ) -- returns value of VarName in main program (only).
       case 391: // TOUCH_ARRAY  ( " "   VarName, scalar AbsAddress, scalar NewValue, scalar/array Operation -- uses NewValue to alter array VarName
                 // in main program (only) at the specified absolute address.
                 //  'Operation' -- first char. only is examined: '+', '-', '*', '/', '#' (if arg scalar, must be the unicode of one of these)
                 //  - first 4: (final value = old value <operation> new value); last: final value = new value.
                 // RETURNS IF ALL WELL: 'lookup' returns variable's value; 'touch_array' return TRUE.
-                // RETURNS IF ERROR: 'lookup': 2-args - crashes with error msg. 4-args - the return given as arg., which may be array or scalar
-                //  (but you usually would choose the same type as for the variable being looked up, wouldn't you?)
-                //   'touch_array' return FALSE (no error messages, but also does not crash).
-                // Note: no 3 args. form is allowed for 'lookup'. In that case, the 3rd. arg. is simply ignored, and all proceeds as if there
-                //   were only 2 args.
+                // RETURNS IF ERROR:
+                //  'lookup': If only one arg., crashes with an error msg. If 3 args, no crash; instead, the supplied arg. is returned,
+                //     be it scalar or array.(You usually would choose the error return to be of the same type as the variable being looked up.)
+                //     Note: no 2-arg. form is allowed for 'lookup'.
+                //  'touch_array' return FALSE (no error messages, but also does not crash).
       { int nameslot = Args[0].I;  if (nameslot == -1) return Oops(Which, "the first arg. must be an array (the name of a variable)");
         // Look for the variable:
         int errno = 0, At = -1;
         byte varuse = 0;
-        string VarName = StoreroomToString(nameslot, true, true); // trim the string.
+        string VarName = StoreroomToString(nameslot, true, true, true); // trim the string and exclude silly values.
         if (VarName == "") errno = 1;
         else
         { At = V.FindVar(0, VarName);
@@ -5775,7 +5834,8 @@ internal partial class F
         if (errno == 0)
         {// LOOKUP:
           if (Which == 390)
-          { if (varuse == 11) // array
+          { if (NoArgs == 2) return Oops(Which, "there must be exactly 1 or exactly 3 args.");
+            if (varuse == 11) // array
             { int inslot = V.GetVarPtr(0, At);
               int outslot = V.GenerateTempStoreRoom(R.Store[inslot].DimSz);
               V.CopyStoreroom(inslot, outslot, true); // 'true' stops re-creating sizing fields already set by the last step.
@@ -5809,13 +5869,13 @@ internal partial class F
         if (Which == 391) break; // 'TOUCH_ARRAY' - just return FALSE.
         // ERROR IN 'LOOKUP':
         // One-arg. version: Crasho!
-        if (NoArgs < 3)
+        if (NoArgs == 1)
         { if (errno == 1) return Oops(Which, "the variable name is not present (did you forget the quote marks?");
           if (errno == 2) return Oops(Which, "the supplied name does not match any main program variable names");
           if (errno == 3) return Oops(Which, "the variable was identified, but that variable is currently unassigned");
           return Oops(Which, "not quite sure what went wrong..."); // should never happen
         }
-        // Two+ arg. version: no crash, just return the appropriate thingo.
+        // Three-arg. version: no crash, just return the appropriate thingo.
         { int errslot;  double errX;
           if (errno == 3) { errslot = Args[2].I;  errX = Args[2].X; }
           else  { errslot = Args[1].I;  errX = Args[1].X; }
@@ -5868,37 +5928,6 @@ internal partial class F
         break;
       }
 
-
-//      case 392: // CMDLINE ( scalar WhichArg / array TheLot ) -- (1) arg. scalar: if the arg. with that index exists, it is
-//      // returned as a chars. array. If not, the return is a single SPACE (not the 'empty' array). (2) arg. ANY array:
-//      // returns a jagged array - padded with spaces (unicode 32) as needed - of all command line arguments,
-//      // starting with the program name itself - hence will always have at least one row.
-//      {
-//        string[] cmdLine = System.Environment.GetCommandLineArgs();
-//        int noCmdArgs = cmdLine.Length;
-//        string ss = "";
-//        bool isScalar = (Args[0].I == -1);
-//        if (isScalar)
-//        { int ndx = Convert.ToInt32(Args[0].X);
-//          if (ndx >= 0 && ndx < noCmdArgs) ss = cmdLine[ndx];
-//          else ss = " "; // a space
-//          result.I = V.GenerateTempStoreRoom(ss.Length);
-//        }
-//        else // arg. is any array, so put all args. into a jagged matrix (even if only one):
-//        { int len, maxLen = 0;
-//          for (int i=0; i < noCmdArgs; i++) { if (cmdLine[i].Length > maxLen) maxLen = cmdLine[i].Length; }
-//          string tt = "";
-//          for (int i=0; i < noCmdArgs; i++)
-//          { len = cmdLine[i].Length;
-//            tt = cmdLine[i] + ' '._Chain(maxLen - len); // No harm if the last term is zero.
-//            ss += tt;
-//          }
-//          result.I = V.GenerateTempStoreRoom(maxLen, noCmdArgs);
-//        }
-//        StringToStoreroom(result.I, ss);
-//        R.Store[result.I].IsChars = true;
-//        break;
-//      }
       case 393: // REPOSITION (Exactly four values, in any scalar-array mix). Values are: Left, Top, Width, Height.
       // If any is negative, that dimension is unaltered. Oversized values are cut back - see called methods for details.
       // RETURNS an array of size 4: [new left, new top, new width, new height]. If none changed, simply returns current values.
@@ -6091,2074 +6120,13 @@ internal partial class F
         R.Store[result.I].IsChars = true;
         break;
       }
-      case 401: // BRACKETLEVEL(char array String, array/scalar Opener, array/scalar Closer, scalar CharPointer)
-      // If Opener or Closer is an array, only the first character is accessed; i.e. openers and closers cannot be more than one char. long.
-      // RETURNS an array of size 3: [0] = level (0 upwards) or error indicator (-1); [1] = ptr to corresponding opener at / to left of CharPointer;
-      //  or -1, if none. [2] = ptr to corresponding opener at / to right of CharPointer, or -1 if none.
-      // Re the level (element [0]): (A) NO ERROR: The base level (e.g. of text with no brackets) is 0. If the pointer is at an opener
-      //  or closer, the level is that of text which is inside the parenthesis which it borders. (B): ERROR: value is -1.
-      //  The other elements are still filled and are probably accurate, but I have not tested every silly possibility, so no promises.
-      // Crashing error: CharPointer out of range - i.e. no adjustment is made here, as this would allow coding errors to create
-      //  hard-to-trace erratic behaviour in your program.
-      {
-        string inStr = StoreroomToString(Args[0].I);    if (inStr == "") return Oops(Which, "the 1st. arg. must be an array");
-        int nope, nose, inLen = inStr.Length;
-        if (Args[1].I == -1) nope = Convert.ToInt32(Args[1].X);
-        else nope = Convert.ToInt32(R.Store[Args[1].I].Data[0]);
-        if (Args[2].I == -1) nose = Convert.ToInt32(Args[2].X);
-        else nose = Convert.ToInt32(R.Store[Args[2].I].Data[0]);
-        char opener = Convert.ToChar(nope),  closer = Convert.ToChar(nose);
-        if (Args[3].I >= 0) return Oops(Which, "the 4th. arg. must be scalar");
-        int ptr = Convert.ToInt32(Args[3].X);
-        if (ptr < 0 || ptr >= inLen) return Oops(Which, "the 4th. arg. points to somewhere outside the 1st. arg. array");
-        Quad quoo = JS.BracketsCheck(ref inStr, opener, closer);
-        int[] bracken = JS.NestLevel(inStr, opener, closer, ptr, true);
-        double level = (double) bracken[5],  opPtr = (double) bracken[0],  clPtr = (double) bracken[1];
-        if (!quoo.B) level = -1;
-        if (clPtr >= inStr.Length) clPtr = -1; // no closer to the right.
-        double[] outdata = new double[] { level, opPtr, clPtr };
-        result.I = V.GenerateTempStoreRoom(outdata.Length);
-        R.Store[result.I].Data = outdata;
-        break;
-      }
-      case 402: // EXIT_PLUS(array DoWhat [, FileName [, bool FormattedMode ] ] ) -- exit the program, then carry out further actions.
-      // DoWhat = "new"  (case-insens.): carry out the same actions as for menu item "File | New", EXCEPT no warning displayed re unsaved text.
-      // DoWhat = "load" (" "): same actions as for menu item "File | Load", again with no warning re overwriting unsaved text.
-      //   In this case there must be a valid FileName, or the fn. simply acts as if the code had 'exit' instead of this function.
-      // FormattedMode only applies to the 'load' case; if TRUE, the actions of "Appearance | Toggle Markup Tag System" are applied to the loaded file.
-      {
-        string ss = StoreroomToString(Args[0].I, true).ToUpper();
-        if (ss == "NEW")
-        { MainWindow.ExitPlus = new Strint2(1, 0, "", ""); // Handled in GO().
-          result.S = "";  result.B = false; return result;
-        }
-        else if (ss == "LOAD")
-        { if (NoArgs < 2) return Oops(Which, "the 'load' form of this fn. requires at least 2 args.");
-          string fname = StoreroomToString(Args[1].I, true, true);
-          string[] stuff = fname._ParseFileName(MainWindow.ThisWindow.CurrentPath); // If empty, will just trigger loading
-          if (stuff == null) stuff = new string[] {"", ""}; // just triggers a dialog box in current directory.
-          int n = 0;   if (NoArgs > 2 && Args[2].X != 0.0) n = 1;
-          MainWindow.ExitPlus = new Strint2(2, n, stuff[0], stuff[1]); // Handled in GO().
-          result.S = "";  result.B = false; return result;
-        }
-        else return Oops(Which, "unrecognized 1st. arg.");
-      }
-      case 403: // INSERT_IMAGE(array FilePathName, scalar Width, scalar Height, array LocationCue)
-      // If successful, inserts the image where LocationCue first occurs in the Assts. Window, and in the process removes that cue.
-      // Returns an array, which is " " (length 1) if success, and an error message (always longer than 1) if failure.
-      // Only crashes if the first argument is scalar or has no printing chars.
-      // Width and Height are in pixels. If either is less than 10 (e.g. 0 or negative), both will be ignored, and the natural size
-      //   of the image will determine its size in the window.
-     { string Result = " ";
-        string filename = StoreroomToString(Args[0].I, true, true); // will be trimmed.
-        if (filename == "")  return Oops(Which, "the 1st. arg. must be a file name");
-        // This bit is here mainly to deal with abbreviations like "~/" and "./":
-        string[] fillet = filename._ParseFileName(MainWindow.ThisWindow.CurrentPath);
-        filename = fillet[0] + fillet[1];
-        int Wd = Convert.ToInt32 (Args[1].X),   Ht = Convert.ToInt32 (Args[2].X);
-        string cue = StoreroomToString(Args[3].I, true, true); // will be trimmed.
-        Gtk.TextBuffer buffAss = MainWindow.ThisWindow.BuffAss;
-        if (cue == "") Result = "No proper location cue was suppplied";
-        else
-        { Gtk.TextIter startIter = buffAss.StartIter, endIt = buffAss.EndIter, insertIter, afterIter;
-          bool succeeded = startIter.ForwardSearch(cue, Gtk.TextSearchFlags.TextOnly, out insertIter, out afterIter, endIt);
-          if (!succeeded) Result = "The location cue '" + cue + "' was not found";
-          else
-          { bool useShortForm = (Wd < 10 || Ht < 10);
-            bool Success = true;
-            Gdk.Pixbuf px = null;
-            try
-            { if (useShortForm) px = new Gdk.Pixbuf(filename);
-              else              px = new Gdk.Pixbuf(filename, Wd, Ht);
-            }
-            catch { Success = false; }
-            if (!Success) Result = "Unable to load the image file '" + filename + "'";
-            else
-            { buffAss.Delete(ref insertIter, ref afterIter);
-              buffAss.InsertPixbuf(ref insertIter, px);
-            }
-          }
-        }
-        result.I = V.GenerateTempStoreRoom(Result.Length);
-        StringToStoreroom(result.I, Result);
-        break;
-      }
-    // case 404: ISNAN(.) -- see Hybrids.
-    case 405: // RANDRANGE(.) - Returns random numbers within a stated range. VOID in all cases (unlike 'rand').
-    // Args: (VariableName, LowLimit, HighLimit [, IntegerOnly]). VariableName - name of a persistent scalar or array;
-    //   LowLimit, HighLimit obvious; if 'IntegerOnly' present and nonzero, returned values may be either limit, as well as in between.
-    // If limits are crossed, they are automatically reversed; i.e. the order of limits is not important.
-    // Special case: If VariableName is an array, and if LowLimit and HighLimit are both arrays of the same size, then individual
-    //   elements of the array will range over the individual corresponding limits.
-    // Crashing error: VariableName not a persistent variable.
-    { int inslot = Args[0].I;
-      bool isScalar = (inslot == -1);
-      double[] data;
-      int inFn = REFArgLocn[0].Y,   inAt = REFArgLocn[0].X;
-      byte use = V.GetVarUse(inFn, inAt);
-      if (use != 3 && use != 11) return Oops(Which, "the 1st. arg. must be either a named array or a named nonsystem scalar");
-      isScalar = (use == 3);
-      if (isScalar) data = new double[] {Args[0].X };
-      else data = R.Store[inslot].Data; // NB - a pointer assignment, not a copy! Data will thus be directly written to the array.
-      int dataCnt = data.Length;
-      bool intOnly = (NoArgs > 3 && Args[3].X != 0.0);
-      int loslot = Args[1].I, hislot = Args[2].I;
-      bool scalarLimits = (loslot == -1 && hislot == -1);
-      double[] lolimits = null, hilimits = null;
-      if (!scalarLimits)
-      { if (isScalar || loslot == -1 || hislot == -1) return Oops(Which, "limits must either both be scalar or both arrays. If arrays, then the 1st. arg. must also be an array");
-        lolimits = R.Store[loslot].Data;   hilimits = R.Store[hislot].Data;
-        if (lolimits.Length != dataCnt || hilimits.Length != dataCnt) return Oops(Which, "array limits must have the same length as the first arg.");
-      }
-      double loLimit, hiLimit;
-      if (scalarLimits)
-      { loLimit = Args[1].X;    hiLimit = Args[2].X;
-        if (intOnly) { loLimit = Math.Round(loLimit);  hiLimit = Math.Round (hiLimit); }
-        if (loLimit == hiLimit) { for (int i=0; i < dataCnt; i++) data[i] = loLimit; }
-        else // unequal limits:
-        { if (loLimit > hiLimit) { double x = loLimit; loLimit = hiLimit; hiLimit = x; }
-          double range = hiLimit - loLimit;
-          if (intOnly)
-          { int intLo = Convert.ToInt32(loLimit),  intHi = 1 + Convert.ToInt32(hiLimit); // recall, the high limit is included as a possible output value
-            for (int i=0;  i < dataCnt; i++) data[i] = Rando.Next(intLo, intHi);
-          }
-          else for (int i=0;  i < dataCnt; i++) data[i] = loLimit + range * Rando.NextDouble();
-        }
-      }
-      else // array limits, and array 1st. arg., all arrays of same length:
-      { for (int i=0; i < dataCnt; i++)
-        { loLimit = lolimits[i];  hiLimit = hilimits[i];
-          if (intOnly) { loLimit = Math.Round(loLimit);  hiLimit = Math.Round (hiLimit); }
-          if (loLimit == hiLimit) data[i] = loLimit;
-          else
-          { if (loLimit > hiLimit) { double x = loLimit; loLimit = hiLimit; hiLimit = x; }
-            if (intOnly) data[i] = Rando.Next(Convert.ToInt32(loLimit), Convert.ToInt32(hiLimit));
-            else data[i] = loLimit + (hiLimit - loLimit) * Rando.NextDouble();
-          }
-        }
-      }
-      // Return the data:
-      if (isScalar) V.SetVarValue(inFn, inAt, data[0]);
-      // If an array, then the contents of 'data' is already installed, as 'data' is only a pointer.
-      break;
-    }
-    // case 406: FIXANGLE(.) -- see Hybrids.
-    case 407: // DISTMUTUAL(array XValues [, array YValues [, array ZValues ]], [ scalar DontTakeSquareRoot [, scalar ReturnFullMatrix ] ]).
-    // Arrays must have the same length (if more than 1). Each set of elements [i] represents coordinates of the ith. point in 1D/2D/3D space.
-    // Returns a matrix which acts as a table to give the distance between any two points.
-    // Normally only the upper right triangular matrix is returned, the lower triangle holding all zeroes; if the last arg. is present & TRUE,
-    //   both triangles are filled (the main diagonal obviously remaining zero).
-    // In the case of ONE DIMENSION, returned values are SIGNED ( the sign being that of X[column] - X[row]). Consequently, if you use the
-    //  'ReturnFullMatrix' option, signs in the lower triangle will be the reverse of those in the upper triangle.
-    //  Also, note that the value of 'DontTakeSquareRoot' is ignored for one dimension.
-    {
-      string argtypes = ArgTypesCode(Args, ' ');
-      if (argtypes.IndexOf("SA") != -1) return Oops(Which, "scalar args. must come after all array args.");
-      int noDims = argtypes.IndexOf ('S');
-      if (noDims == -1) noDims = NoArgs;
-      if (noDims == 0 || noDims > 3) return Oops(Which, "args. must start off with at least 1 and no more than 3 arrays");
-      StoreItem Sitem_X = R.Store[Args[0].I],  Sitem_Y = null,  Sitem_Z = null;
-      double[] XCoords = Sitem_X.Data,  YCoords = null,  ZCoords = null;
-      int noPoints = XCoords.Length;
-      if (noDims > 1)
-      { Sitem_Y = R.Store[Args[1].I];  YCoords = Sitem_Y.Data;
-        if (YCoords.Length != noPoints) return Oops(Which, "1st. and 2nd. arrays have unequal lengths");
-      }
-      if (noDims > 2)
-      { Sitem_Z = R.Store[Args[2].I];  ZCoords = Sitem_Z.Data;
-        if (ZCoords.Length != noPoints) return Oops(Which, "3rd. array has a length different to the earlier arrays");
-      }
-      // Boolean args:
-      int noScalarArgs = NoArgs - noDims;
-      bool dontTakeSqRoot = (noScalarArgs > 0 && Args[noDims].X != 0.0);
-      bool returnFullMx = (noScalarArgs > 1 && Args[noDims+1].X != 0.0);
-      double x, y, z, t;
-      // Get distances:
-      double[] distances = new double[noPoints*noPoints];
-      { for (int i=0; i < noPoints-1; i++)
-        { int offset = i*noPoints;
-          // The following 'if' segments hopefully increase speed, at the cost of extra program length.
-          if (noDims == 1) // in this case, any arg 'dontTakeSqRoot' is ignored, and values returned are SIGNED, not absolute values.
-          { for (int j=i; j < noPoints; j++) distances[offset+j] = XCoords[j] - XCoords[i]; }
-          else if (noDims == 2)
-          { for (int j=i; j < noPoints; j++)
-            { x = XCoords[j] - XCoords[i];    y = YCoords[j] - YCoords[i];
-              t = x*x + y*y;
-              if (!dontTakeSqRoot) t = Math.Sqrt(t);
-              distances[offset+j] = t;
-            }
-          }
-          else if (noDims == 3)
-          { for (int j=i; j < noPoints; j++)
-            { x = XCoords[j] - XCoords[i];    y = YCoords[j] - YCoords[i];    z = ZCoords[j] - ZCoords[i];
-              t = x*x + y*y + z*z;
-              if (!dontTakeSqRoot) t = Math.Sqrt(t);
-              distances[offset+j] = t;
-            }
-          }
-        }
-      }
-      // Load the lower triangle of the matrix, if required.
-      if (returnFullMx)
-      { for (int i=1; i < noPoints; i++)
-        { int offset = i*noPoints;
-          if (noDims > 1)
-          { for (int j=0; j < i; j++) distances[offset + j] = distances[j*noPoints + i]; }
-          else
-          { for (int j=0; j < i; j++) distances[offset + j] = -distances[j*noPoints + i]; }
-        }
-      }
-      // Return the result:
-      result.I = V.GenerateTempStoreRoom(noPoints, noPoints);
-      R.Store[result.I].Data = distances;
-      break;
-    }
-    case 408: // DISTPOINTS(array X1Values [, array Y1Values [, array Z1Values ]],  array X2Values [, array Y2Values [, array Z2Values ]],
-    //                      [ scalar DontTakeSquareRoot]).
-    // Returns a matrix of all distances between the 1st. and 2nd. set of points, mx dims. being (no. pts. in 1st. set) x (no. in 2nd. set).
-    // Must be even no. of arrays, 2 (1 dim.) to 6 (3 dim.). The remaining arg., if present, must be scalar.
-    // In the case of ONE DIMENSION, returned values are SIGNED ( the sign being that of X[j] of set 2 - X[i] of set 1).
-    { // *** If adding further scalar args. at the end, the arg. testing below will have to be more complex; it is based on 0 or 1 scalars at end.
-      bool takeSqRoot = (NoArgs % 2 == 0 || Args[NoArgs-1].X == 0.0); // Odd no. of args. indicates that there is a last scalar arg.
-      int noDims = NoArgs / 2; // the no. args. is limited to 2 to 7, so this must always be 1 to 3.
-      for (int i=0; i < noDims*2; i++) { if (Args[i].I == -1) return Oops(Which, "a scalar arg. found where an array was expected"); }
-      StoreItem Sitem_X1 = R.Store[Args[0].I],  Sitem_Y1 = null,  Sitem_Z1 = null;
-      StoreItem Sitem_X2 = R.Store[Args[noDims].I],  Sitem_Y2 = null,  Sitem_Z2 = null;
-      double[] X1Coords = Sitem_X1.Data,  Y1Coords = null,  Z1Coords = null;
-      double[] X2Coords = Sitem_X2.Data,  Y2Coords = null,  Z2Coords = null;
-      int noPoints1 = X1Coords.Length,   noPoints2 = X2Coords.Length;
-      if (noDims > 1)
-      { Sitem_Y1 = R.Store[Args[1].I];   Sitem_Y2 = R.Store[Args[noDims+1].I];
-        Y1Coords = Sitem_Y1.Data;        Y2Coords = Sitem_Y2.Data;
-        if (Y1Coords.Length != noPoints1 || Y2Coords.Length != noPoints2) return Oops(Which, "a 2nd. dimension coordinate array has the wrong length");
-      }
-      if (noDims > 2)
-      { Sitem_Z1 = R.Store[Args[2].I];   Sitem_Z2 = R.Store[Args[noDims+2].I];
-        Z1Coords = Sitem_Z1.Data;        Z2Coords = Sitem_Z2.Data;
-        if (Z1Coords.Length != noPoints1 || Z2Coords.Length != noPoints2) return Oops(Which, "a 3rd. dimension coordinate array has the wrong length");
-      }
-      double x, y, z, t;
-      // Get distances:
-      double[] distances = new double[noPoints1*noPoints2];
-      int offset;
-      { for (int i=0; i < noPoints1; i++)
-        { offset = i * noPoints2;
-          // The following 'if' segments hopefully increase speed, at the cost of extra program length.
-          if (noDims == 1)
-          { for (int j=0; j < noPoints2; j++)  distances[offset+j] = X2Coords[j] - X1Coords[i];
-          }
-          else if (noDims == 2)
-          { for (int j=0; j < noPoints2; j++)
-            { x = X2Coords[j] - X1Coords[i];    y = Y2Coords[j] - Y1Coords[i];
-              t = x*x + y*y;
-              if (takeSqRoot) t = Math.Sqrt(t);
-              distances[offset+j] = t;
-            }
-          }
-          else if (noDims == 3)
-          { for (int j=0; j < noPoints2; j++)
-            { x = X2Coords[j] - X1Coords[i];    y = Y2Coords[j] - Y1Coords[i];    z = Z2Coords[j] - Z2Coords[i];
-              t = x*x + y*y + z*z;
-              if (takeSqRoot) t = Math.Sqrt(t);
-              distances[offset+j] = t;
-            }
-          }
-        }
-      }
-      // Return the result:
-      result.I = V.GenerateTempStoreRoom(noPoints2, noPoints1);
-      R.Store[result.I].Data = distances;
-      break;
-    }
-    case 409: // SETALIAS(any number of declared variable NAMES, up to MaxREFArgs names). Assigns integers from 0 upwards as
-    // aliasses for variables belonging to this function (only), integers being assigned in the order in which arguments occur.
-    // Any assignable variable may be aliased except where it has not yet been referenced (so that its 'Use' field is 0).
-    // Variables may be accessed via system fn. 'alias(.)'. All aliasses vanish when the function finishes running, except for
-    // main program aliasses, which persist or not in accordance with whether 'R.KillData(.)' is called or not.
-    // Should be USED ONLY ONCE in any one function's code; it won't crash if you use it more than once, but each subsequent use
-    // will remove all prior aliasses before setting up the new set.
-    // ANY ERROR CRASHES the program. Errors include: Unassigned or nonpersistent variable; a variable name not recognized.
-    {
-      if (V.VarAliasses == null) // then we create this list of arrays for all user functions, not just the present one.
-      { V.VarAliasses = new List<Strint2>[C.UserFnCnt];
-        for (int i = 0; i < C.UserFnCnt; i++) V.VarAliasses[i] = new List<Strint2>();
-      }
-      int thisFn = R.CurrentlyRunningUserFnNo,   varNo;
-      V.VarAliasses[thisFn].Clear();
-      Strint2[] struggle = new Strint2[NoArgs];
-      for (int i=0; i < NoArgs; i++)
-      { if (REFArgLocn[i].Y != thisFn) return Oops(Which, "the {0}th. arg. does not belong to this function", i+1);
-        varNo = REFArgLocn[i].X;
-        byte usage = V.GetVarUse(thisFn, varNo);
-        if (usage != 3 && usage != 11) return Oops(Which, "the {0}th. arg. is not a declared and assignable variable", i+1);
-        string ss = V.GetVarName(thisFn, varNo); // Should never fail, as the assigning of REFArgLocn has done the identification work.
-        struggle[i] = new Strint2(varNo, i, ss, ""); // i is the alias.
-      }
-      // if got here, no errors...
-      V.VarAliasses[thisFn].AddRange(struggle);
-      break;
-    }
-    case 410: // GETVAL(scalar AliasIndex [, one or more scalar values, being address for an array segment ])
-    // If scalar, returns its value. If array, returns the whole array (if no address arguments) or else exactly what any array address
-    //  would return, except that to indicate the whole of an inner dimension, use -1 (or MINREAL): if 5 is the alias of 'Arr',
-    //  "getval(5, -1, 2)" is equiv. to "Arr[][2]". (No other negative value is allowed; it would cause a crash with message.)
-    case 411: // SETVAL(scalar AliasIndex ...) VOID. Two versions. If AliasIndex turns out to refer to a scalar, then only the next scalar
-    // value is accessed (without a test for arrayhood): "setval(AliasIndex, x)". If an array, then the first 0+ args. after AliasIndex
-    // must be scalars, and are read as the address of the array segment to receive data; if no array follows, and the address indicates
-    // a single datum, then the final scalar is taken as that datum. Otherwise the array is taken as the data.
-    // E.g., if alias 5 corresponds to a 2x3 matrix Mx, "setval(5, 0, data(10, 20, 30))" is equiv. to "Mx[0] = data(10, 20, 30)";
-    // "setval(5, 0, 1, 11)" is equiv. to "Mx[0,1] = 11". For "Mx[][1] = data(1, 2)" use -1 or MINREAL: "setval(5, -1, 1, data(1, 2)".
-    // (No other negative address is allowed; it would cause a crash with message.)
-    {
-     // Get at the aliassed variable:
-      if (V.VarAliasses == null) return Oops(Which, "no aliasses have been assigned yet in this function");
-      if (Args[0].I != -1) return Oops(Which, "the 1st. arg. must be scalar, being the alias of some variable");
-      int thisAlias = Convert.ToInt32(Args[0].X);
-      int thisFn = R.CurrentlyRunningUserFnNo;
-      List<Strint2> aliassary = V.VarAliasses[thisFn];
-      int foundat = -1;
-      for (int i=0; i < aliassary.Count; i++)
-      { if (aliassary[i].IY == thisAlias) { foundat = i;  break; } }
-      if (foundat == -1) return Oops(Which, "no variable corresponds to this alias");
-      int thisVarNo = aliassary[foundat].IX;
-      byte usage = V.GetVarUse(thisFn, thisVarNo);
-      // Scalar variable was aliassed:
-      if (usage == 3)
-      { if (Which == 410)  result.X = V.GetVarValue(thisFn, thisVarNo);
-        else V.SetVarValue(thisFn, thisVarNo, Args[1].X);
-        break;
-      }
-      else if (usage != 11) return Oops(Which, "Aliassed variables must be existing and declared arrays or scalars"); // e.g. 'kill(.)' was used.
-    // Array variable was aliassed:
-      int inslot = V.GetVarPtr(thisFn, thisVarNo);
-      int nonaddressArgs = Which - 409; // 1 for 'GETval', 2 for 'SETval'
-      int addressLen = NoArgs - nonaddressArgs;
-      if (addressLen == 0)
-      // the whole array was specified:
-      { if (Which == 410) // GETvar:
-        { StoreItem source = R.Store[inslot];
-          double[] outdata = source.Data._Copy();
-          int[] dims = source.DimSizes;
-          result.I = V.GenerateTempStoreRoom(dims);
-          StoreItem destn = R.Store[result.I];
-          destn.Data = outdata;
-          destn.IsChars = source.IsChars;
-        }
-        else // SETvar:
-        { int donorFn = REFArgLocn[NoArgs-1].Y,  donorAt = REFArgLocn[NoArgs-1].X;
-          if (donorFn == R.TempArrayCode)// then the donor is a temporary array:
-          { V.TransferTempArray(Args[NoArgs-1].I, thisFn, thisVarNo); }
-          else V.MakeCopy(donorFn, donorAt, thisFn, thisVarNo);
-        }
-      }
-      else // A segment of the aliassed array was specified:
-      {// Prepare to run this method F.RunSysFn(.) recursively, to apply function "__assign(.):
-        double[] address = AccumulateValuesFromArgs(Args, 1, addressLen);
-        PairIX[]  pricks = new PairIX[nonaddressArgs + addressLen];
-        pricks[0] = new PairIX(inslot, 0.0);
-        for (int j=0; j < addressLen; j++)
-        { double d = address[j];  if (d == -1.0) d = double.MinValue; // the case where a column is required
-          pricks[j+1] = new PairIX(-1, d);
-        }
-        if (nonaddressArgs == 1) // GETvar:
-        { Quad squad = RunSysFn(32, pricks); // this is system fn. "__segmt", which returns a copy of the designated segment of the aliassed array.
-          if (!squad.B) return Oops(Which, squad.S);
-          else { result.I = squad.I;  result.X = squad.X; } // the return can be scalar or array
-        }
-        else // SETvar:
-        { pricks[nonaddressArgs + addressLen - 1] = Args[NoArgs-1]; // Fine, whether this arg. is scalar or array
-          Quad quid = RunSysFn(33, pricks); // system fn. "__assign".
-          if (!quid.B) return Oops(Which, quid.S);
-          // this system fn. is void, so don't set 'result'.
-        }
-      }
-      break;
-    }
-    case 412 : // PREVALENCE(InArray, ...) - Two distinct modes, distinguished by whether 2nd. arg. is SCALAR.
-    // Mode 1 -- 2 or 3 args; 2nd. is SCALAR: (InArray, scalar MinimumOccurrences [, scalar ExcludedValue] ) -- registers the number
-    //   of times that all values occur within InArray. (If 3rd. arg. present and true, that value is excluded from consideration.)
-    //   RETURNS a MATRIX: result[0,i] is the value, result[1,i] is the number of times it occurs in InArray.
-    //   If MinimumOccurrences rounds to <= 1 and there is no 3rd. arg., there would always be valid data returned. If MinimumOccurrences
-    //   rounds to > 1, then only duplicated values occur, and only if duplicated at least that no. of times. If none so duplicated,
-    //   the 'empty' array [NaN] is returned. Again, if all remaining values are ExcludedValue, [NaN] is returned.
-    //   ORDER: The matrix is sorted by result[1], so that values occurring more often are represented in lower columns. Where two or more
-    //   values are duplicated the same number of times, the order of values amongst these tying occurrences is indeterminate, due to the
-    //   internal workings of the sorting method. To sort within tying occurrences would involve extra time overhead; at present I am avoiding it.
-    // Mode 2 -- Two or three args, ALL arrays. (A) Two-arg version: (InArray, SpecificValues). RETURNS a LIST ARRAY of size(SpecificValues)+1;
-    //   For all but the last, result[i] is the number of occurrences in InArray of SpecificValues[i]; result[last] is the number of elements
-    //   In InArray not present in SpecificValues. (B) Three-arg verson: (InArray, LowValues, HighValues) - the two last arrays must have the
-    //   same size. This time result[i] is incremented if InArray[k] >= LowValues[i] and < HighValues[i]. Again, failures recorded in result[last].
-    {
-      int inslot = Args[0].I;  if (inslot == -1) return Oops(Which, "the 1st. arg. must be an array");
-      double[] indata; // Can't go further here, as mode 1 needs a copy but mode 2 can use pointer.
-      int loSlot = Args[1].I;
-      bool isMode1  = (loSlot == -1);
-      bool isMode2A = (!isMode1 && NoArgs == 2);
-      double[] outdata;
-      if (isMode1)
-      {
-        int minDuplicns = Convert.ToInt32(Args[1].X);  if (minDuplicns < 1) minDuplicns = 1;
-        bool omitAValue = (NoArgs > 2);
-        double omitThis = 0.0; // dummy value, or compiler complains.
-        if (omitAValue) omitThis = Args[2].X;
-        // Sort the copy of InArray:
-        indata = R.Store[inslot].Data._Copy(); // A copy, because we are going to sort it.
-        JS.Sort (indata, true); // sort in ascending order.
-        int inlen = indata.Length,   cntr = 1;
-        List<double> values = new List<double>(inlen),  occurrences = new List<double>(inlen);
-        double x = 0, xlast = 0; // dummy values
-        bool firstValidValueProcessed = false;
-        for (int i=0; i < inlen; i++)
-        { x = indata[i];  if (omitAValue && x == omitThis) continue; // ignore it completely (so skip reset of xlast at the end of this loop).
-          if (firstValidValueProcessed)
-          { if (x == xlast)  cntr++;
-            else
-            { if (cntr >= minDuplicns) { values.Add(xlast);   occurrences.Add(cntr); }
-              cntr = 1;
-            }
-          }
-          else firstValidValueProcessed = true; // to ensure that the above loop is only omitted when the first valid value has been found.
-          xlast = x;
-        }
-        // Deal with the last element of the array.
-        if (firstValidValueProcessed && (cntr >= minDuplicns) ) { values.Add(xlast);   occurrences.Add(cntr); }
-        // Get the stuff back to the user:
-        if (values.Count == 0) { result.I = EmptyArray(); break; }
-        double[] valuesArr = values.ToArray();
-        double[] occurArr = occurrences.ToArray();
-        int arrLen = valuesArr.Length;
-        if (arrLen > 1) JS.SortByKey(valuesArr, occurArr, false); // sorts the two arrays together, in descending order of occurArr elements.
-        outdata = new double[2 * arrLen];
-        valuesArr.CopyTo(outdata, 0);   occurArr.CopyTo(outdata, arrLen);
-        result.I = V.GenerateTempStoreRoom(arrLen, 2);
-      }
-      else // Mode 2A or 2B:
-      { indata = R.Store[inslot].Data;
-        double[] loData = R.Store[loSlot].Data;
-        int inDataLen = indata.Length,  loDataLen = loData.Length;
-        outdata = new double[loDataLen+1];
-        if (isMode2A)
-        { for (int i=0; i < inDataLen; i++)
-          { double x = indata[i];
-            bool foundit = false;
-            for (int j=0; j < loDataLen; j++)
-            { if (x == loData[j]) { outdata[j]++;  foundit = true;  break; } }
-            if (!foundit) outdata[loDataLen]++;
-          }
-        }
-        else // Mode2B:
-        { double[] hiData = R.Store[Args[2].I].Data;
-          if (hiData.Length != loDataLen) return Oops(Which, "the last two arrays must have the same length");
-          for (int i=0; i < inDataLen; i++)
-          { double x = indata[i];
-            bool foundit = false;
-            for (int j=0; j < loDataLen; j++)
-            { if (x >= loData[j]  &&  x < hiData[j]) { outdata[j]++;  foundit = true;  break; } }
-            if (!foundit) outdata[loDataLen]++;
-          }
-        }
-        result.I = V.GenerateTempStoreRoom(loDataLen+1);
-      }
-      R.Store[result.I].Data = outdata;
-      break;
-    }
-    case 413: // __CONSTANT(scalar NewConstant, scalar Value) -- Installs NewConstant as a scalar constant.
-    // **** NB: If you change the name of this function, also change the ref. to it in unit Parser, where along with 'dim' it is preprocessed.
-    {
-      int ndx = REFArgLocn[0].X;
-      int ff = V.ResetUserConstant(ndx, Args[1].X);
-      if (ff == -2) return Oops(Which, "cannot reset the system constant {0}", V.GetVarName(0, ndx));
-      if (ff != 1) return Oops(Which, "What the hey went wrong?");
-      break;
-    }
-    case 414: // FILTER(array InArr, scalar WindowWidth, scalar StepSize, array Mode [, array HandlingEdges ] ) -- apply a filter
-    // across InArr, returning an array of filtered data with the same dimensionality (1D to 3D) but (usually) different dimensions.
-    // The filter never overlaps edges; it starts with the bottom left of the window at InMx[0,0] and ends with top right at InMx[last,last],
-    // where 'last' is such that a further step would take the window partly or wholly over the edge.
-    // WindowWidth should always be odd, though the fn. would still work if not.
-    // Mode: See code below for allowed values, still rather changeable.
-    // HandlingEdges: *** Not accessed at present. I imagine it would only be relevant for StepSize = 1, to bring output matrix size up to
-    //   input matrix size.
-    {
-      int inslot = Args[0].I,  modeslot = Args[3].I;
-      if (inslot == -1 || modeslot == -1) return Oops(Which, "either the 1st. or the 4th. arg. is not an array");
-      StoreItem inItem = R.Store[inslot];
-      double[] indata = inItem.Data;
-      int[] inDims = inItem.DimSz;
-      int inDimCnt = inItem.DimCnt;
-      int windowWd = Convert.ToInt32(Args[1].X),  stepSize = Convert.ToInt32(Args[2].X);
-      if (windowWd < 1 || stepSize < 1) return Oops(Which, "either the 2nd or 3rd. scalar value is less than one (or is an array)");
-      string Mode = StoreroomToString(modeslot, true, true);
-      int ModeNo = 0;
-      if (Mode == "average") ModeNo = 1;
-      else if (Mode == "maximum") ModeNo = 10;
-      if (ModeNo == 0) return Oops(Which, "'{0}' is not a valid mode", Mode);
-      // Work out the loop limits: *** If TVar.MaxNoDims is ever increased beyond 3, you'll have to modify the stuff below to cater
-      //  for more dims. As it is, no error would be raised, but only the first 3D piece of a higher dimensional structure would be processed.
-      int stepsCols, stepsRows = 1, stepsDeep = 1; // the last two have defaults, to apply for the 1D case.
-      bool youErred = false;
-      stepsCols = 1 + (inDims[0] - windowWd) / stepSize; // '1' is the starting position; then the window advances in steps of stepSize to
-             //  a further (inDims[0] - windowWd) steps to reach the far end. This is integer division, so a partial final step won't be included.
-      if (stepsCols < 1) youErred = true;
-      else if (inDimCnt > 1)
-      { stepsRows = 1 + (inDims[1] - windowWd) / stepSize;
-        if (stepsRows < 1) youErred = true;
-        else if (inDimCnt > 2)
-        { stepsDeep = 1 + (inDims[2] - windowWd) / stepSize;
-          if (stepsRows < 1) youErred = true;
-        }
-      }
-      if (youErred) return Oops(Which, "The window width is greater than a dimension of the input array");
-      // Define the output array. *** If 'HandlingEdges' is one day coded for, then this will change...
-      double[] outdata = new double[stepsDeep * stepsRows * stepsCols];
-      int[] outDims; // We will set it to length 3, so we can use the 3D loop below for all cases.
-      int windowSize;
-      if      (inDimCnt == 1) { outDims = new int[] {stepsCols, 0, 0};                  windowSize = windowWd; }
-      else if (inDimCnt == 2) { outDims = new int[] {stepsCols, stepsRows, 0};          windowSize = windowWd * windowWd; }
-      else                    { outDims = new int[] {stepsCols, stepsRows, stepsDeep};  windowSize = windowWd * windowWd * windowWd; }
-      // Extract the strips of input data which are to be processed with the window:
-      double x;
-      double[] substrate = new double[windowSize];
-      int indims0 = inDims[0];
-      int substrateStart, inputRowsIn, inRowsOffset,  startInRow;
-      int outdataCntr = 0;
-      for (int outblock = 0;  outblock < stepsDeep; outblock++)
-      {
-        for (int outrow = 0;  outrow < stepsRows;  outrow++)
-        {
-          startInRow = outrow * stepSize;
-          for (int outcol = 0;  outcol < stepsCols;  outcol++)
-          {
-            substrateStart = 0;
-            for (int inblockIncmt = 0; inblockIncmt < windowWd;  inblockIncmt++)
-            { if (inDimCnt < 3 && inblockIncmt > 0) break;
-              for (int inrowIncmt = 0;  inrowIncmt < windowWd;  inrowIncmt++)
-              { if (inDimCnt < 2 && inrowIncmt > 0) break;
-                inputRowsIn = startInRow + inrowIncmt;
-                inRowsOffset = inputRowsIn * indims0;
-                Array.Copy (indata, inRowsOffset + outcol*stepSize, substrate, substrateStart, windowWd );
-                substrateStart += windowWd;
-              }
-            }
-            // Operate on it:
-            if (ModeNo == 1) // average of values in substrate:
-            { x = 0;
-              for (int i=0; i < windowSize; i++) x += substrate[i];
-              outdata[outdataCntr] = x / windowSize;    outdataCntr++;
-            }
-            else if (ModeNo == 10) // return the maximum value in substrate
-            { x = substrate[0];
-              for (int i=1; i < windowSize; i++) { if (substrate[i] > x) x = substrate[i]; }
-              outdata[outdataCntr] = x;    outdataCntr++;
-            }
-          }
-        }
-      }
-      result.I = V.GenerateTempStoreRoom(outDims);
-      R.Store[result.I].Data = outdata;
-      break;
-    }
-    case 415: // POINTSOF(PlotID, ScaledCoordinates [, OriginalShape] ) -- returns a matrix of all X, Y (, Z) values for the plot.
-    // If ScaledCoordinates true, returns coords. in accordance with the graph scale; otherwise returns pixel coordinates relative
-    //  to the whole drawing surface (i.e. not relative to the graph box margins).
-    // Returns a matrix of size 2 x M (2D; 3D as pixels) or 3 x M (3D as scaled coords).
-    // OriginalShape: only accessed if the plot is a shape plot (which is always 2D), and if ScaledCoordinates is true. If so, and if
-    //  OriginalShape is present and true, then the returned matrix will be of the shape before any translation and rotation
-    //  (from MoveShape, or from including args. PivotX etc. in the original PlotShape function call). Otherwise it is the default:
-    //  the current shape vertices are returned. (Note that in the case of pixel coordinates, the returned points are always of the moved shape.)
-    // ERRORS: (1) PlotID not recognized: No crash, but returns the 'empty' array.
-    // BIG WARNING: If you have a shape, want scaled coords, and have set OriginalShape to FALSE, so you want the moved shape: UNLESS AND UNTIL
-    //  you have graphed the moved shape, you will get either the original shape or (if shape was earlier moved and then graphed) the previous
-    //  shape position. This is because class Shape does not actually compute vertex coordinates until the moved shape is drawn to the graph.
-    // BIG WARNING 2: If the plot is featured in two or more graphs, only the points as they occur at the latest graphing
-    //  will be returned, with no information as to which graph that was. Only an issue for pixel coordinates, or for shapes present on several
-    //  graphs but just moved in one of them.
-    { int plotID = Convert.ToInt32(Args[0].X);
-      Plot splot = null;
-      foreach (Plot plotto in MainWindow.Plots2D)
-      { if (plotto.ArtID == plotID) { splot = plotto;  break; } }
-      if (splot == null) { result.I = EmptyArray();  break; }
-      bool isPixelCoords = (Args[1].X == 0.0);
-      bool getMovedCoords = (splot is Shape  &&  !isPixelCoords  &&  (NoArgs < 3  ||  Args[2].X == 0.0) );
-            // This boolean is therefore always FALSE for all non-Shape plots.
-      double[] outdata;
-      int[] dims = new int[3];
-      if (isPixelCoords)
-      { double[] Xpix = splot.Xpixels,   Ypix = splot.Ypixels;
-        int pixLen = Xpix.Length;
-        outdata = new double[2*pixLen];
-        Xpix.CopyTo(outdata, 0);   Ypix.CopyTo(outdata, pixLen);
-        dims[0] = pixLen;  dims[1] = 2;
-      }
-      else // scaled coordinates
-      { double[] XX, YY;
-        if (getMovedCoords) // that is, the shape, if moved, has actually been drawn on the graph:
-        { XX = (splot as Shape).CornersX;
-          if (XX != null) YY = (splot as Shape).CornersY;
-          else { XX = splot.XCoords;  YY = splot.YCoords; }
-        }
-        else { XX = splot.XCoords;  YY = splot.YCoords; }
-        int XXlen = XX.Length;
-        if (splot.Is3D)
-        { outdata = new double[3*XXlen];
-          dims[0] = XXlen;  dims[1] = 3;
-          XX.CopyTo(outdata, 0);   YY.CopyTo(outdata, XXlen);   splot.ZCoords.CopyTo(outdata, 2*XXlen);
-        }
-        else // 2D
-        { outdata = new double[2*XXlen];
-          dims[0] = XXlen;  dims[1] = 2;
-          XX.CopyTo(outdata, 0);   YY.CopyTo(outdata, XXlen);
-        }
-      }
-      result.I = V.GenerateTempStoreRoom(dims);
-      R.Store[result.I].Data = outdata;
-      break;
-    }
-    case 416: // CLUSTER(char array Action,  InMatrix, ...)
-    // Action = "resolve": (Action, InMatrix, IncludeDiagonallyTouching): InMatrix should contain only two values: -1 (for 'Empty' boxes)
-    //   and 0 (for 'Null' boxes). The returned matrix will have the same dimensions as InMatrix; all clusters of empty boxes will be identified,
-    //   and each filled with a unique positive integer. The integers will have sequence gaps usually, as the algorithm tentatively labels
-    //   subclusters and then relabels them if these merge. Nulls (0) are left as is.
-    //   NO CHECK for values other than 0 and -1; if they are there, no doubt awful things will happen - garbage-in, garbage-out will apply.
-    // Action = "single": (Action, InMatrix, IncludeDiagonallyTouching, ThisRow, ThisColumn, FillValue): InMatrix can have any values. Whatever is the
-    //   value at the indicated location, clusters of that value will be sought AS LONG AS the value there is not 0 (which is again 'Null').
-    //   The returned matrix will have the original value replaced by FillValue everywhere in the cluster; other values in InMatrix stay as is.
-    //   (if the value at the location is already 0, the function will return SCALAR 0).
-    {// #### Make crashproof for all -1 or all 0.
-      int inslot = Args[1].I;  if (inslot == -1) return Oops(Which, "2nd. arg. must be a matrix");
-      StoreItem insitem = R.Store[inslot];
-      int[] inDims = insitem.DimSz;
-      int noRows = inDims[1], noCols = inDims[0];  if (noRows == 0 || inDims[2] != 0) return Oops(Which, "the 2nd. arg. should be a matrix");
-      double[] indata = insitem.Data._Copy();
-      int indataLen = indata.Length;
-      bool allowCornerTouch = (Args[2].X != 0);
-      int[] touchRows, touchCols;
-      if (allowCornerTouch) // E   SE  S  SW   W   NW  N  NE
-      { touchRows = new int[] {0, -1, -1, -1,  0,  1,  1, 1};
-        touchCols = new int[] {1,  1,  0, -1, -1, -1,  0, 1};
-      }
-      else //                  E  S   W  N
-      { touchRows = new int[] {0, -1, 0, 1};
-        touchCols = new int[] {1, 0, -1, 0};
-      }
-      int noNeighbours = touchRows.Length;
-      string Action = StoreroomToString(Args[0].I);
-      bool isSingle = (Action == "single"),   isResolve = (Action == "resolve");
-      if (!isSingle && !isResolve) return Oops(Which, "unrecognized value of 1st. arg.");
-      int thisRow = -1, thisCol = -1, thisBox = -1;
-      double Null = 0.0;
-      if (isSingle)
-      { if (NoArgs != 6) return Oops(Which, "there should be 6 args. for Action = 'single'");
-        double clusterValue = Args[5].X;  if (clusterValue == 0.0) return Oops(Which, "the last arg. must be a nonzero scalar");
-        int[] fullNbrsRow = new int[noNeighbours], newNbrsRow = new int[noNeighbours];
-        for (int i=0; i < noNeighbours; i++) fullNbrsRow[i] = 1;
-        thisRow = Convert.ToInt32(Args[3].X);
-        thisCol = Convert.ToInt32(Args[4].X);
-        if (thisRow < 0 || thisRow >= noRows || thisCol < 0 || thisCol >= noCols)
-        { return Oops(Which, "the last 2 args. do not constitute a valid address within the given matrix"); }
-        thisBox = thisRow * noCols + thisCol;
-        double coreValue = indata[thisBox];
-        if (coreValue == Null) break; // i.e return SCALAR 0
-        indata[thisBox] = clusterValue; // would not be set by the loop below.
-        // Set up the stacks
-        Stack<int[]> stackNbrs = new Stack<int[]>(); // *** NB! This stack is ELECTRIC - it only holds a pointer, with the result that
-                                    // later changes to the pushed array outside of the stack also change the array (supposedly) on the stack.
-        Stack<Duo> stackXY = new Stack<Duo>();
-        stackXY.Push(new Duo(thisCol, thisRow));
-        fullNbrsRow.CopyTo(newNbrsRow, 0);
-        stackNbrs.Push(newNbrsRow);
-        newNbrsRow = new int[noNeighbours]; // and so break newNbrsRow's connection to the stack
-        Duo thisBoxRef, nextBoxRef;
-        int[] whatsLeft;
-        int nextMove;
-        while (true)
-        {
-          thisBoxRef = stackXY.Peek(); // Leave it on the stack for now.
-          whatsLeft = stackNbrs.Peek(); // Leave it on the stack for now. NB - even though we used Peek and not Poke, STILL any
-                                        //  changes to 'whatsLeft' carry through to the array on the top of the stack.
-          nextMove = -1;
-          for (int i=0; i < noNeighbours; i++) { if (whatsLeft[i] == 1) { nextMove = i;  break; }  }
-          if (nextMove == -1)
-          { if (stackNbrs.Count == 1) break;   // nothing left undone on the stack
-            stackXY.Pop(); // get rid of this box from the stack, as it has no more neighbours to test
-            stackNbrs.Pop();
-            continue;
-          }
-          // If got here, there is work to do for this square.
-          nextBoxRef.X = thisBoxRef.X + touchCols[nextMove];
-          nextBoxRef.Y = thisBoxRef.Y + touchRows[nextMove];
-          whatsLeft[nextMove] = 0; // to avoid revisiting the new square when revisiting the old square on the stack
-                                   // As mentioned above, we have just changed the array on the stack as well, by this move.
-          int zeroat;
-          if (nextBoxRef.X >= 0 && nextBoxRef.X < noCols && nextBoxRef.Y >= 0 && nextBoxRef.Y < noRows)
-          {
-            if (indata[nextBoxRef.Y*noCols + nextBoxRef.X] == coreValue)
-            {
-              indata[nextBoxRef.Y*noCols + nextBoxRef.X] = clusterValue;
-              fullNbrsRow.CopyTo(newNbrsRow, 0); // safe because we dereferenced newNbrsRow earlier.
-              // avoid useless reexploring the parent cell, so set the reciprocal move to zero:
-              zeroat = (nextMove+noNeighbours/2) % noNeighbours;
-              newNbrsRow[zeroat] = 0;
-              stackXY.Push(nextBoxRef);
-              stackNbrs.Push(newNbrsRow); newNbrsRow = new int[noNeighbours];
-            }
-          }
-        }
-      }
-      else // Action = "resolve":
-      { double lastlabel,  thislabel,  nextLabelNo = 1.0;
-        double Empty = -1.0;
-        for (int rw=0; rw < noRows; rw++)
-        {
-          lastlabel = Null;  thislabel = Null;
-          for (int cl=0; cl < noCols; cl++)
-          {
-            thislabel =  indata[rw*noCols + cl];
-            if (thislabel != Null)
-            { // Assign a label to this box, if empty
-              if (thislabel == Empty)
-              { if (lastlabel == Null) {  thislabel = nextLabelNo;   nextLabelNo++;   indata[rw*noCols + cl] = thislabel;  }
-                else { thislabel = lastlabel;   indata[rw*noCols + cl] = thislabel; }
-              }
-              else if (lastlabel != Null  &&  thislabel != lastlabel) // do nothing, if this label already = last label
-              { for (int i=0; i < indataLen; i++) { if (indata[i] == lastlabel) indata[i] = thislabel; } }
-                  // this label has precedence, and all instances of last label are switched to this label.
-             // Check the contact squares above and below:  (Below is nec, as a cluster may curve upwards, ahead,
-             //       and then hook downwards under this row, ahead of this column.)
-              for (int ii = 0; ii < noNeighbours; ii++)
-              { int crow =  rw + touchRows[ii];
-                if (crow >= 0 && crow < noRows)
-                { int coll = cl + touchCols[ii];
-                  if (coll >= 0 && coll < noCols)
-                  { double x =  indata[crow*noCols + coll];
-                    if (x != Null)
-                    { if (x == Empty) indata[crow*noCols + coll] = thislabel;
-                      else if (x != thislabel)
-                      { for (int j=0; j < indataLen; j++) { if (indata[j] == thislabel) indata[j] = x; }
-                        thislabel = x;
-                      }
-                    }
-                  }
-                }
-              }
-            }
-            lastlabel = thislabel;
-          }
-        }
-      }
-      result.I = V.GenerateTempStoreRoom(inDims);
-      R.Store[result.I].Data = indata;
-      break;
-    }
-    case 417: // MXCENTRE(char. array Mode, InMatrix [, bool RoundToNearestEven) -- find whatever type of centre is required by Mode.
-    // The return is always an array of size 2. If the result is determinate and in range, this array is [ row index, column index ].
-    // Otherwise [-1, -1] is returned. So [0] should be tested before using the return.
-    // Mode = "of mass": Centre of mass is returned, taking into account actual values (including negative ones). In many cases where
-    //   negative values are present, this would produce a COM off the matrix, in which case [ -1, -1 ] is returned.
-    // Mode = "of rectangle": Centre of the rectangle which encloses all nonzero values is returned.
-    // All modes: If no 3rd. arg., or it is FALSE, then rounding is away from zero instead.
-    {
-      string Mode = StoreroomToString(Args[0].I);  if (Mode == "") return Oops(Which, "1st. arg. should be a char. array");
-      int inmxslot = Args[1].I;
-      int noRows = 0, noCols = 0;
-      double[] indata = null;
-      if (inmxslot >= 0)
-      { StoreItem sitem = R.Store[inmxslot];
-        if (sitem.DimCnt == 2)
-        { noRows = sitem.DimSz[1];   noCols = sitem.DimSz[0];
-          indata = sitem.Data;
-        }
-        else inmxslot = -1; // to trigger the error message...
-      }
-      if (inmxslot == -1) return Oops(Which, "2nd. arg. must be a matrix");
-      int indataLen = indata.Length;
-      double[] outdata = new double[2];
-      bool skipRounding = false; // only set to 'true' where outdata has been set to the failure result {-1, -1}.
-      bool skipRangeTest = false; // after rounding has occurred, the range test of rounded values is skipped if they can't possibly be out of range.
-      if (Mode == "of rectangle")
-      {
-        int loRow = indataLen, loCol = indataLen, hiRow = 0, hiCol = 0;
-        for (int i = 0; i < indataLen; i++)
-        { int rw = i / noCols,  cl = i % noCols;
-          if (indata[i] != 0.0)
-          { if (rw < loRow) loRow = rw;  if (rw > hiRow) hiRow = rw;
-            if (cl < loCol) loCol = cl;  if (cl > hiCol) hiCol = cl;
-          }
-        }
-        if (loRow == indataLen)
-        { outdata[0] = -1.0;  outdata[1] = -1.0;  skipRounding = true; } // indeterminate, because no nonzero values in the matrix
-        else
-        { outdata[0] = ((double)loRow + (double)hiRow) / 2.0;
-          outdata[1] = ((double)loCol + (double)hiCol) / 2.0;
-          skipRangeTest = true; // impossible for values to round to out-of-range values.
-        }
-      }
-      else if (Mode == "of mass")
-      { double[] sumRows = new double[noCols], sumCols = new double[noRows];
-        double x;
-        for (int i = 0; i < indataLen; i++)
-        { int rw = i / noCols,  cl = i % noCols;
-          x = indata[i];
-          sumRows[cl] += x;   sumCols[rw] += x;
-        }
-        bool isIndeterminate = false;
-        double sumSumRows = 0.0,  sumSumCols = 0.0;
-        double sumRowMoments = 0.0,  sumColMoments = 0.0;
-        for (int i=0; i < noCols; i++) { sumSumRows += sumRows[i];  sumRowMoments += sumRows[i]* (double) i; }
-        if (sumSumRows == 0.0) isIndeterminate = true;
-        else
-        { for (int i=0; i < noRows; i++) { sumSumCols += sumCols[i];  sumColMoments += sumCols[i]* (double) i; }
-          if (sumSumCols == 0.0) isIndeterminate = true;
-        }
-        if (isIndeterminate) { outdata[0] = outdata[1] = -1.0;  skipRounding = true; }
-        else
-        { outdata[0] = sumColMoments / sumSumCols; // Can be out of range; but we check for that at the end of the function.
-          outdata[1] = sumRowMoments / sumSumRows;
-        }
-      }
-      else return Oops(Which, "1st. arg. is not a recognized mode");
-      // ROUNDING:   Each Mode's code must ensure that values are such that rounding would not create out-of-range values at the top end.
-      if (!skipRounding)
-      { MidpointRounding moo = MidpointRounding.AwayFromZero;
-        if (NoArgs > 2 && Args[2].X != 0.0) moo = MidpointRounding.ToEven;
-        outdata[0] = Math.Round(outdata[0], moo);  outdata[1] = Math.Round(outdata[1], moo);
-        if (!skipRangeTest) // don't waste time on this check if it is unnecesary
-        { if (outdata[0] < 0.0 || outdata[0] >= (double) noRows || outdata[1] < 0.0 || outdata[1] >= (double) noCols)
-          { outdata[0] = -1.0;  outdata[1] = -1.0; }
-        }
-      }
-      result.I = V.GenerateTempStoreRoom(2);
-      R.Store[result.I].Data = outdata;
-      break;
-    }
-    case 418: // GRAPHVISIBLE(GraphID [, bool MakeVisible ]) -- If 2 args, changes visibility accordingly (if it was different);
-    // in any case returns the current visibility of the graph. (Nonexistent graph would also return FALSE - no error raised.)
-    { int graphID = (int) Args[0].X;
-      Graph graf = null;
-      Trio trill = Board.GetBoardOfGraph(graphID, out graf);
-      if (graf == null) break; // returning 'false'.
-      int doWhat = 0; // tells method below just to return visibility status, without altering it.
-      if (NoArgs > 1)
-      { if (Args[1].X == 0.0) doWhat = -1;  else doWhat = 1; }
-      // We now have the board...
-      if (Board.VisibilityStatus(trill.X, doWhat)) result.X = 1.0;
-      break;
-    }
-    case 419: // CURSORPOSN(array Window [,  scalar Where ] ) -- returns the final cursor position. If a second arg, moves it first.
-    // 'Where' = desired character position for placement. If rounds to below zero, reset to 0; if beyond end of text (e.g. MAXREAL), at end.
-    { char windowID = ' ';
-      double x = R.Store[Args[0].I].Data[0];
-      if (x == 65 || x == 97) windowID = 'A';  else if (x == 82 || x == 114) windowID = 'R';  else break;
-      int n = -1; // neg. values leave the cursor where it is.
-      if (NoArgs > 1)
-      { x = Args[1].X;
-        if (x >= (double) int.MaxValue)  n = int.MaxValue;
-        else if (x < -0.5) n = -1;
-        else n = Convert.ToInt32(x);
-      }
-      result.X = (double) MainWindow.ThisWindow.CursorPosition(windowID, n);
-      break;
-    }
-    case 420: // MAINMENU(array MenuTitles [, bool MakeVisible ] )
-    // ONE ARG VERSION: MenuTitle must exactly match one of the ten main menu titles, with no leading or trailing spaces.
-    //   If the menu name is identified, its visibility status is returned. Output coding: 1 = visible, 0 = invisible, -1 =
-    //   menu name not identified.
-    // TWO ARG VERSION: This time MenuTitle may be more than one menu title (delimiter = "|"), but there must be no leading
-    //   or trailing spaces per menu title. If found, the menu(s) are made visible / invisible according to the last argument.
-    //   The return is (trivially) 1 if MakeVisible TRUE or 0 if FALSE; it is -1 if ANY of the names is not recognized.
-    //   SPECIAL CASE: If MenuTitle is exactly "ALL", then all ten menus are made visible / invisible.
-    // Note that all menu items return to visibility at the end of the run.
-    // Also note that only main menu item titles can be used; this function does not affect submenu visibilities.
-    {
-      int titleSlot = Args[0].I;  if (titleSlot == -1) return Oops(Which, "1st. arg. must be an array of menu name(s)");
-      string argstr = StoreroomToString(titleSlot);
-      string[]titles = argstr.Split(new char[]{'|'},  StringSplitOptions.RemoveEmptyEntries);
-      if (titles.Length == 0) return Oops(Which, "no menu names supplied");
-      char visible = '?';
-      if (NoArgs > 1)
-      { if (Args[1].X == 0.0) visible = 'I';  else visible = 'V'; }
-      int output = 0;
-      bool errorFound = false;
-      for (int i=0; i < titles.Length; i++)
-      { output = MainWindow.ThisWindow.MenuVisibility(titles[i], visible);
-        if (output == -1) errorFound = true;
-        if (visible == '?' || titles[i] == "ALL") break; // after the first name has been handled.
-      }
-      if (errorFound) result.X = -1.0;
-      else result.X = (double) output;
-      break;
-    }
-    case 421: // KEYNAME( scalar/array KeyValues [, array Delimiter] ) -- Returns key name(s) corresponding to key value(s) in
-    // the first argument. If the JTV function called below cannot find a name, it simply returns "#" + the key value.
-    // If there is no second argument but more than one value in KeyValues, the default delimiter is simply a space.
-    // A key value of 0 returns "null". PROVISO: Names found by trial and error on my computer, and are not nec. general to other computers.
-    {
-      double[] values;
-      int valSlot = Args[0].I;
-      if (valSlot == -1) values = new double[] {Args[0].X};  else values = R.Store[valSlot].Data;
-      string ss = "";
-      string delim = " ";
-      if (NoArgs > 1 && Args[1].I >= 0) delim = StoreroomToString(Args[1].I);
-      int len = values.Length;
-      for (int i=0; i < len; i++)
-      {
-        int n = Convert.ToInt32(values[i]);
-        ss += JTV.KeyDenomination(n);
-        if (i < len-1) ss += delim;
-      }
-      double[] outdata = StringToStoreroom(-1, ss);
-      result.I = V.GenerateTempStoreRoom(outdata.Length);
-      R.Store[result.I].Data = outdata;
-      R.Store[result.I].IsChars = true;
-      break;
-    }
-    case 422: // SOLVEEXP: Two forms allowed:
-    // (A) one arg.: solveexp(char. array Expression) -- Expression must be a sequence of values (constants, variables
-    //   in scope, literal values) with appropriately placed operation signs (allowed: +. -. *, /, ^) and possibly with appropriately
-    //   placed brackets '(', ')' (nesting allowed). Any spaces, tabs or par. marks will be removed before processing begins. No other
-    //   chars. should be allowed, and no functions are allowed.
-    // (B) two arg.: solveexp(char. array Expression, array Values) -- This time no values, constants or variables are allowed in
-    //   Expression. Instead, values are all stored in the 2nd. arg. Values, and references to them in Expression are in the form
-    //   "{n}" (where n is an explicit integer, the index of the value in Values).
-    {
-      int expslot = Args[0].I;  if (expslot == -1) return Oops(Which, "the 1st. arg. must be an array (the expression to solve)");
-      double[] values = null;
-      if (NoArgs > 1)
-      { int valslot = Args[1].I;
-        if (valslot == -1) values = new double[] {Args[1].X};
-        else values = R.Store[valslot].Data;
-      }
-      string expression = StoreroomToString(expslot);
-      bool isFormA = (expression.IndexOf('{') == -1); // No braces, so assumed to be the one-arg. form (A) as described above.
-      if (isFormA) // then we have to build arguments that would be suitable for form B:
-      { string errmsg;
-        expression = P.ParseExpession(expression, out values, out errmsg, true);
-        if (errmsg != "") return Oops(Which, errmsg);
-      }
-      // Form B code, to which Form A has now been conformed:
-      string oopsie;
-      double z = JS.SolveExpression(expression, values, out oopsie);
-      if (oopsie != "") return Oops(Which, "Problem with expression: " + oopsie);
-      result.X = z;
-      break;
-    }
-    case 423: // SIGMOID(array XX, scalar IndexCoefficient, scalar DenomCoefficient, char array Mode ) -- sigmoid functions.
-    // Only the first character of Mode is accessed. Structure of XX ignored.
-    // Mode = "rising": returns 1 / (1 + D.C. * e^-(I.C. * XX) ). Hence, 0 for X=-infinity, 1 for X = infinity.
-    // Mode = "falling": Returns 1 - the above. Hence, 1 for X = -infinity, 0 for X = infinity.
-    // Mode = "compressed": Returns  1 / ( (XX/D.C.)^I.C. + 1). Intended for use for X >= 0.
-    //      Values: X = 0 --> 1; X = D.C. --> 0.5; X = infinity --> 0. No cliff for I.C. = 1, cliff more sheer as I.C. increases.
-    // RETURNS a list array. Crashes if Mode present but unrecognizable
-    { 
-      int inslot = Args[0].I;  if (inslot == -1)  return Oops(Which, "1st. arg. must be an array");
-      double[] indata = R.Store[inslot].Data;
-      int dataLen = indata.Length;
-      double x, IndexCoeff = Args[1].X,  DenomCoeff = Args[2].X;
-      int modeslot = Args[3].I;
-      if (modeslot == -1) return Oops(Which, "4th. arg. must be an array");
-      double Mode = R.Store[modeslot].Data[0];
-      double[] outdata = new double[dataLen];
-      if (Mode == 114 || Mode == 102) // 114 = "r",  102 = "f"
-      { for (int i=0; i < dataLen; i++)
-        { x = 1.0 / (1.0 + DenomCoeff * Math.Exp(-IndexCoeff * indata[i]) );
-          if (Mode == 114) outdata[i] = x;  else outdata[i] = 1 - x;
-        }
-      }
-      else if (Mode == 99) // 99 = "c"
-      { bool negIndex = (IndexCoeff < 0.0);
-        if (negIndex) IndexCoeff = -IndexCoeff;
-        double z = 1 / DenomCoeff;
-        for (int i=0; i < dataLen; i++)
-        { x = 1.0 / (1.0 + Math.Pow(z *  indata[i], IndexCoeff));
-          if (negIndex) outdata[i] = 1.0 - x; else outdata[i] = x; 
-        }
-      }
-      else return Oops(Which, "4th. arg. is not a recognized operation code");
-      result.I = V.GenerateTempStoreRoom(dataLen);
-      R.Store[result.I].Data = outdata;
-      break;
-    }
 
-//    case 423: // SIGMOID(scalar/array X [, scalar IndexCoefficient [, scalar DenomCoefficient ] ] -- sigmoid function.
-//    // result = 1 / (1 + D.C. * e^-(I.C. * X) ).
-//    // Returns variable of same structure as X. Defaults: both coefficients = 1.
-//    { int inslot = Args[0].I;
-//      double[] indata;
-//      StoreItem initem = null;
-//      if (inslot == -1) indata = new double[] { Args[0].X };
-//      else
-//      { initem = R.Store[inslot];
-//        indata = initem.Data;
-//      }
-//      int dataLen = indata.Length;
-//      double IndexCoeff = 1.0, DenomCoeff = 1.0;
-//      if (NoArgs > 1) IndexCoeff = Args[1].X;
-//      if (NoArgs > 2) DenomCoeff = Args[2].X;
-//      double[] outdata = new double[dataLen];
-//      for (int i=0; i < dataLen; i++)
-//      { outdata[i] = 1.0 / (1.0 + DenomCoeff * Math.Exp(-IndexCoeff * indata[i]) );
-//      }
-//      if (inslot == -1) { result.X = outdata[0]; break; } // Scalar in --> Scalar out.
-//      result.I = V.GenerateTempStoreRoom(initem.DimSizes);
-//      R.Store[result.I].Data = outdata;
-//      break;
-//    }
-
-
-
-    case 424: // SEQUENCE (StartValue, any no. of named scalars) -- the Nth scalar receives the new value StartValue+(N-1).
-    // If the .Use of a scalar is not 3, an error is raised. The return is the number of named scalar arguments.
-    // StartValue does not have to be a named value. (If an array, defaults to 0, with no error message.
-    // StartValue is rounded. *** I have deliberately avoided other parameters, e.g. a step argument. For anything else
-    //  the much more powerful function "unpack" should be used.
-    { double startValue = Math.Round(Args[0].X);
-      for (int arg = 1; arg < NoArgs; arg++)
-      { int Fn = REFArgLocn[arg].Y,  At = REFArgLocn[arg].X;
-        if (Fn < 0) return Oops(Which, "the {0}th arg. is not an existing variable name", arg + 1);
-        int varuse = V.GetVarUse(Fn, At);
-        if (varuse == 0 || varuse == 3) // Receiver is SCALAR. Unassigned scalars allowed here. (Unit Parser had set up unrecog'd. names as such.)
-        { V.SetVarValue(Fn, At, startValue); }
-        else return Oops(Which, "the {0}th arg. is not a user-definable scalar variable", arg + 1);
-        startValue += 1.0;
-      }
-      result.X = startValue;
-      break;
-    }    
-    case 425: // CRASH(same args. as for 'text(.)' etc.)  Crashes the program from anywhere, leaving the error msg. in Results Window.
-    { string displaytext = ArgsToDisplayString(0, Args, REFArgLocn, "");
-      result.S = displaytext;  result.B = false; return result;
-      // For once, no 'break' is needed!
-    }
-    case 426: // PLOTMX(matrix Mx [, Xcoords [, PtShape [, PtWidth [, PtColour [, LnShape [, LnWidth [, LnColour ]]]]]]] )
-    // Plots each row of Mx separately against Xcoords. Xcoords must be a list array, and must have length exactly of rows of Mx.
-    // PtShape ... LnColour have the same meaning as for "plot" EXCEPT that for the Type and Shape args., array items refer to whole
-    // curves. Array items are addressed by modulo no. rows of Mx, so e.g. for a Mx with 5 rows, if PtWidth is data(1, 2, 3), for the
-    // five curves point widths would be 1, 2, 3, 1, 2. Individual colours within PtColour and LnColour are treated likewise.
-    // As a result of this system, there is no way of having different point features or line features across any one curve.
-    // JAGGED MATRICES: If you want curves to be plotted only as far as a jagged matrix padder, first convert the padder in your
-    // matrix to MAXREAL, as any row in Mx will be truncated at this value.
-    // Corollary: If you want to cancel the plotting of some curve within Mx, simply install MAXREAL as its first element. 
-    // RETURNED: A LIST ARRAY of plot IDs.
-    {
-      // First argument:
-      int mxslot = Args[0].I;  if (mxslot == -1) return Oops(Which, "1st. arg. cannot be scalar");
-      StoreItem mxitem = R.Store[mxslot];
-      int[] dimsz = mxitem.DimSz;
-      int noRows = dimsz[1];   if (noRows == 0) return Oops(Which, "1st. arg. must be a matrix");
-      int rowLen = dimsz[0];
-      double[] YY = mxitem.Data;
-      // Second argument (or lack thereof):
-      double[] XX;
-      int Xslot = -1;
-      if (NoArgs == 1) // then invent a set of X coordinates:
-      { XX = new double[rowLen];   
-        for (int i = 0; i < rowLen; i++)  XX[i] = i;
-      }
-      else
-      { Xslot = Args[1].I;   if (Xslot == -1) return Oops(Which, "2nd. arg. must be an array");
-        XX = R.Store[Xslot].Data;
-        if (XX.Length != rowLen) return Oops(Which, "2nd. arg. must have the same length as rows of the 1st. arg. matrix");
-      }
-      // Retrieve the remaining six args., or if any absent, install default values:
-      int dummy = 0; // needed because we are calling functions originally written for function "plot(.)", which needed that REF arg's output value.
-      char[] ptshape, lnshape;   double[] ptwidth, lnwidth;   Gdk.Color[] ptclr = null, lnclr = null;
-     // Point and line shape:
-      if (NoArgs > 2) ptshape = Plot_Shape(Args[2].I, Args[2].X, ref dummy); // If scalar, taken as a unicode value.
-        else ptshape = new char[] { '.' }; // default point - a dot. 
-      if (NoArgs > 5) lnshape = Plot_Shape(Args[5].I, Args[5].X, ref dummy);
-        else lnshape = new char[] { '_' }; // default line - continuous. 
-     // Point and line width:
-      if (NoArgs > 3) ptwidth = Plot_Width(Args[3].I, Args[3].X, ref dummy);
-        else ptwidth = new double[] {3.0};
-      if (NoArgs > 6) lnwidth = Plot_Width(Args[6].I, Args[6].X, ref dummy);
-        else lnwidth = new double[] {1.0};
-     // Point and line colour:
-      if (NoArgs > 4) ptclr = Plot_Colour(Args[4].I, Args[4].X, ref dummy, JTV.Black);
-        else ptclr = new Gdk.Color[] { JTV.Blue };
-      if (NoArgs > 7) lnclr = Plot_Colour(Args[7].I, Args[7].X, ref dummy, JTV.Black);
-        else lnclr = new Gdk.Color[] { JTV.Blue };
-      // PLOT IT ALL:
-      double[] PlotIDs = new double[noRows];
-      for (int i=0; i < noRows; i++)
-      { int inset = i*rowLen;
-        Plot plotto = null;
-        int ptshapeIndex = i % ptshape.Length,   ptwidthIndex = i % ptwidth.Length,  ptclrIndex = i % ptclr.Length;   
-        int lnshapeIndex = i % lnshape.Length,   lnwidthIndex = i % lnwidth.Length,  lnclrIndex = i % lnclr.Length;   
-        // Unfortunately we have to convert these single values to arrays:
-        char[] thisptshape = new char[] { ptshape[ptshapeIndex] };
-        char[] thislnshape = new char[] { lnshape[lnshapeIndex] };
-        double[] thisptwidth = new double[] { ptwidth[ptwidthIndex] };
-        double[] thislnwidth = new double[] { lnwidth[lnwidthIndex] };
-        Gdk.Color[] thisptclr = new Gdk.Color[] { ptclr[ptclrIndex] };
-        Gdk.Color[] thislnclr = new Gdk.Color[] { lnclr[lnclrIndex] };
-        int n = YY._Find(double.MaxValue, inset, inset + rowLen - 1);
-        if (n == inset) continue; // no curve to plot, as MAXVALUE is the first character.
-        double[] yyo;
-        if (n != -1) // then there is a MAXREAL, so curtail arrays:
-        { double[] xxo = XX._Copy(0, n-inset);   yyo = YY._Copy(inset, n-inset);
-          plotto = new Plot(xxo, yyo, thisptshape, thisptwidth, thisptclr, thislnshape, thislnwidth, thislnclr);
-        }
-        else
-        { yyo = YY._Copy(inset, rowLen);
-          plotto = new Plot(XX, yyo, thisptshape, thisptwidth, thisptclr, thislnshape, thislnwidth, thislnclr);
-        }
-        MainWindow.Plots2D.Add(plotto);
-        PlotIDs[i] = (double) plotto.ArtID;
-      }
-      result.I = V.GenerateTempStoreRoom(noRows);
-      R.Store[result.I].Data = PlotIDs;
-      break;
-    }
-    case 427:  case 428: // ROTATEROW / ROTATECOL (Matrix, scalar RowColNo [, scalar NoTimes [, scalar PadValue
-    //                                                    [, scalar FromIndex [, scalar ToIndex ] ] ] ] -- VOID. 
-    // Rotates in situ a single row or column. NoTimes: N (pos or neg) --> content of Matrix[i] --> Matrix[i+N].
-    // If no 'PadValue' arg., or if it is an array (like "wrap"), wraparound occurs, all values being preserved.
-    //   Otherwise the last value to move is replaced by PadValue.
-    // No error raised if Matrix is not a named array, but the fn. isn't much use to you if the arg. is a temporary array.
-    // If FromIndex - ToIndex doesn't cover any of the row or column, simply no rotation occurs. Adjustments:
-    //     FromIndex < 0 --> 0;  ToIndex < 0 or too large --> end of the row or column. 
-    {
-      bool isRow = (Which == 427); 
-      int inslot = Args[0].I;  if (inslot == -1) return Oops(Which, "1st. arg. cannot be scalar");
-      StoreItem inItem = R.Store[inslot];
-      double[] indata = inItem.Data;
-      int[] dims = inItem.DimSz;
-      int noRows = dims[1], noCols = dims[0];
-      if (noRows == 0) return Oops(Which, "1st. arg. must be a matrix");
-      int NoTimes = 1;
-      int whichStrip = Convert.ToInt32(Args[1].X); // We don't bother checking for scalarhood.
-      if (NoArgs > 2) NoTimes = Convert.ToInt32(Args[2].X);
-      if (NoTimes == 0) break; // do nothing. Now guaranteed that 0 < abs(NoTimes) < no. rows / cols. 
-      double padder = 0;
-      bool wrap = (NoArgs <= 3 || Args[3].I >= 0);
-      if (!wrap) padder = Args[3].X;
-      int startAt = 0, endAt = -1;
-      if (NoArgs > 4) { startAt = Convert.ToInt32(Args[4].X);  if (startAt < 0) startAt = 0; }
-      if (NoArgs > 5) { endAt = Convert.ToInt32(Args[5].X);  if (endAt < 0) endAt = -1; }
-      int ndx;
-      int stripLen = (isRow) ? noCols : noRows;
-      // Extract the old strip:
-      double[] oldstrip = new double[stripLen];
-      if (isRow)
-      { if (whichStrip < 0 || whichStrip >= noRows) return Oops(Which, "row index is out of range");
-        oldstrip = inItem.Data._Copy(whichStrip * noCols, noCols);      
-      }
-      else
-      { if (whichStrip < 0 || whichStrip >= noCols) return Oops(Which, "column index is out of range");
-        // dissect out the original column from the matrix:
-        for (int i=0; i < noRows; i++) // the donor
-        { oldstrip[i] = indata[i * noCols + whichStrip]; }
-      }
-      // Rotate the strip:
-      double[] newstrip = oldstrip._Copy(); // Where start and end pts were specified, we want the rest of newstrip to be the same as oldstrip
-      if (endAt == -1 || endAt >= stripLen) endAt = stripLen-1;
-      int sublen = endAt - startAt + 1;
-      double implant; 
-      for (int i = startAt; i <= endAt; i++)
-      { ndx = i + NoTimes;
-        if (!wrap && (ndx < startAt || ndx > endAt)) implant = padder;
-        else implant = oldstrip[i];
-        while (ndx > endAt)   ndx -= sublen;
-        while (ndx < startAt) ndx += sublen;
-        newstrip[ndx] = implant;
-      }
-      // Implant the new row or column:
-      if (isRow)
-      {  Array.Copy(newstrip, 0, inItem.Data, whichStrip * noCols, noCols);
-      }
-      else
-      { 
-        for (int j=0; j < noRows; j++)
-        inItem.Data[j * noCols + whichStrip] = newstrip[j];
-      }      
-      break;
-    }
-    case 429: // MULTIBOX(array Heading, array LayoutString, array Texts, array ButtonTitles [, array TextsDelimiter ] )
-    // TextsDelimiter: Normally '|' separates between texts. If you want that char. to be literally part of a text, or want to avoid the
-    // possibility of the user inserting this as part of the text, then provide any printable character (i.e. above 'space') as the delimiter.
-    // RETURNS the button ID.
-    { bool oopsie = false;
-      string heading =  StoreroomToString(Args[0].I);      if (heading == "") oopsie = true;
-      string layout  =  StoreroomToString(Args[1].I);      if (layout == "") oopsie = true;
-      string texts   =  StoreroomToString(Args[2].I);      if (texts == "") oopsie = true;
-      string buttontitles = StoreroomToString(Args[3].I);  if (buttontitles == "") oopsie = true;
-      if (oopsie) return Oops(Which, "all args. must be arrays");
-      char delimChar = '|';
-      if (NoArgs > 4)
-      { string ss = StoreroomToString(Args[4].I);
-        if (ss[0] > '\u0020') delimChar = ss[0];
-      }
-      string[] textsArray = texts.Split(new char[] {delimChar});
-      // CALL THE METHOD:
-      int btn = JD.MultiBox(heading, ref layout, ref textsArray, buttontitles);
-      if (btn == 0) { MainWindow.StopNow = 'G'; R.LoopTestTime = 1; }// Icon closure. This value ensures that the very next end-of-loop
-             // test will check for user's wish to end the program. But R.LoopTestTime will then be automatically reset to its orig. value of 100.
-      if (btn < 0)
-      { string errmsg = "???";
-        if      (btn == -1000) errmsg = "no printable chars. in the 2nd. arg.";
-        else if (btn == -1001) errmsg = "invalid character in the 2nd. arg.";
-        else if (btn == -1002) errmsg = "no button titles supplied in the 4th. arg.";
-        else if (btn == -1003) errmsg = "there was not exactly one text per widget in the 3rd. arg.";
-        return Oops(Which, errmsg);
-      }
-      StoreItem sitem = R.Store[Args[1].I];
-      double[] xx = StringToStoreroom(-1, layout);  if (xx.Length < 1) return Oops(Which, "?? programming error!");
-      sitem.Data = xx;
-      sitem.DimCnt = 1;  sitem.DimSz = new int[TVar.MaxNoDims];   sitem.DimSz[0] = xx.Length;
-      StoreItem sitem1 = R.Store[Args[2].I];
-      string textsBack = String.Join(delimChar.ToString(), textsArray);
-      if (textsBack == "") textsBack = " ";
-      string dely = delimChar.ToString();
-      textsBack = textsBack.Replace(dely + dely,  dely + " " + dely);     
-      if (textsBack[0] == delimChar) textsBack = " " + textsBack;
-      if (textsBack[textsBack.Length-1] == delimChar) textsBack = textsBack + " ";
-      xx = StringToStoreroom(-1, textsBack);
-      sitem1.Data = xx;
-      sitem1.DimCnt = 1;  sitem1.DimSz = new int[TVar.MaxNoDims];   sitem1.DimSz[0] = xx.Length;
-      result.X = (double) btn;
-      break;
-    }
-    case 430: // SETBOX(four values in any format: Width, Height, CentreX, CentreY). Settings for the next dialog box (as invoked
-    // by 'show', 'request', 'decide'; it has no effect on file dialog boxes).
-    // Sets box size and location either as a fraction of screen extent (if 0 < the dimension <= 1) or as pixels (dimension > 1).
-    // Defaults are invoked by -1; but one -1 for Width or Height resets both to -1; similarly, -1 for either of CentreX/Y resets both to -1.
-    // The settings of this function do not last beyond the first call to any dialog box.
-    { double[] settings = AccumulateValuesFromArgs(Args);
-      double width = -1, height = -1, centreX = -1, centreY = -1; 
-      if (settings.Length >= 2) { width = settings[0];  height = settings[1]; }
-      if (settings.Length == 4) { centreX = settings[2];  centreY = settings[3]; }
-      JD.PlaceBox(width, height, centreX, centreY);
-      break;
-    }
-
-    case 431: // COUNT(array InArray, array / scalar Target [, scalar startPtr [, scalar endPtr ] ] ) -- returns a SCALAR,
-    // the no. instances of Target found (0, if none). Stuff at pointers is included in the counting process. Out-of-range pointers adjusted.
-    // The structure of 'InArray' is ignored; only its data strip is accessed. Hence 'startPtr' and 'endPtr' are taken as whole-array iterators.
-    // If speed is a big deal and the target is just one value, make it a scalar rather than a one-entry array.
-    { int inslot = Args[0].I, targetslot = Args[1].I;
-      if (inslot == -1) return Oops(Which, "1st. arg. must be an array");      
-      double[] indata = R.Store[inslot].Data;
-      int startPtr = 0, endPtr = indata.Length;
-      if (NoArgs > 2) startPtr = Convert.ToInt32(Args[2].X); // "_FindAll(.) below adjusts improper value.
-      if (NoArgs > 3) endPtr = Convert.ToInt32(Args[3].X); // "_FindAll(.) below adjusts improper value.
-      int[] targetFinds;
-      if (targetslot == -1) targetFinds = indata._FindAll(Args[1].X, startPtr, endPtr); // faster than the same method's overload below
-      else targetFinds = indata._FindAll(R.Store[targetslot].Data, startPtr, endPtr);
-      result.X = targetFinds.Length;
-      break;
-    }
-    // RE THE NEXT THREE FUNCTIONS: These are for some list array "InArray" in which subarrays ("segments") are separated by a SINGLE-valued delimiter.
-    //   Segments are numbered to base 0. Segments of size 0 are allowed, as occurs when InArray starts with the delimiter (Segment 0 then
-    //   has zero length) or ends with the delimiter, or contains two or more contiguous delimiters.
-    //   The number of segments is ALWAYS equal to the number of delimiters + 1. As an extreme example (representing the delimiter by "|"),
-    //   InArray consisting of nothing but the delimiter still has two segments, both of zero size.
-
-    case 432: // GETSEGMT(array InArray, array / scalar Delimiter, scalar WhichSegment ) -- See above notes first. Returns the indicated segment;
-    // or [NaN] if the indicated segment is empty. CRASHES if WhichSegment is out of range.
-    //  If Delimiter is an array, only its first element is used. The returned segment has the chars. rating of InArray.
-    case 433: // SETSEGMT(NAMED array InArray, array / scalar Delimiter, scalar WhichSegment, scalar/array NewContent ) -- VOID.
-    // Sets the indicated segment to the supplied value, unless that value is NaN (if scalar) or, if an array, starts with [0] = NaN;
-    // in this case, the indicated segment will be an empty segment.
-    // CRASHES if WhichSegment is out of range. If Delimiter is an array, only its first element is used.
-    { bool isGetSegmt =  (Which == 432);
-      double[] indata = null; // It is assigned in method 'LocateSegment' below.
-      int leftDelimPtr=0, rightDelimPtr=0, WhichEnd=0;
-      bool Is_Chars=false;
-      double delimiter=0;
-      int locate_outcome = LocateSegment(Args, ref indata, ref delimiter, ref leftDelimPtr, ref rightDelimPtr, ref WhichEnd, ref Is_Chars);
-      if (locate_outcome != 1)
-      { if (locate_outcome == -2) return Oops(Which, "1st. arg. must be an array");
-        if (locate_outcome == -3) return Oops(Which, "1st. arg. cannot be the empty array [NaN]");
-        if (locate_outcome <= 0) return Oops(Which, "no such segment exists");
-      }
-      int segmentWidth = rightDelimPtr - leftDelimPtr - 1; // width of stuff between delimiters. Meaningless, if isInsert, but then is not accessed.
-      double[] outdata;
-      if (isGetSegmt) // GETSEGMT:
-      { if (segmentWidth == 0) outdata = new double[] {double.NaN}; 
-        else outdata = indata._Copy(leftDelimPtr+1, segmentWidth);
-        result.I = V.GenerateTempStoreRoom(outdata.Length);
-        R.Store[result.I].Data = outdata;
-        R.Store[result.I].IsChars = Is_Chars;
-      }
-      else // SETSEGMT:
-      { int indataLen = indata.Length;
-        double[] newdata = null;
-        if (Args[3].I == -1) newdata = new double[] {Args[3].X};
-        else newdata = R.Store[Args[3].I].Data;
-        bool isEmpty = double.IsNaN(newdata[0]);
-        int newdataLen = newdata.Length;  if (isEmpty) newdataLen = 0;        
-        outdata = new double[indataLen + newdataLen - segmentWidth];
-        // Prefix with earlier data, if any:
-        if (leftDelimPtr >= 0) // i.e. if there is a non-virtual left pointer:
-        { Array.Copy(indata, 0, outdata, 0, leftDelimPtr+1); }
-        // Put in the new data, if any:
-        if (newdataLen > 0) newdata.CopyTo(outdata, leftDelimPtr+1); // OK for leftDelimPtr to be -1.
-        // Append remaining old data, if any:
-        if (rightDelimPtr < indataLen)
-        { Array.Copy(indata, rightDelimPtr, outdata, leftDelimPtr+1+newdataLen, indataLen - rightDelimPtr); }
-        // Change the variable's pointer to take the new array:
-        int[] dim_sz = new int[TVar.MaxNoDims];   dim_sz[0] = outdata.Length;        
-        int newslot = V.GenerateTempStoreRoom(dim_sz);
-        StoreItem  newit = R.Store[newslot];
-        newit.Data = outdata;
-        newit.IsChars = Is_Chars;
-        int Fn = REFArgLocn[0].Y, At = REFArgLocn[0].X;
-        V.TransferTempArray(newslot, Fn, At);
-      }
-      break;
-    }
-    case 434: // FINDSEGMT (InArray, scalar/array Delimiter, array/scalar SearchFor [, bool FullLengthMatchReqd [, scalar StartFrom
-              //      [, scalar MaxNoFinds  ] ] ] ). -- see notes before case 432 ("getsegmt").
-    // Recall: If InArray is "a||cc" and Delimiter is '|', then segment 0 is "a", segment 1 is empty, segment 2 is "cc". If InArray = "|",
-    //   segment 0 = segment 1 = empty segment. The empty segment is represented as NaN. So to this function...
-    //   Delimiter: Always a single value; so if arg. is an array, only the first element is used.
-    //   SearchFor: obvious. Can be NaN, in which case the returned segment no. will be that of the first empty segment.
-    //   FullLengthMatchReqd: If TRUE or absent, the whole segment must equal SearchFor, to register a positive find. 
-    //     Otherwise the match need only be for the length of SearchFor. (E.g. in "a|bb|bbcde", SearchFor = "bb" and this arg. FALSE,
-    //     both segments 1 and 2 would qualify as finds.) If SearchFor is NaN, then FullLengthMatchReqd is force to TRUE; input value is ignored.
-    //   StartFrom: A segment no., NOT an array index. (It would be too complex to code in array indexes here, since empty segments are allowed.)
-    //     If absent, taken as 0. Negative StartFrom reset to 0; oversized StartFrom would simply return -1 (no find).
-    //     (If you only have an array index to start from, use fn. "findall" to find all the delimiter indexes, and hence the starts of segments.)
-    //   MaxNoFinds: If absent, taken as 1. To indicate 'find all possible', set to 0 or a negative value, or to a value much higher than possible.
-    // RETURNED: Array, always of size 3. If no find, [-1, -1, -1]. If a find, [segment no.,  ptr. to start of segment, ptr. to end of segment ].
-    //  If StartFrom is present and set to anything except 1, this array will have length 3 x no. of finds, each triplet taking the pattern
-    //     just given for successive finds. (Still, if no finds, [-1, -1, -1] is returned.)
-    //  In the case of search for the empty segment, will be different: [segment no., ptr. to 1st. of two adjacent delimiters, ptr to 2nd. such].
-    //     Bear in mind that if the find is segment 0 (so that InArray starts with a delimiter), the first pointer will be -1 (pointing to a
-    //     virtual delimiter before the start). Similarly if InArray ends with a delimiter, a find of the segment beyond it would return with
-    //     element [2] pointing to a virtual delimiter at location InArray.Length.
-    { int inslot = Args[0].I, delimslot = Args[1].I, targetslot = Args[2].I;
-      if (inslot == -1) return Oops(Which, "1st. arg. must be an array");      
-      StoreItem inItem = R.Store[inslot];
-      double[] indata = inItem.Data;
-      int indataLen = indata.Length;
-      double delimiter;
-      if (delimslot == -1) delimiter = Args[1].X;
-      else delimiter = R.Store[delimslot].Data[0];
-      int[] allDelims = indata._FindAll(delimiter);
-      int noDelims = allDelims.Length; // will be 0, if none.
-      int noSegments = noDelims+1;
-      double[] target;
-      if (targetslot == -1) target = new double[] { Args[2].X };
-      else target = R.Store[targetslot].Data;
-      int targetLen = target.Length;
-      if (targetLen == 1 && double.IsNaN(target[0])) targetLen = 0;
-      bool fullLengthSearch = (NoArgs == 3 || Args[3].X != 0.0);
-      if (targetLen == 0) fullLengthSearch = true; // otherwise any and every segment is a find for target length 0 and full length search not nec.
-      int startSegment = 0;  if (NoArgs > 4) startSegment = Convert.ToInt32(Args[4].X);
-      if (startSegment < 0) startSegment = 0;
-      int findSegment = -1;
-      int startPtr = -1, endPtr = -1;
-      int maxFinds = 1;
-      if (NoArgs > 5)
-      { maxFinds = Convert.ToInt32(Args[5].X);
-        if (maxFinds <= 0) maxFinds = indataLen+1; // i.e. a value guaranteed to exceed the number of possible finds.
-      }
-      var findings = new List<double>(); 
-      if (startSegment <= noDelims) // the search cannot succeed if not.
-      // Derive from allDelims an array which also refers to a virtual delimiter at index -1 and another at index indata.Length:
-      { int[] expandedDelims = new int[noDelims+2];
-        expandedDelims[0] = -1;  expandedDelims[noDelims+1] = indataLen;
-        if (noDelims > 0) allDelims.CopyTo(expandedDelims, 1);
-        // In this new array, segment N for all legal values always lies between expandedDelims[N] and [N+1]. (Illegal N were excluded above.)
-        int segmentLen, noFinds = 0;
-        for (int i = startSegment; i < noSegments; i++)
-        { startPtr = expandedDelims[i]+1;   endPtr = expandedDelims[i+1]-1;  segmentLen = endPtr - startPtr+1;
-          if (segmentLen < targetLen) continue; // no hope of match.
-          if (segmentLen > targetLen && fullLengthSearch) continue; // no hope of match.
-          findSegment = i; // tentative
-          for (int j=0; j < targetLen; j++)
-          { if (indata[startPtr+j] != target[j])  { findSegment = -1;  break; } }
-          if (findSegment == i) // a definite find:
-          { if (targetLen == 0)
-            { findings.Add((double) findSegment);   findings.Add((double) endPtr); findings.Add((double) startPtr); } // delim. before and after.
-            else // for nonempty target, startPtr precedes endPtr:
-            { findings.Add((double) findSegment);   findings.Add((double) startPtr); findings.Add((double) endPtr); }
-            noFinds++;
-            if (noFinds >= maxFinds) break;
-          }
-        }
-      }
-      // Prepare results:
-      if (findings.Count == 0) findings.AddRange(new double[] {-1.0, -1.0, -1.0});
-      result.I = V.GenerateTempStoreRoom(findings.Count);
-      R.Store[result.I].Data = findings.ToArray();
-      break;
-    }
-    case 435: // FINDANY(InArray, scalar StartPtr, array TargetSet [, scalar / array Delimiter) -- Finds the first instance of any
-    // of the targets in InArray, and returns two items of data: where that target was found in InArray, and which target it was.
-    // Two versions: (1) Three args only. The search is for each individual element of TargetSet;
-    //  (2) Four args: the fourth is a single-valued delimiter (if Delimiter is an array, only Delimiter[0] is used). Then TargetSet is
-    //   taken as a set of subarray targets delimited by Delimiter. CRASHES if any subarray is empty; that is, the following are forbidden
-    //   (using delimiter '|'): "|AA|BB", "AA|BB|", "AA||BB". Proper is: "AA|BB|CC".
-    // RETURN: Always an array of size 2. If no find, [-1, -1]. If a find, version 1 --> [locn. of find, index in TargetSet],
-    //   and version 2 --> [locn. of find, subarray no. in TargetSet]. (Subarrays numbered to base 0; e.g. "AA" above is subarray 0.)
-    { int inslot = Args[0].I,  targetslot = Args[2].I;
-      if (inslot == -1 || targetslot == -1) return Oops(Which, "1st. and 3rd. args. must be arrays");
-      double[] indata = R.Store[inslot].Data;
-      int indataLen = indata.Length;
-      int startPtr = Convert.ToInt32(Args[1].X); // no check for arrayhood.
-      if (startPtr < 0) return Oops(Which, "2nd. arg. must be a non-negative integer");
-      double[] targetdata = R.Store[targetslot].Data;
-      double Delim = 0.0;
-      bool hasDelim = (NoArgs > 3);
-      if (hasDelim)
-      { if (Args[3].I == -1) Delim = Args[3].X;
-        else Delim = R.Store[Args[3].I].Data[0];
-      } 
-      double[] outcome = new double[] { -1.0, -1.0 }; // The default: No find.
-      int targetLen = targetdata.Length;
-      // Case 1 -- 3 args, so individual elements of TargetSet are each sought:
-      if (!hasDelim) 
-      { int n, firstAt = indataLen,  whatFound = -1; 
-        for (int i=0; i < targetLen; i++)
-        { n = indata._Find(targetdata[i], startPtr);
-          if (n != -1  &&  n < firstAt)
-          { firstAt = n; whatFound = i; }
-        }
-        if (whatFound != -1) { outcome[0] = (double) firstAt;  outcome[1] = (double) whatFound; }
-      }
-      // Case 2 -- 4 args, so TargetSet is a delimited set of subarrays:
-      else
-      { if (targetdata[0] == Delim  ||  targetdata[targetLen-1] == Delim)
-        { return Oops(Which, "In the 4-arg. form, the 3rd. arg. cannot begin or end with the delimiter (which is the 4th. arg.)"); }
-        int n, p, q, firstAt = indataLen,  whatFound = -1; // firstAt has dummy value, much higher than no. of subarrays
-        int[] delimery = targetdata._FindAll(Delim);
-        int noTargets = delimery.Length + 1;
-        for (int i=0; i < noTargets; i++)
-        { p = 0;  if (i > 0) p = delimery[i-1]+1; // first char. of subarray, which follows the delim (or is at the start of indata).
-          q = targetLen;  if (i < noTargets-1) q = delimery[i]; // delim. after this subarray (or beyond end of indata).
-          if (q == p) return Oops(Which, "two delimiters are consecutive in the 3rd. arg."); 
-          n = indata._Find( targetdata._Copy(p, q-p), startPtr );
-          if (n != -1  &&  n < firstAt)
-          { firstAt = n; whatFound = i; }
-        }
-        if (whatFound != -1) { outcome[0] = (double) firstAt;  outcome[1] = (double) whatFound; }
-      }
-      // Prepare the return:
-      result.I = V.GenerateTempStoreRoom(2);
-      R.Store[result.I].Data = outcome;
-      break;
-    }
-
-    case 436: // DEFLUFF(NAMED variable Subject, scalar VirtZero) -- All |values| ≤ VirtZero will be replaced in situ by 0.0.
-    // Note: a VOID function; 'Subject' is altered. (If scalar and a constant, no error is raised; but also nothing happens.)
-    // If VirtZero is ≤ 0, or is an array, no change will happen to Subject, but no error will be raised.
-    { int slot = Args[0].I;
-      double virt_zero = Args[1].X;
-      if (virt_zero > 0.0)
-      { if (slot == -1)
-        { double x = Args[0].X;
-          if (x <= virt_zero && x >= -virt_zero)
-          { V.SetVarValue(REFArgLocn[0].Y, REFArgLocn[0].X, 0.0); // Does not alter the value, if arg. is a constant
-          }
-        }
-        else 
-        { double[] dudu = R.Store[slot].Data;
-          dudu._Defluff(virt_zero);
-        }
-      }
-      break;
-    }
-  case 437: // RANDUM (int NoBytes) -- gets random BYTES directly from the linux kernel via pseudofile "/dev/urandom", which
-  // should have the same address on all Linux systems. They are returned as one byte per list array element. HUGELY slower than
-  // "rand(Arr, 256)" for arrays of less than 10000 length, and still about 3 times slower for that and larger lengths.
-  // The only advantage, if any, is to escape dependence on the NET-computed random numbers that are determined by a seed.
-  // NoBytes: Values rounding to < 1 are corrected to 1. No upper limit or check for NaN - crash MonoMaths, if you wish.
-  {
-    int len = Convert.ToInt32(Args[0].X);  if (len < 1) len = 1;
-    string filename = "/dev/urandom";
-    byte[] data = new byte[len];
-    using (FileStream fs = File.OpenRead(filename)) // Not in a 'try' block because the file is guaranteed to be there and usable in Linux systems.
-    { fs.Read (data, 0, len); }
-    double[] outdata = new double[len];
-    for (int i=0; i < len; i++) outdata[i] = data[i];
-    result.I = V.GenerateTempStoreRoom(len);
-    R.Store[result.I].Data = outdata;
-    break;
+    default: break;                                //default  //last
   }
-  case 438: // EQUAL (array Standard, array Test,  array / scalar HowFar)
-  // Returns TRUE if the arrays are exactly equal, either in toto (no final scalar), or equal for the length (from the start) indicated
-  //  by the 3rd arg, if present. Otherwise returns FALSE. 
-  // TWO FORMS: (1) 3rd. arg. is scalar: its value is the length of data strip to compare. (If oversized or ≤ 0, set to length of Standard.)
-  //  (2) 3rd. arg. an array: If that subarray is present in Standard, then the length to search is the length up to but not including the
-  //   subarray. If not found in Standard, the whole of Standard is used.
-  // If you want more information about how the two arrays match, use function COMPARE instead. This one has minimal functionality for speed. 
-  {
-    int slotStandard = Args[0].I,  slotTest = Args[1].I,  slotHowFar = Args[2].I;
-    if (slotStandard == -1 || slotTest == -1) return Oops(Which, "1st. 2 args. must be arrays");
-    double[] dataStandard = R.Store[slotStandard].Data,  dataTest = R.Store[slotTest].Data;
-    int lenStandard = dataStandard.Length,  lenTest = dataTest.Length;
-    int lengthToCheck;
-    if (slotHowFar == -1) // 3rd. arg. is scalar:
-    { lengthToCheck = Convert.ToInt32(Args[2].X);
-      if (lengthToCheck > lenStandard  ||  lengthToCheck <= 0) lengthToCheck = lenStandard;
-    }
-    else // 3rd. arg. an array:
-    { double[] dataHowFar = R.Store[slotHowFar].Data;
-      lengthToCheck = dataStandard._Find(dataHowFar);
-      if (lengthToCheck == -1)  lengthToCheck = lenStandard;
-    }
-    if (lengthToCheck <= lenTest) // if not, then the return must be FALSE, so just break leaving result.X as 0.
-    { result.X = 1.0;
-      for (int i=0; i < lengthToCheck; i++)
-      { if (dataTest[i] != dataStandard[i]) { result.X = 0.0; break; } }
-    }
-    break;
-  }
-  case 439: // INI_DATA(array Feature) -- returns data for any and all features that contain Feature (case-sens.) somewhere in the field name.
-  // If scalar (or empty), returns data for all features. Field names are exactly as in the INI file, to left of equal signs.
-  // RETURN: A delimited list array, the delimiter being MAXINT32. There are twice as many subarrays as there are returned data items.
-  // For each datum, the arrangement is: <field name><delimiter<field value>. The form of 'value' depends on the field type. It can
-  // be a single numerical value (directly entered, not in string form); or an array of 3 values for a colour (R, G, B values); or
-  // an array of unicodes. E.g. if 'Feature' is "Font", the return as at the moment of writing this would be as follows (using '|' for MAXINT32):
-  //   "FontNameAss|DejaVu Sans Condensed|FontNameRes|DejaVu Sans Condensed|FontPointsAss|11|FontPointsRes|11", where all are unicode values
-  // except the two numbers '11', which are single values, not strings.
-  // RETURN IF NO FINDS: Array of length 1, a space: " ".
-  {
-    string target = StoreroomToString(Args[0].I);
-    bool getTheLot = (target == "");
-    List<INIRecord> dataset = new List<INIRecord>();
-    INIRecord[] INRalias = MainWindow.ThisWindow.INR;
-    for (int i=0; i < INRalias.Length; i++)
-    { string ss = INRalias[i].Nm;
-      if (!String.IsNullOrEmpty(ss))
-      { if (getTheLot  ||  ss.IndexOf(target) != -1)
-        { INIRecord foo = new INIRecord();  foo.CopyFrom(INRalias[i]);
-          dataset.Add(foo);
-        }
-      }
-    }
-    List<double> output = new List<double>();
-    if (dataset.Count == 0) output.Add(32.0);
-    else
-    { double Delim = (double) int.MaxValue;
-      for (int i=0; i < dataset.Count; i++)
-      { INIRecord inr = dataset[i];
-        output.AddRange(  StringToStoreroom(-1, inr.Nm) );
-        output.Add(Delim);
-        if (inr.Tp == 'X') output.Add(inr.X);
-        else if (inr.Tp == 'I') output.Add( (double) inr.I);
-        else if (inr.Tp == 'L')
-        { byte[] boodle = inr.Clr._ToByteArray();
-          double[] doodle = boodle._ToDubArray();
-          output.AddRange(doodle);
-        }
-        else // string
-        { string ss = inr.S;
-          if (String.IsNullOrEmpty(ss)) ss = " ";
-          output.AddRange(StringToStoreroom(-1, ss) );
-        }          
-        if (i < dataset.Count-1) output.Add(Delim);    
-      }
-    }
-    result.I = V.GenerateTempStoreRoom(output.Count);
-    R.Store[result.I].Data = output.ToArray();
-    break;
-  } 
-  case 440: // TRAIN(..) -- A 'train' is a list array made up of subarrays ('carriages'). The format of the train is:
-  // [No. Carriages][Length of Carriage1][Length of Carriage2]..[Length of Last Carriage] [All the data, undelimited].
-  //   The part preceding the first data value is called the 'header'.
-  // A train may be NULL - just the array [0] - but no carriage may contain 0 data.
-  // Here are the modes, with arguments. Note that none are VOID; if a train is to be altered (appended to, deleted from...),
-  // the return will be an altered copy of the input train.
-  // Puffer = train("new"); -- creates the array [ 0 ] - the NULL train, with 0 carriages.
-  // Stats = train("header", Puffer); returns the header of the train: [noCarriages, Carriage1Length, ... , lastCarriageLength ].
-  // Puffer = train("from", list array InArray, scalar/array Delim);  builds train from a delimited list, ignoring empty subarrays.
-  //     Delim, if array: only the first value is used.
-  // Puffer = train("from", matrix JaggedMx, scalar/array Padder);  builds train from a jagged matrix.
-  // DelimitedArray = train("delimit", Puffer, scalar/array Delimiter);  returns data as a delimited array.
-  // Puffer1 = train("append", Puffer, scalar/array Carriage); -- as with all other operations, checked for inconsistencies and crashes if so.
-  // Puffer1 = train("insert", Puffer, scalar WhichCarriage, scalar/array NewCarriage); // WhichCarriage must exist; this mode can't be used to append.
-  // Puffer1 = train("alter", Puffer, scalar WhichCarriage, scalar/array NewCarriage);
-  // Puffer1 = train("delete", Puffer, scalar startCarriage, scalar noCarriages); // noCarriages reduced if ovesized; but start can't be neg, or beyond end.
-  //  ... and 3 functions that find: 'find' for a whole-carrage match; 'holds' for subarray somewhere in carriage; 'starts' for subarray is front of c.
-  // Index = train("find", Puffer, scalar/array SoughtCarriage, scalar firstCarriageToCheck, scalar maxNoFinds ); --> array always; [-1] if no match.
-  // Index = train("holds", Puffer, scalar/array SoughtSubarray, scalar firstCarriageToCheck, scalar maxNoFinds ); --> array always; [-1] if no match.
-  // Index = train("starts", Puffer, scalar/array SoughtSubarray, scalar firstCarriageToCheck, scalar maxNoFinds ); --> array always; [-1] if no match.
-  //   For the above 3, silly args. don't crash; simply "no find" code is returned.
-  // Puffer1 = train("copy", Puffer, scalar fromCarriage, scalar noCarriages); // arg. laws as for 'delete'. Returns a properly formatted train.
-  // array = train("read", Puffer, scalar CarriageNo); // Returns the empty array if CarriageNo doesn't exist, or Puffer is the NULL train.
-  // NB: There are no optional args. for any case; the exact no. of args. is specific to each mode.
-  {
-    int n, errorNo;
-    bool CharsRating = false;
-    double[] outdata = null;
-    int modeSlot = Args[0].I; // true for ALL modes
-    if (modeSlot == -1) return Oops(Which, "1st. arg. must be an array");
-    string doWhat = "≡" + StoreroomToString(modeSlot) + '≡';
-    //                0         1         2         3         4         5         6         7         8         9         10        11        12
-    string modery = "≡new≡≡≡≡≡≡≡header≡≡≡≡from≡≡≡≡≡≡delimit≡≡≡append≡≡≡≡insert≡≡≡≡alter≡≡≡≡≡delete≡≡≡≡find≡≡≡≡≡≡holds≡≡≡≡≡starts≡≡≡≡copy≡≡≡≡≡≡read≡";
-    int modeIndex = modery.IndexOf(doWhat);
-    if (modeIndex % 10 != 0) return Oops(Which, "1st. arg. not a recognized operation");
-    modeIndex /= 10; // Now set to the numbers indicated above the line defining 'modery'.
-    //                            0  1  2  3  4  5  6  7  8  9  10 11 12
-    int[] noArgsDue = new int[] { 1, 2, 3, 3, 3, 4, 4, 4, 5, 5, 5, 4, 3 };
-    if (NoArgs != noArgsDue[modeIndex]) return Oops(Which, "this mode requires exactly {0} arg(s).", noArgsDue[modeIndex]);
-    // NEW:
-    if (modeIndex == 0)
-    { result.I = V.GenerateTempStoreRoom(1);
-      R.Store[result.I].Data[0] = 0.0;
-      break;
-    }
-  // All cases past here have at least 2 args., and the 2nd. arg. is always an array:
-    if (Args[1].I == -1) return Oops(Which, "2nd. arg. must be an array");
-    // HEADER:
-    else if (modeIndex == 1)
-    { double[] puffer = R.Store[Args[1].I].Data;
-      outdata = TrainHeader(puffer, out errorNo);
-      if (errorNo != 0) return Oops(Which, "the arg. is not correctly formatted as a train");
-    }
-    else // ALL OTHER CASES have AT LEAST 3 ARGS.
-    { // FROM:
-      if (modeIndex == 2)
-      { double padDelim = (AccumulateValuesFromArgs(Args, 2, 2))[0];
-        outdata = BuildTrain(Args[1].I, padDelim);
-        if (outdata == null) return Oops(Which, "could not convert 2nd. arg. into a train");
-        CharsRating = R.Store[Args[1].I].IsChars;
-      }
-      else // ALL OTHER CASES have 2nd. arg. as PUFFER (must be a valid train).
-      { int trainSlot = Args[1].I;
-        if (trainSlot == -1) return Oops(Which, "2nd. arg. must be an array");
-        StoreItem tritem = R.Store[trainSlot];
-        double[] Zug = tritem.Data;
-        double[] header = TrainHeader(Zug, out errorNo);
-        if (errorNo != 0) return Oops(Which, "the 2nd. arg. is not formatted correctly as a train");
-        int[] headerI = header._ToIntArray();
-        int noCarriages = headerI[0];
-        if (noCarriages == 0  &&  modeIndex >= 5  &&  modeIndex <= 7) return Oops(Which, "this mode cannot be used with a NULL train");
-        CharsRating = tritem.IsChars;
-        List<double> outthing = new List<double>(2 * Zug.Length);
-        if (modeIndex == 3) // "DELIMIT"
-        { double Delim = (AccumulateValuesFromArgs(Args, 2, 2))[0];
-          int cntr = 0;
-          for (int i = 0; i < noCarriages; i++) // rotate through all the carriages:
-          { for (int j = 0; j < headerI[i+1]; j++)
-            { outthing.Add(Zug[noCarriages + 1 + cntr]);  cntr++; }
-            if (i != noCarriages-1) outthing.Add(Delim);
-          }
-          if (outthing.Count == 0) outthing.Add(Delim);
-        }
-        else if (modeIndex == 4) // "APPEND"
-        { double[] lastCarriage = AccumulateValuesFromArgs(Args, 2, 2);
-          outthing.AddRange(Zug);          
-          outthing.AddRange(lastCarriage);          
-          noCarriages++;
-          outthing[0] = noCarriages;
-          outthing.Insert(noCarriages, (double) lastCarriage.Length);
-        }
-        else if (modeIndex == 5  ||  modeIndex == 6) // "INSERT" or "ALTER"
-        { int carriageNo = Convert.ToInt32(Args[2].X);
-          if (carriageNo < 0  || carriageNo >= noCarriages) return Oops(Which, "3rd. arg. is out of range");
-          double[] newCarriage = AccumulateValuesFromArgs(Args, 3, 3);
-          outthing.AddRange(Zug);
-          int insertAt = noCarriages+1; // 1st. non-header element in the train
-          for (int i = 1; i <= carriageNo; i++) insertAt += headerI[i];
-          if (modeIndex == 6) // ALTER:
-          { outthing.RemoveRange(insertAt, headerI[carriageNo+1]); } // abolish the old carriage first
-          outthing.InsertRange(insertAt, newCarriage); // BOTH insert and alter
-          if (modeIndex == 5) // INSERT:
-          { outthing[0] = noCarriages + 1;
-            outthing.Insert(carriageNo + 1, (double) newCarriage.Length);
-          }
-          else outthing[carriageNo+1] = newCarriage.Length; // ALTER
-        }
-        else if (modeIndex == 7) // "DELETE"
-        { int startCarriage = Convert.ToInt32(Args[2].X); // no test for arrayhood
-          if (startCarriage < 0  || startCarriage >= noCarriages) return Oops(Which, "3rd. arg. is out of range");
-          int doomedCarriages = Convert.ToInt32(Args[3].X);
-          if (doomedCarriages < 1) return Oops(Which, "for this mode, 4th. arg. cannot be 0 or negative");
-          if (startCarriage + doomedCarriages > noCarriages) doomedCarriages = noCarriages - startCarriage; // oversized arg. trimmed down.
-          outthing.AddRange(Zug);
-          int startPtr = noCarriages+1; // 1st. non-header element in the train
-          for (int i = 1; i <= startCarriage; i++) startPtr += headerI[i];
-          int endPtr = startPtr;
-          for (int i = 0; i < doomedCarriages; i++) endPtr += headerI[startCarriage + i+1];
-          outthing.RemoveRange(startPtr, endPtr - startPtr); // remove data
-          outthing.RemoveRange(startCarriage+1, doomedCarriages); // adjust header
-          outthing[0] = noCarriages - doomedCarriages;
-        }
-        else if (modeIndex >= 8  &&  modeIndex <= 10) // 8 = "FIND", 9 = "HOLDS", 10 = "STARTS".
-        { CharsRating = false; // as it was set in the containing block above to rating of the train, but this mode's output is statistics only.
-          bool mustMatchWhole = (modeIndex == 8);
-          bool mustStartWithSought = (modeIndex != 9);
-          double[] Sought = AccumulateValuesFromArgs(Args, 2, 2);
-          int soughtLen = Sought.Length;
-          int startCarriage = Convert.ToInt32(Args[3].X),  maxFinds = Convert.ToInt32(Args[4].X);
-          if (startCarriage >= 0  &&  startCarriage < noCarriages  &&  maxFinds > 0) // i.e. if args. are sensible
-          { int startptr, endptr = noCarriages, thisLen;
-            for (int i = 0; i < noCarriages; i++)
-            { thisLen = headerI[i+1];
-              startptr = endptr + 1;
-              endptr = startptr + thisLen - 1;
-              if (i < startCarriage) continue;
-              if ( (mustMatchWhole && thisLen != soughtLen)  ||  soughtLen > thisLen) continue; // save some time             
-              n = Zug._Find(Sought, startptr, endptr);
-              if (n != -1)
-              { if (!mustStartWithSought || n == startptr) // A find:
-                { outthing.Add(i);  if (outthing.Count == maxFinds) break;  }
-              }
-            }
-          }
-          if (outthing.Count == 0) outthing.Add( -1.0 );
-        }
 
-        else if (modeIndex == 11  ||  modeIndex == 12 ) // "COPY" and "READ"
-        { bool isRead = (modeIndex == 12);
-          int startCarriage = Convert.ToInt32(Args[2].X), noToCopy = 1;
-          if (!isRead) noToCopy = Convert.ToInt32(Args[3].X);
-          if (startCarriage >= 0  &&  startCarriage < noCarriages  &&  noToCopy > 0) // i.e. if args. are sensible
-          { int startptr, endptr = noCarriages, thisLen;
-            int overallStartPtr = -1;
-            noToCopy = Math.Min(noToCopy, noCarriages - startCarriage);            
-            double[] newheader = new double[noToCopy+1]; // header for the new train
-            if (!isRead) newheader[0] = (double) noToCopy;
-            for (int i = 0; i < startCarriage + noToCopy; i++)
-            { thisLen = headerI[i+1]; // we have to start at carriage 0, even if not copying from there, to get the header right.
-              startptr = endptr + 1;
-              endptr = startptr + thisLen - 1;
-              if (i < startCarriage) continue;
-              if (i == startCarriage) overallStartPtr = startptr;
-              if (!isRead) newheader[i - startCarriage + 1] = (double) thisLen;
-            }
-            if (overallStartPtr > -1)
-            { double[] stuffToCopy = Zug._Copy(overallStartPtr, endptr - overallStartPtr + 1);
-              if (!isRead)  outthing.AddRange(newheader); // no header needed for "READ"
-              outthing.AddRange(stuffToCopy);
-            }
-          }
-          else if (isRead) outthing.Add(double.NaN); // silly args.: if 'copy', leave empty; it will become the NULL train below.
-        }
-        // End point for all modes for which 2nd. arg. is the input train
-        if (outthing.Count > 0) outdata = outthing.ToArray();
-        else outdata = new double[] { 0.0};
-      } // End of processing modes with 2nd. arg. = input train
-    } // End of processing modes with 1st. arg. = the mode
-    result.I = V.GenerateTempStoreRoom(outdata.Length);
-    R.Store[result.I].Data = outdata;
-    R.Store[result.I].IsChars = CharsRating;
-    break;
-  }
-  case 441: // REMOVERUNS(array InArray [, scalar / array OfTheseValues) -- A 'run' of element X is a succession of two or more
-  // XX... in sequence. Such a run will be reduced to a single X. If no 2nd. argument, runs of ANY value will be reduced: "AABBBBCDD"
-  // would reduce to "ABCD". If 2nd. argument, only its value(s) will be reduced. E.g. removeruns("AABBBCCDD", "AD") --> "ABBBCCD". 
-  // RETURNED: a processed copy of InArray. STRUCTURE of InArray is ignored; but the output is always a list array.
-  //  The chars. rating of output is the same as that of input array.
-  {
-    int inslot = Args[0].I;  if (inslot == -1) return Oops(Which, "1st. arg. must be an array");
-    StoreItem sindata = R.Store[inslot];
-    double[] indata = sindata.Data;
-    bool isChars = sindata.IsChars;
-    int indataLen = indata.Length;
-    double[] runsOfThese = null;
-    bool runsOfAnything = (NoArgs == 1);
-    if (!runsOfAnything) runsOfThese = AccumulateValuesFromArgs(Args, 1);
-    // Scan for runs:
-    double lastval = indata[0], thisval = 0.0;
-    List<double> outlist = new List<double>(indataLen);   outlist.Add(lastval);
-    int runsize = 0;
-    bool isValidRunChar = true;
-    for (int i = 1; i < indataLen; i++)
-    { thisval = indata[i];
-      if (thisval != lastval) 
-      { outlist.Add(thisval);  
-        runsize = 0;
-      }
-      else // this value duplicates the last:
-      { if (runsize == 0) isValidRunChar = (runsOfAnything || runsOfThese._Find(thisval) >= 0);
-        runsize++;
-        if (!isValidRunChar) outlist.Add(thisval);
-      }
-      lastval = thisval;
-    }            
-    result.I = V.GenerateTempStoreRoom(outlist.Count);
-    R.Store[result.I].Data = outlist.ToArray();
-    R.Store[result.I].IsChars = isChars;
-    break;
-  }
-    case 442: // SEEKNO(array Subject [, scalar FromPtr [, scalar ToPtr [, bool IntegerOnly [, bool AllowNegSign ]..]
-    // Given a chars. array, seek the first string version of a valid number between pointers inclusive, and return details.
-    // FromPtr, ToPtr: These corrected to start / end char.: neg. FromPtr, oversized ToPtr. In addition, ToPtr of -1 --> end char.
-    // IntegerOnly: what it says. E.g. "yak 12.3" would return only 12, regarding the '.' as nonnumerical. Default: false.
-    // AllowedNegSign: what it says. But if the neg. sign is not in range (i.e. is at FromPtr-1) it will not be detected. Default: false.
-    // RETURNED: Array, length 3:
-    //   [0], [1] -- point to first and last elements in Subject of the identified value, OR -1 if none found. In the case where IntegerOnly
-    //      is absent or FALSE, -1 indicates a no-find, -2 an error in converting the find to a value (but the pointers are still returned).
-    //   [2] -- the value found, or NaN (which can never be validly obtained)
-    //  NB: If IntegerOnly is TRUE but the integer has a value outside of the Int32 range, a no-find will be returned; not so if this is FALSE.
-    {// Deal with all arguments:
-      string instr = StoreroomToString(Args[0].I, false, false, true); // Non-unicodes safely converted to unicodes for nonnumerical chars.
-      if (instr == "") return Oops(Which, "1st. arg. must be an array of chars.");
-      int inStrLen = instr.Length;
-      int fromPtr = 0, toPtr = inStrLen, n;
-      if (NoArgs > 1) fromPtr = Convert.ToInt32(Args[1].X);   if (fromPtr < 0) fromPtr = 0;
-      if (NoArgs > 2) { n = Convert.ToInt32(Args[2].X);   if (n >= 0 && n < inStrLen) fromPtr = n; }
-      bool integerOnly = (NoArgs > 3 && Args[3].X != 0.0);
-      bool allowNegSign = (NoArgs > 4 && Args[4].X != 0.0);
-      // Get seeking:
-      double[] outdata = new double[4];
-      if (integerOnly)
-      { int[] intie = JS.FindInteger(instr, !allowNegSign, fromPtr, toPtr);
-        if (intie[0] == 0) outdata = new double[] { -1.0, -1.0, double.NaN };
-        else outdata = new double[] { (double) intie[2],  (double) intie[3],  (double) intie[1] };
-      }
-      else // not restricted to integers:
-      { outdata = new double[3];
-        Octet ox = JS.FindNumber(instr, fromPtr, toPtr, !allowNegSign);
-        if (ox.BX) // a possible number identified
-        { outdata[0] = (double) ox.IX;  outdata[1] = (double) ox.IY;
-          outdata[2] = ox.BY ? ox.XX : double.NaN;  // then is a valid number
-        }
-        else { outdata[0] = -1.0;  outdata[1] = -1.0;  outdata[2] = double.NaN; }
-      }
-      result.I = V.GenerateTempStoreRoom(3);
-      R.Store[result.I].Data = outdata;
-      break;
-    }
-    case 443: // INJECT ([scalar or array WithWhat], array VarNames [, bool ReturnStats) ] : Injects values into the scalars named in the
-    // string VarNames. The first non-identifier char. will be taken as the delimiter; if none, the whole array is regarded as a single
-    // variable name. Suppose VarNames is "x|y|z"; then V.Vars will be checked for each of var. names "x", "y" and "z". If, say, "y" 
-    // does not exist in V.Vars, then it still uses up a value supplied according to WithWhat, but nothing else happens. If "y" has a .Use
-    // other than 0 or 3, a crash occurs. (This includes using fn. names or nonallowed name chars.) If Use is 0, then the var. is registered
-    // as a scalar, and is assigned Use = 3. Note that empty strings are allowed: they use up values, which may be a desired effect.
-    // The delimiter can be a space; but VarNames is trimmed before looking for the delimiter. Given a non-space delimiter, spaces not
-    //   internal to a name are ignored (e.g. "cat  |  do g" is taken as two potential names, 'cat' and 'do g'; the 2nd. will crash).
-    // WithWhat: If absent, named vars. are assigned 0, 1, 2, 3, .... If a scalar, all named scalars get that value. If an array,
-    //   values are assigned in order. If not enough values in WithWhat, values are cyclically reused; if too many values in WithWhat,
-    //   excess values are ignored.
-    // RETURNED: (1) - no final scalar argument: The number of substrings in VarNames, which is also the number of values used up from
-    //   WithWhat (or internally, if no WithWhat). The function can safely be used as VOID, as errors all crash. But if you really want
-    //   some statistics, then the final scalar arg. must be PRESENT and TRUE; if so, then a list array is returned, of size 3:
-    //   [0] = No. of substrings in VarNames, and so no. WithWhat values used up; [1] = No. of strings which are valid ID names
-    //   but do not occur elsewhere at this fn. level (so remain nonexistent, as this fn. cannot create them at run-time);
-    //  [2] = No. of empty substrings.
-    {
-      // Sort out what arg. is what:
-      string ss = ArgTypesCode(Args, ' '); // length = no. args., and [i] is 'S' for scalar, 'A' for array.
-      bool returnArray = false, noWithWhat = false, withWhatIsScalar = false;
-      int stringsArg = 0;
-      if      (ss == "A")  { noWithWhat = true; }
-      else if (ss == "AA" || ss == "SA") { stringsArg = 1;   withWhatIsScalar = (ss[0] == 'S');  }
-      else if (ss == "AS") { noWithWhat = true; returnArray = (Args[1].X != 0.0); }
-      else if (ss == "AAS" || ss == "SAS"){ stringsArg = 1;    returnArray = (Args[2].X != 0.0);   withWhatIsScalar = (ss[0] == 'S'); }
-      else return Oops(Which, "wrong deployment of arg. types");
-      // Develop an array of potential variable names:
-      string instr = StoreroomToString(Args[stringsArg].I, true, true, true);
-      if (instr == "") return Oops(Which, "the array of variable names cannot be empty");
-      string[] varNames;
-      int n = instr._IndexOfNoneOf(P.IdentifierChars);
-      if (n == -1) varNames = new string[] { instr };
-      else varNames = instr.Split(new char[] { instr[n] }, StringSplitOptions.None); // empty substrings allowed.
-      // Develop an array of values to be assigned to such variables:
-      int noSubstrings = varNames.Length;
-      double[] varValues = new double[noSubstrings];
-      if (noWithWhat) { for (int i=0; i < noSubstrings; i++) varValues[i] = i; }
-      else if (withWhatIsScalar) { for (int i=0; i < noSubstrings; i++) varValues[i] = Args[0].X; }
-      else
-      { double[] invals = R.Store[Args[0].I].Data;
-        int invalsLen = invals.Length;
-        for (int i=0; i < noSubstrings; i++) varValues[i] = invals[i % invalsLen];
-      }     
-      // Do the assigning, keeping count of valid assignments:
-      int Fn = R.CurrentlyRunningUserFnNo,  At;
-      int noUnreferenced = 0, noEmpties = 0;
-      for (int i=0; i < noSubstrings; i++)
-      { string var_name = varNames[i].Trim();
-        if (var_name == "")  noEmpties++; // an empty name will (notionally) use up a value of varValues, but have no other effect.
-        else
-        { At = V.FindVar(Fn, var_name);
-          if (At < 0) // no such variable name registered; therefore is either unused elsewhere OR is an invalid name...
-          { char what_it_is;
-            P.NameLocn(var_name, Fn, true, out what_it_is);
-            if (what_it_is == ' ') noUnreferenced++; // valid name, but unused elsewhere at the same function level. Again, a varValue used up.
-            else // A crashable error:
-            { ss = "";
-              if (what_it_is == 'F') ss = " system function name";
-              else if (what_it_is == 'U') ss = " user function name";
-              else ss = "n illegal name";
-              return Oops(Which, "the string '" + var_name + "' is a" + ss);
-            }
-          }
-          else
-          { int usage = V.GetVarUse(Fn, At);
-            if (usage != 0 && usage != 3)
-            { return Oops(Which, "the variable named '" + varNames[i].Trim() +"' is already defined as an array, constant or system variable'");
-            }                             
-            V.SetVarValue(Fn, At, varValues[i]);
-          }
-        }
-      }
-      if (returnArray)
-      { result.I = V.GenerateTempStoreRoom(3);
-        R.Store[result.I].Data = new double[] { (double) noSubstrings, (double) noUnreferenced, (double) noEmpties };
-      }
-      else result.X = noSubstrings;
-      break;
-    }   
-    case 444: // HOTKEYSOFF: scalar GraphID. If graph not identified, nothing happens. Otherwise ALL of the menu hot keys of the graph
-    // are irrevocably turned off. However the prompts for them are still visible in the menu (I haven't yet figured out how to turn them off).
-    { 
-      int graphID = (int) Args[0].X;
-      Graph griffin;
-      Trio threeoh = Board.GetBoardOfGraph(graphID, out griffin);
-      if (threeoh.X == 0) break; // simply nothing happens, if board not found for this graph ID.
-      Board.DisconnectAllAccelKeys(threeoh.X);
-      break;
-    }
-    case 445: // __FINDLINENO(scalar LineNo_ToBase_1 [, bool GoThere] ) -- Always returns contents of given line (if it exists) or [NaN] (if not).
-    // If GoThere is absent or FALSE, the current focus is not affected; if TRUE, the return is the same but if the line exists, focus goes to it.
-    {
-      double[] outdata = null;
-      Gtk.TextBuffer BuffAss = MainWindow.ThisWindow.BuffAss;
-      string AllText = BuffAss.Text;
-      int totalLines = AllText._CountChar('\n');
-      int lineNo = Convert.ToInt32(Args[0].X); // REMEMBER that it is to base 1.
-      if (lineNo > 0  && lineNo <= totalLines) // valid line number:
-      { int startPtr = -1, endPtr; // we will retrieve text BETWEEN these points, not at them.
-        if (lineNo > 1) startPtr = AllText._IndexOfNth('\n', lineNo-1); // the last line's LF.
-        endPtr = AllText._IndexOf('\n', startPtr+1);  if (endPtr == -1) endPtr = AllText.Length; // the LF at the end of this line.        
-        if (endPtr == startPtr+1) outdata = new double[] {32.0}; // If the line is empty, it is returned as a single space.
-        else outdata = StringToStoreroom(-1, AllText._Between(startPtr, endPtr));
-      }
-      if (outdata != null  &&  NoArgs > 1  &&  Args[1].X != 0.0) // put the cursor there:
-      { MainWindow.ThisWindow.PlaceCursorAtAssWindowLine(lineNo-1, 0, true);
-      }
-      bool noData = (outdata == null);
-      if (noData) outdata = new double[] {double.NaN};
-      // Return the data:
-      result.I = V.GenerateTempStoreRoom(outdata.Length);      
-      R.Store[result.I].Data = outdata;
-      if (!noData) R.Store[result.I].IsChars = true;
-      break;
-    }
-    case 446: // FIRFILTER (array InArray,  array / scalar ImpulseRespose [, scalar Delay [, scalar LeftPadder [, scalar RightPadder] ] ] )
-    // RETURNS a LIST array of the same length as InArray. At element no. i, and iterating with j over all the elements of ImpulseResponse,
-    // the returned array's ith. element is the SUM of ImpulseResponse[j] * InArray[i - j - Delay].  At the ends, this system fails (iteration
-    // over j not fully possible) unlessImpulseResponse trivially has length 1. For elements where this is so, padders are supplied; the
-    // extent before the first valid returned data has elements = LeftPadder; those after the last valid data have elements = RightPadder.
-    // Default values of optional arguments: Delay = 0,  LeftPadder = Double.MinValue,  RightPadder = Double.MaxValue.
-    // SPECIAL CASE: If ImpulseResponse rounds to a positive nonzero integer, the IR will become an averaging filter; e.g. if its value is n,
-    // it will be replaced internally by the impulse response [1/n, 1/n, .... 1/n] with length n.
-    // ERRORS: Scalar InArray would crash; but if last three were arrays, they would be seen as scalars of value 0.0 (no test).
-    {
-      int inslot = Args[0].I;  if (inslot == -1) return Oops(Which, "1st. arg. must be an array");
-      double[] indata = R.Store[inslot].Data;
-      int indataLen = indata.Length;
-      double[] IRdata;
-      int IRslot = Args[1].I,  IRlen;
-      if (IRslot == -1) // then a scalar has been supplied:
-      { double x = Math.Round(Args[1].X);
-        if (x < 1.0) return Oops(Which, "if the 2nd. arg. is scalar, it must round to an integer ≥ 1");
-        if (x > (double) indataLen) { result.I = EmptyArray(); break; } // avoids chaos in next step; more refined checks on size come later.
-        IRlen = (int) x;
-        IRdata = new double[IRlen];
-        double y = 1/x;
-        for (int i=0; i < IRlen; i++)  IRdata[i] = y;
-      }
-      else // IR is an array:
-      { IRdata = R.Store[IRslot].Data;
-        IRlen = IRdata.Length;
-      }
-      int Delay = NoArgs > 2 ?  Convert.ToInt32(Args[2].X)  :  0 ;
-      double LeftPadder = NoArgs > 3 ? Args[3].X  :  double.MinValue;      
-      double RightPadder = NoArgs > 4 ? Args[4].X  :  double.MaxValue;      
-      int firstValidX = Math.Max(0, IRlen + Delay - 1);
-      int lastValidX =  Math.Min(indataLen-1, indataLen - 1 + Delay);
-      if (firstValidX > lastValidX)  { result.I = EmptyArray(); break; }
-      double[] outdata = new double[indataLen];
-      for (int i = 0; i < firstValidX; i++) outdata[i] = LeftPadder;
-      for (int i = lastValidX+1; i < indataLen; i++) outdata[i] = RightPadder;
-      double sum;
-      for (int i = firstValidX; i <= lastValidX; i++)
-      { sum = 0.0;
-        for (int j = 0; j < IRlen; j++)
-        { sum += IRdata[j] * indata[i-Delay-j];  }
-        outdata[i] = sum; 
-      }
-      result.I = V.GenerateTempStoreRoom(indataLen);
-      R.Store[result.I].Data = outdata;      
-      break;
-    }
-    case 447: // GRAPHTITLE(scalar GraphID,   array TheTitle) -- puts TheTitle into the window heading and panel button.
-    // No error raised - simply does nothing - if GraphID is not valid.
-    { int graphID = (int) Args[0].X;  if (graphID <= 0) break;
-      string theTitle = StoreroomToString(Args[1].I);   if (String.IsNullOrEmpty(theTitle)) break; 
-      Graph graf = null;
-      Trio trill = Board.GetBoardOfGraph(graphID, out graf);   if (graf == null) break;
-      Board.Texts(trill.X, theTitle, null, null);
-      break;
-    }
-    case 448: // F448MONOTONICITY(array Subject,  bool ExpectAscending [, scalar StartIndex [, scalar VirtualZero ] ] --
-    // Checks for places in the array data strip where the trend of data to rise or to fall changes to the opposite trend (an 'exception point').
-    // Also detects duplicates, though these are not registered as 'exception points'.
-    // 'Subject' - array structure ignored. Should not contain NaN, as then results would be unpredictable.
-    // 'ExpectAscending' - boolean; if false, expect values to be descending.
-    // 'VirtualZero' - quantities this close or closer to zero than this will be regarded as zero. Can be 0; if negative, will be taken as 0.
-    // RETURNED: An array of size 4: [No of exception points, First exception point,  No duplicates, First contiguous duplicate].
-    //  If no exception points, both elements [0] and [2] will be 0; if no contiguous duplicates, [1] and [3] will be zero.
-    //  Example: Ascending order expected, Subject is [10, 30, 50, 20, 30, 10, 10]: There are 2 exception points, index 3 (value 20)
-    //   and index 5 (value 1). There is also 1 duplicate, index 6 (the final 10). So the returned array would be [2, 3, 1, 6].
-    {
-      int inslot = Args[0].I;  if (inslot == -1) return Oops(Which, "1st. arg. must be an array");
-      double[] indata = R.Store[inslot].Data;
-      int insize = indata.Length;
-      bool isAscending = (Args[1].X != 0.0);
-      int startPtr =  (NoArgs > 2)  ?  Convert.ToInt32(Args[2].X)  :  0;
-      if (startPtr < 0  ||  startPtr > (insize-2) ) return Oops(Which, "start index must lie between 0 and the penultimate element of the array");
-      double virtZero =  (NoArgs > 3)  ?  Args[3].X  :  0.0;
-      if (virtZero < 0.0) virtZero = 0.0;
-      int noExceptionPts = 0,  firstExceptionPt = 0,   noDuplicates = 0,   firstDuplicate = 0;
-      double diff, absdiff;
-      for (int i = startPtr+1; i < insize; i++)
-      { diff = indata[i] - indata[i-1];
-        absdiff = Math.Abs(diff);
-        if (absdiff <= virtZero)
-        { noDuplicates++;  if (noDuplicates == 1) firstDuplicate = i; }
-        else if (isAscending  ^ (diff > 0.0) )
-        { noExceptionPts++; if (noExceptionPts == 1) firstExceptionPt = i; }
-      }
-      result.I = V.GenerateTempStoreRoom(4);
-      R.Store[result.I].Data = new double[] { (double) noExceptionPts, (double) firstExceptionPt,  (double) noDuplicates,  (double) firstDuplicate };
-      break;
-    }
-    case 449: // DIVMOD(scalar / array Subject,  scalar Divisor) -- returns an array, containing the tuplet [ Subject DIV Divisor,  Subject MOD Divisor]
-    // for each element of Subject; so if Subject is scalar, the returned array will have length 2.
-    // Subject and Divisor are rounded to integers before division. Error raised if Divisor rounds to zero.
-    // Re sign:  divmod(20, -3)  -->  Div -6,  Mod +2;  divmod(-20, 3)  -->  Div -6,  Mod -2;   divmod(-20, -3)  -->  Div +6,  Mod -2.
-    // Note that the sign of the Div part is always what you would expect from simple division; the Mod sign is more tricky.
-    {
-      Int64 Divisor = Convert.ToInt64(Args[1].X);
-      if (Divisor == 0) return Oops(Which, "2nd. arg. must not round to zero");
-      // Deal with scalars separately, for speed:
-      if (Args[0].I == -1)
-      { Int64 Subject = Convert.ToInt64(Args[0].X), DivI,  ModI;
-        DivI = Math.DivRem(Subject, Divisor, out ModI); 
-        result.I = V.GenerateTempStoreRoom(2);
-        R.Store[result.I].Data = new double[] { (double) DivI, (double) ModI };
-      }
-      else // Subject is an array:
-      { double[] indata = R.Store[Args[0].I].Data;
-        int len = indata.Length;
-        var outdata = new double[2*len];
-        Int64 ModX;
-        for (int i=0; i < len; i++)    
-        { outdata[2*i] = Math.DivRem(Convert.ToInt64(indata[i]), Divisor, out ModX); 
-          outdata[2*i+1] = ModX;
-        }
-        result.I = V.GenerateTempStoreRoom(2, len);
-        R.Store[result.I].Data = outdata;
-      }
-      break;
-    }
-
-    // . . . . . . . . . . . . .
-
-
-      default: break;                                //default  //last
-    }
   // - - - - - - - - - - - - - - - - - - - -
     return result;
-  }
+}
 
 //==========================================================
 
@@ -8167,15 +6135,31 @@ internal partial class F
 //  what RunSysFn(..) requires. Hence, Result.B enters as TRUE. XX represents
 //  the first argument (as is, if scalar; or an element in the array, if array);
 //  YY is the second argument, if any (always scalar), or else 0.0.
+// *** When adding to this, always use braces and don't do one-liners, otherwise the menu item for searching for code will fail.
   public static void Hybrids (short Which, double XX, double YY, ref Quad result)
   { switch(Which)
-    { case 5:  result.X = XX * XX; break; // SQR(XX)
-      case 6:  result.X = XX * (double) 180 / Math.PI; break; // DEG(XX)
-      case 7:  result.X = XX * Math.PI / (double) 180; break; // RAD(XX)
-      case 8:  result.X = Math.Sin(XX); break; // SIN(XX)
-      case 9:  result.X = Math.Cos(XX); break; // COS(XX)
-      case 10: result.X = Math.Tan(XX); break; // TAN(XX)
-      case 11:  case 12:                       // AECSIN(XX) / ARCCOS(XX)
+    { 
+      case 6:  // DEG(XX)
+      { result.X = XX * (double) 180 / Math.PI; 
+        break;
+      }
+      case 7:  // RAD(XX)
+      { result.X = XX * Math.PI / (double) 180;
+        break;
+      }
+      case 8:  // SIN(XX)
+      { result.X = Math.Sin(XX);
+        break;
+      }
+      case 9:  // COS(XX)
+      { result.X = Math.Cos(XX);
+        break;
+      }
+      case 10: // TAN(XX)
+      { result.X = Math.Tan(XX);
+        break;
+      }
+      case 11:  case 12:  // AECSIN(XX) / ARCCOS(XX)
       { if (XX > 1.0 || XX < -1.0)
         { if (YY != 0.0) { if (XX > 1.0) XX = 1.0;  else XX = -1.0; } // 2nd. arg. boolean - clip out-of-limits args. without raising error.
           else { result = Oops(Which, "args. must lie between -1.0 and +1.0 inclusive (no allowance made for tiny numerical errors)"); break; }
@@ -8185,8 +6169,15 @@ internal partial class F
         break;
       }
       // case 13 - ARCTAN - used to be here, but due to argument considerations had to be taken out of the HYBRIDS block.
-      case 14: result.X = Math.Abs(XX); break;  // ABS(XX)
-      case 15: if (XX >= 0.0) result.X = Math.Sqrt(XX); else result = Oops(Which, "negative arg. not allowed"); break; // sqrt(XX)
+      case 14:  // ABS(XX) 
+      { result.X = Math.Abs(XX);
+        break;
+      }
+      case 15: 
+      { if (XX >= 0.0) result.X = Math.Sqrt(XX); 
+        else result = Oops(Which, "negative arg. not allowed"); 
+        break; // sqrt(XX)
+      }
       case 16: // FACT(XX); FACT(XX,YY) (for fact(XX) / fact(YY)).
       { int btm = (int) Math.Round(YY), top = (int) Math.Round(XX);
         if (btm == 0) btm = 1; // the case where 2nd. arg. was omitted by user.
@@ -8209,9 +6200,15 @@ internal partial class F
         else result.X = JM.Factorial(top, btm, 0, 2).X;
         break;
       }
-      case 18: result.X = Math.Exp(XX); break; // EXP(XX) ( = 2.71828.. raised to power of arg.)
-      // LN(XX):
-      case 19: if (XX > 0.0) result.X = Math.Log(XX);  else result = Oops(Which, "the arg. must be positive and nonzero");  break;
+      case 18: // EXP(XX) ( = 2.71828.. raised to power of arg.)
+      { result.X = Math.Exp(XX);
+        break;
+      }
+      case 19:  // LN(XX):
+      { if (XX > 0.0) result.X = Math.Log(XX);
+        else result = Oops(Which, "the arg. must be positive and nonzero");
+        break;
+      }
       case 20: // LOG(XX), LOG(XX,YY) -  log to base 10 / log to base YY.
       { if (XX <= 0.0) { result = Oops(Which, "the arg. must be positive and nonzero"); break; }
         if (YY == 0.0) result.X = Math.Log10(XX); // no 2nd. arg.
@@ -8235,8 +6232,9 @@ internal partial class F
         break;
       }
       case 22: // FRAC(XX)
-      { XX = Math.Abs(XX);  result.X = XX - Math.Floor(XX); break; }
-
+      { XX = Math.Abs(XX);  result.X = XX - Math.Floor(XX);
+        break;
+      }
       case 23: // FLOOR(XX [, YY]) If a second argument, is as for 'round(.)' above. 'floor(1.678,2)' --> 1.67.
       { if (YY == 0.0) { result.X = Math.Floor(XX); break; } // commonest case, dealt with separately for speed.
         double YR = Math.Round(YY); if (YR > 15.0) YR = 15.0;  else if (YR < -15.0) YR = -15.0;
@@ -8273,8 +6271,11 @@ internal partial class F
         result.X = ( Math.Abs(x - XX) <= YY) ? 1.0 : 0.0;
         break;
       }
-      case 48: // DEFRAC(XX);
-      { if (XX < 0) result.X = Math.Ceiling(XX);  else result.X = Math.Floor(XX);  break; }
+      case 48: // DEFRAC(XX)
+      { if (XX < 0) result.X = Math.Ceiling(XX);
+        else result.X = Math.Floor(XX);
+        break;
+      }
       case 86: // EVEN(XX[,YY]); returns 1 ('true') if XX is even (or if YY
         // is supplied, if YY exactly divides XX), otherwise 0. Use mod(..)
         // if wanting the modulo. NB: if YY is omitted or is 0, it is automatically
@@ -8285,44 +6286,48 @@ internal partial class F
         n = IX - IY*(IX/IY);
         if (n == 0) result.X = 1.0; else result.X = 0.0;
         // this is a logic function, TRUE (1.0) if the modulo is zero.
-        break; }
-        case 351: // TOZERO(XX, YY) -- returns XX moved closer to zero as a number with precision YY (unless it already has that precision).
-        { if (XX == 0.0) result.X = XX;
-          else if (YY == 0.0) // commonest case, dealt with separately for speed.
-          { if (XX > 0.0) result.X = Math.Floor(XX);  else result.X = Math.Ceiling(XX); }
-          else 
-          { double sign = 1.0; if (XX < 0) sign = -1.0;
-            XX = Math.Abs(XX);
-            double YR = Math.Round(YY); if (YR > 15.0) YR = 15.0;  else if (YR < -15.0) YR = -15.0;
-            double multiplier = Math.Pow(10, YR); // 10 ^ YR.
-            result.X = sign * Math.Floor(XX * multiplier);
-            result.X /= multiplier;
-          }  
-          break;
-        }
-        case 352: // FROMZERO(XX, YY) -- returns XX moved closer to zero as a number with precision YY (unless it already has that precision).
-        { if (XX == 0.0) result.X = XX;
-          else if (YY == 0.0) // commonest case, dealt with separately for speed.
-          { if (XX > 0.0) result.X = Math.Ceiling(XX);  else result.X = Math.Floor(XX); }
-          else
-          { double sign = 1.0; if (XX < 0) sign = -1.0;
-            XX = Math.Abs(XX);
-            double YR = Math.Round(YY); if (YR > 15.0) YR = 15.0;  else if (YR < -15.0) YR = -15.0;
-            double multiplier = Math.Pow(10, YR); // 10 ^ YR.
-            result.X = sign * Math.Ceiling(XX * multiplier);
-            result.X /= multiplier;
-          }  
-          break;
-        }
-        case 404: // ISNAN(XX) -- returns TRUE or FALSE
-        { result.X = 0.0;  if (double.IsNaN(XX)) result.X = 1.0;  break; }
-        case 406: // FIXANGLE(XX [, YY] ) // Confine a radian angle to a 2PI range. YY = low value, 0 if omitted by user.
-        { double toopie = 2.0 * Math.PI;
-          while (XX > YY + toopie) XX -= toopie;
-          while (XX < YY) XX += toopie;
-          result.X = XX;
-          break;
-        }
+        break;
+      }
+      case 351: // TOZERO(XX, YY) -- returns XX moved closer to zero as a number with precision YY (unless it already has that precision).
+      { if (XX == 0.0) result.X = XX;
+        else if (YY == 0.0) // commonest case, dealt with separately for speed.
+        { if (XX > 0.0) result.X = Math.Floor(XX);  else result.X = Math.Ceiling(XX); }
+        else 
+        { double sign = 1.0; if (XX < 0) sign = -1.0;
+          XX = Math.Abs(XX);
+          double YR = Math.Round(YY); if (YR > 15.0) YR = 15.0;  else if (YR < -15.0) YR = -15.0;
+          double multiplier = Math.Pow(10, YR); // 10 ^ YR.
+          result.X = sign * Math.Floor(XX * multiplier);
+          result.X /= multiplier;
+        }  
+        break;
+      }
+      case 352: // FROMZERO(XX, YY) -- returns XX moved closer to zero as a number with precision YY (unless it already has that precision).
+      { if (XX == 0.0) result.X = XX;
+        else if (YY == 0.0) // commonest case, dealt with separately for speed.
+        { if (XX > 0.0) result.X = Math.Ceiling(XX);  else result.X = Math.Floor(XX); }
+        else
+        { double sign = 1.0; if (XX < 0) sign = -1.0;
+          XX = Math.Abs(XX);
+          double YR = Math.Round(YY); if (YR > 15.0) YR = 15.0;  else if (YR < -15.0) YR = -15.0;
+          double multiplier = Math.Pow(10, YR); // 10 ^ YR.
+          result.X = sign * Math.Ceiling(XX * multiplier);
+          result.X /= multiplier;
+        }  
+        break;
+      }
+      case 404: // ISNAN(XX) -- returns TRUE or FALSE
+      { result.X = 0.0;
+        if (double.IsNaN(XX)) result.X = 1.0;
+        break;
+      }
+      case 406: // FIXANGLE(XX [, YY] ) // Confine a radian angle to a 2PI range. YY = low value, 0 if omitted by user.
+      { double toopie = 2.0 * Math.PI;
+        while (XX > YY + toopie) XX -= toopie;
+        while (XX < YY) XX += toopie;
+        result.X = XX;
+        break;
+      }
 
     // . . . . . . . . . . . . .
       default: break;
@@ -8402,7 +6407,7 @@ internal partial class F
   ///  and NaN is set to 0.</para>
   /// </summary>
   public static string StoreroomToString(int slot, int fromPtr, int extent, params bool[] TrimEndStartEtc)
-  { if (slot < 0 || slot >= R.Store.Count || R.StoreUsage[slot]==0) return "";
+  { if (slot < 0 || slot >= R.Store.Count || R.StoreUsage[slot] == 0) return "";
     bool trimend = (TrimEndStartEtc.Length > 0 && TrimEndStartEtc[0]);
     bool trimstart = (TrimEndStartEtc.Length > 1 && TrimEndStartEtc[1]);
     bool specialChars = (TrimEndStartEtc.Length > 2 && TrimEndStartEtc[2]);
@@ -8894,13 +6899,20 @@ internal partial class F
     }
     return textout;
   }
-/// <summary>Accumulate values in a range of arguments, be they scalar or array. No test for silly args. - just crasho.
-/// 'Args' should consist of all of the function's args. 
+
+/// <summary>Accumulate values in a range of arguments, be they scalar or array.
+/// 'Args' should consist of ALL of the function's args. 'FirstLastValidArg': args. are to base 0. If FLVA is absent,
+///   all of Args will be accessed; if FLVA has length 1, all from FLVA[0]; if length 2, all between FLVA[0] and [1].
+///   If FLVA[0] is less than 0 it is set to 0; if FLVA[1] is ≥ NoArgs it is reset to NoArgs - 1. If, after all this,
+///   the range is impossible (FLVA[1] less than FLVA[0]), the return will be an EMPTY ARRAY. In all other cases
+///   the return will hold valid values.
 /// </summary>
   public static double[] AccumulateValuesFromArgs(PairIX[] Args, params int[] FirstLastValidArg)
   { int NoArgs = Args.Length, startptr = 0, endptr = NoArgs-1;
     int n = FirstLastValidArg.Length;
     if (n >= 1) startptr = FirstLastValidArg[0];   if (n >= 2) endptr = FirstLastValidArg[1];
+    if (startptr < 0) startptr = 0;
+    if (endptr >= NoArgs) endptr = NoArgs-1; 
     List<double> doobiedoo = new List<double>();
     for (int i = startptr; i <= endptr; i++)
     { if (Args[i].I == -1) doobiedoo.Add(Args[i].X);

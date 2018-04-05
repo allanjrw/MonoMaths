@@ -5,6 +5,7 @@ using System.IO;
 using Gtk;
 using Gdk;
 using JLib;
+using FuncSet;
 
 namespace MonoMaths
 {
@@ -12,7 +13,7 @@ namespace MonoMaths
 public partial class MainWindow : Gtk.Window
 {
   // Keep this instance field up the top of the file, for ready access.
-  public string MainWindowTitle = "MonoMaths 0.99.02";// Form title changes during op'n.; when 'File | New' is clicked,
+  public string MainWindowTitle = "MonoMaths 1.11.00";// Form title changes during op'n.; when 'File | New' is clicked,
         // the title is reset to this value. NB: (1) Increment the last 2 digits every time any change is made which would affect
         // future coding by a user; (2) Increment the middle 2 digits whenever code updating would cause existing functions to behave
         // differently in some preexisting user program.
@@ -51,6 +52,7 @@ public partial class MainWindow : Gtk.Window
         // The Environment call always returns "/home/xxx", where typically "xxx" is the nickname of the person logged in.
   public static string SysFn1FilePathName = "/home/jon/Projects_MonoDevelop/MonoMaths/SysFns1.cs";
   public static string SysFn2FilePathName = "/home/jon/Projects_MonoDevelop/MonoMaths/SysFns2.cs";
+  public static string SysFn3FilePathName = "/home/jon/Projects_MonoDevelop/MonoMaths/SysFns3.cs";
   public static string CapturedArrayPathName = ProgramPath + "Captured Array"; // If you click 'capture' on the variable display,
                                               // the variable's descriptors and contents are saved in this file; fn. 'captured(.)' reloads it.
   public static string ArrayDisplayFormatStr = ""; // The initial format when you double-click on an array name in Assts. Window, after a run.
@@ -85,6 +87,7 @@ public partial class MainWindow : Gtk.Window
   public static int HoldREditAssCursorLocnForMarkUp = 0;
   public static bool HoldUseRemarksTags;
   public static bool HoldUnsavedData;
+  public static bool DisplayScalarValuesAfterTheRun = true;
   public static Tetro LastF1BoxPosition = new Tetro(-1, -1, -1, -1); // Ensures the next F1 message box posn & size are as for the last one when it closed.
   public static Tetro LastVarsBoxPosition = new Tetro(-1, -1, -1, -1); // Same idea, for the display of current variable values.
   public static List<string> Pnemonic; // Double-keypress at KeyDown() looks for Pnemonic[n], to replace with PnemonicReplacemt[n].
@@ -99,6 +102,7 @@ public partial class MainWindow : Gtk.Window
 //-------------------------------
 //   INSTANCE FIELDS
 //-------------------------------
+
   private string CurrentDataPath = ""; // Set with default at startup. Has a final slash.
   private string PnemonicFName = ""; // Set to "" at startup, then filled from INI file.
   private double RelHtAss = 0.75;//REditAss ht. div. by (REditAss ht.+REditRes ht.)
@@ -231,7 +235,7 @@ public partial class MainWindow : Gtk.Window
     NavigationStack = new List<Duo>(NavigationStackMaxSize);
     NavigationStack.Add(new Duo(0, 0)); // .X = top left cnr. of the screen; .Y = cursor position.
     NavigationPtr = 0; // the top of the stack.
-    // Are there a command line arguments?
+    // Are there command line arguments?
     string[] commandLineParts = Environment.GetCommandLineArgs();
     if (commandLineParts.Length > 1) // It always has length at least 1, as [0] is the program name.
     { commandLineParts[0] = ""; // we don't want the program name.
@@ -246,58 +250,69 @@ public partial class MainWindow : Gtk.Window
       { string ass = Assmts[i].Trim();
         if (ass.Length < 1) continue;
         // Parameters that stand alone
-        if (ass == "formatted") _Formatted = true;
-        // Parameters that require assignments:
-        else
-        { int pEq = ass.IndexOf("=");  if (pEq == -1) continue;
-          string nm = ass._Between(-1, pEq).Trim();
-          string argmt = ass._Extent(pEq+1).Trim();
-          if (nm.Length < 1  ||  argmt.Length < 1) continue;
-          if (nm == "load" || nm == "run")
-          { bool isRun = (nm == "run");
-            string _RunArgs = null;
-            int pOpener = argmt.IndexOfAny( new char[] {'\"', '\'', '`'});
-            if (pOpener == -1 || pOpener == argmt.Length-1) continue;
-            char quoteMark = argmt[pOpener];
-            int pCloser = argmt.IndexOf(quoteMark, pOpener+1);  if (pCloser == -1) continue;
-            string fname = argmt._Between(pOpener, pCloser);  if (fname == "") continue;
-            if (isRun)
-            { // look for a subsequent section of args. for the new instance:
-              int pOpener2 = argmt._IndexOf(quoteMark, pCloser+1);
-              if (pOpener2 != -1)
-              { int pCloser2 = argmt._IndexOf(quoteMark, pOpener2+1);
-                if (pCloser2 > pOpener2 + 1) _RunArgs = argmt._Between(pOpener2, pCloser2);
-              }
-            }
-            string[] psst = fname._ParseFileName(CurrentPath); // the arg. is the default, if no path found in fname.
-            string thePath = psst[0],  theFile = psst[1];
-            Boost bu = LoadProgramAndResetParams(thePath, theFile, false);
-            if (bu.B)
-            { if (isRun)
-              { if (!String.IsNullOrEmpty(_RunArgs)) V.PersistentArray = F.StringToStoreroom(-1, _RunArgs);
-                // Invoke the scalar command line assts, if any:
-                if (needsRepositioning) ChangeWindowLocation(new double[] {_Left, _Top, _Width, _Height});
-                if (_AssWinHt > 0) Repartition('A', Convert.ToInt32(_AssWinHt));
-                if (_Formatted) WriteWindow('A', BuffAss.Text, "fill", true);
-                GO(); 
-              }
-            }
-            else // error:
-            { string ss = "Failed to access command line file '" + fname + "'";
-              JTV.DisplayMarkUpText(REditRes, ref ss, "append");
-            }
-            break; // Any further arguments are ignored after both 'load' and 'run'.
+        if (ass == "formatted") { _Formatted = true;  continue; }
+        if (ass.IndexOf('=') == -1) // No assignment, so we will assume this is something to be loaded:
+        { // If it does not contain a quote mark, give it one:
+          int n = ass.IndexOfAny(C.AllowedQuoteMarks.ToCharArray());
+          if (n == -1) ass = "`" + ass + '`';
+          ass = "load=" + ass;
+          // If no sizing parameters have been supplied, set them to a reasonable display size for text,
+          //   as this facility would nearly always be used for loading text for reading.
+          if (_Left == -1)
+          { _Left = 0.085; _Top = 0;  _Width = 0.8;  _Height = 0.94; _AssWinHt = 650;
+            needsRepositioning = true;
           }
-          else // expect a positive scalar value:
-          { double x = argmt._ParseDouble(-1.0);
-            if (x < 0.0) continue;
-            if      (nm == "left" || nm == "L") { _Left = x;  needsRepositioning = true; }
-            else if (nm == "top" || nm == "T") { _Top = x;  needsRepositioning = true; }
-            else if (nm == "width" || nm == "W") { _Width = x;  needsRepositioning = true; }
-            else if (nm == "height" || nm == "H") { _Height = x;  needsRepositioning = true; }
-            else if (nm == "topwindowheight" || nm == "TWH") _AssWinHt = x;
-            else continue;
+        } // and it will be handled in what follows.
+
+
+        int pEq = ass.IndexOf("="); // Guaranteed to be found
+        string nm = ass._Between(-1, pEq).Trim();
+        string argmt = ass._Extent(pEq+1).Trim();
+        if (nm.Length < 1  ||  argmt.Length < 1) continue;
+        if (nm == "load" || nm == "run")
+        { bool isRun = (nm == "run");
+          string _RunArgs = null;
+          int pOpener = argmt.IndexOfAny(C.AllowedQuoteMarks.ToCharArray());
+          if (pOpener == -1 || pOpener == argmt.Length-1) continue;
+          char quoteMark = argmt[pOpener];
+          int pCloser = argmt.IndexOf(quoteMark, pOpener+1);  if (pCloser == -1) continue;
+          string fname = argmt._Between(pOpener, pCloser);  if (fname == "") continue;
+          if (isRun)
+          { // look for a subsequent section of args. for the new instance:
+            int pOpener2 = argmt._IndexOf(quoteMark, pCloser+1);
+            if (pOpener2 != -1)
+            { int pCloser2 = argmt._IndexOf(quoteMark, pOpener2+1);
+              if (pCloser2 > pOpener2 + 1) _RunArgs = argmt._Between(pOpener2, pCloser2);
+            }
           }
+          string[] psst = fname._ParseFileName(CurrentPath); // the arg. is the default, if no path found in fname.
+          string thePath = psst[0],  theFile = psst[1];
+          Boost bu = LoadProgramAndResetParams(thePath, theFile, false);
+          if (bu.B)
+          { if (isRun)
+            { if (!String.IsNullOrEmpty(_RunArgs)) V.PersistentArray = F.StringToStoreroom(-1, _RunArgs);
+              // Invoke the scalar command line assts, if any:
+              if (needsRepositioning) ChangeWindowLocation(new double[] {_Left, _Top, _Width, _Height});
+              if (_AssWinHt > 0) Repartition('A', Convert.ToInt32(_AssWinHt));
+              if (_Formatted) WriteWindow('A', BuffAss.Text, "fill", true);
+              GO(); 
+            }
+          }
+          else // error:
+          { string ss = "Failed to access command line file '" + fname + "'";
+            JTV.DisplayMarkUpText(REditRes, ref ss, "append");
+          }
+          break; // Any further arguments are ignored after both 'load' and 'run'.
+        }
+        else // expect a positive scalar value:
+        { double x = argmt._ParseDouble(-1.0);
+          if (x < 0.0) continue;
+          if      (nm == "left" || nm == "L") { _Left = x;  needsRepositioning = true; }
+          else if (nm == "top" || nm == "T") { _Top = x;  needsRepositioning = true; }
+          else if (nm == "width" || nm == "W") { _Width = x;  needsRepositioning = true; }
+          else if (nm == "height" || nm == "H") { _Height = x;  needsRepositioning = true; }
+          else if (nm == "topwindowheight" || nm == "TWH") _AssWinHt = x;
+          else continue;
         }
       } // End of trawl through command line assignments
       // Invoke the scalar command line assts, if any:
@@ -307,8 +322,8 @@ public partial class MainWindow : Gtk.Window
     } // End of command line handler
   }
 
-// Corner icon closure:
-  protected void OnDeleteEvent (object sender, DeleteEventArgs a) // if a.RetVal is set to TRUE, then the window does not close.
+// Corner icon click, Main Window:
+  protected void OnDeleteEvent (object sender, DeleteEventArgs a) // if a.RetVal is set to TRUE inside the method, then the window does not close.
   {
     if (CurrentRunStatus > 0)
     { a.RetVal = true; // Main window won't close; instead, hold or pause states are cancelled.
@@ -914,8 +929,12 @@ public partial class MainWindow : Gtk.Window
     int fullwordLen = wordLen + n; // i.e. no contig. ident. chars. to left of cursor + ditto to right of cursor
     // So the stretch to be replaced begins at wordptr (set near the method's start) and extends for fullwordLen chars.
 
-  // JUST ONE SUITABLE REPLACEMENT: Don't bother with a PopUp menu; just replace it...
-    if (noFinds == 1)
+    // Check if all entries are the same, or if there is only one:
+    bool no_differences = true;
+    for (int i = 1; i < noFinds; i++)
+    { if (offerings[i] != offerings[0]) { no_differences = false;  break;  } }
+    // If so, don't bother with a PopUp menu; just replace it...
+    if (no_differences)
     { JTV.ReplaceTextAt(BuffAss, cursor - wordLen, fullwordLen, offerings[0]);
       return;
     }
@@ -938,39 +957,39 @@ public partial class MainWindow : Gtk.Window
 
   protected void OnSpecialCharactersActionActivated (object sender, System.EventArgs e)
   {
-    string bodyText = "There are three ways to get special characters into your text:\n";
-    bodyText += "  (1) Simply paste them from somewhere else (e.g. a character map application);\n";
-    bodyText += "  (2) Select from the list below, and then press 'ACCEPT'; the selected text will\n";
-    bodyText += "         automatically be pasted into the Assignments Window at the cursor.\n";
-    bodyText += "  (3) Where characters have a special key assigned to them (in grey below, under the special character),\n";
-    bodyText += "         you don't need this display (except for reference). Just put the key character into your text,\n";
-    bodyText += "         have the cursor just to the right of that key character, and then click the hot key, which is\n";
-    bodyText += "         <# red>Ctrl+Shift+G<# black> for special chars. in red, and <# blue>Ctrl+Shift+H<# black> for those in blue.\n\n";
-    bodyText += "   Mono doesn't properly handle UTF8 characters of more than two bytes width. If you use them they will probably work,\n";
-    bodyText += "     but some features will fail, e.g. searches for any text beyond such characters will have offset highlighting.\n";
-    bodyText += "     (All of the characters below are good guys that will give you no such problems.)\n";
-    bodyText += "\n\n<font DejaVu Sans Mono, Courier_New, 12>";
-    bodyText += "<# red >      α β γ δ ε ζ η θ ι κ λ μ ν ξ ο π ρ σ ς τ υ φ χ ψ ω\n";
-    bodyText += "<# grey>      a b g d e z @ 0 i k l m n x o p r s c t u f h y w\n\n";
-    bodyText += "<# red >      Α Β Γ Δ Ε Ζ Η Θ Ι Κ Λ Μ Ν Ξ Ο Π Ρ Σ Τ Υ Φ Χ Ψ Ω\n";
-    bodyText += "<# grey>      A B G D E Z # 9 I K L M N X O P R S T U F H Y W\n\n";
-    bodyText += "<# blue>      ∫ ∮ ∑ √ ± ° × ‹ › ≪ ≫ ‒ ‖ ┃ ℜ ℑ ℂ ℤ ℱ ⨍ ∂ ∇ ∞ ∡ ≈ ≠ ≡ ≤ ≥ ∝\n";
-    bodyText += "<# grey>      i j S / + o x ( ) { } - \" | R I C Z F f d D @ A ~ # = < > p\n\n";
-    bodyText += "<# blue>      ← → ↔ ↑ ↓ ¹ ² ³ ⁴ ⁵ ⁶ ⁷ ⁸ ⁹ ⁰\n";
-    bodyText += "<# grey>      [ ] _ ^ v 1 2 3 4 5 6 7 8 9 0\n\n";
-    bodyText += "</font><# Black>Some others which don't have a special key assigned:\n\n";
-    bodyText += "<# black>     ÷ ⁄ ‡ • ‧ … ℛ ℵ ₊ ₋ ↕ ↚ ↛ ⇒ ⇐ ∈ ∡ ∬ ∭ ∮ ∯ ∰ ⨍ ⋃ ⋂ ✔ ✘ ¼ ½ ¾ ⅓ ⅔ à â è ê é ì ò ô ù û ç ä ë ï ö ü ₀ ₁ ₂ ₃ ₄ ₅ ₆ ₇ ₈ ₉ ⁺ ⁻ ₊ ₋\n";
-    // Small point: char. 𝕀 can be copied from the bottom line, but it fails if you try to do a MathChars substitution below; Mono bombs.
-
-    JD.PlaceBox(820, 550, "last", "last"); // 'last' = future instances of the dialog are placed wherever the user left this instance.
+    string bodyText = "To <b>insert special characters into your text</b> you can do one of the following:\n";
+    bodyText += "<bullet>Copy and paste from the list below, or from some more complete character map;\n";
+    bodyText += "<bullet 50,➯>(If using your own map, avoid chars. with a unicode more than 2 bytes long, or you will have problems.)\n";
+    bodyText += "<bullet>Select character(s) from the list below, and then click 'ACCEPT'; the selected text will automatically\n";
+    bodyText += "         be pasted into the Assignments Window at the cursor.\n";
+    bodyText += "<bullet>Use a hot key combination which automatically substitutes for the character to the left of the cursor\n";
+    bodyText += "         in your text (you don't need this display for that, except for reference).\n\n";
+    bodyText += "The <b>hot key combinations</b> are:\n";
+    bodyText += "<bullet 50,➯><# red>Ctrl+Shift+G<# black>, to turn a <# darkslategrey>grey <# black>character into the <# red>red <# black>character above it;\n";
+    bodyText += "<bullet 50,➯><# blue>Ctrl+Shift+H<# black>, to turn a <# darkslategrey>grey <# black>character into the <# blue>blue <# black>character above it;\n";
+    bodyText += "<bullet 50,➯><# purple>Ctrl+Shift+J<# black>, to turn a <# darkslategrey>grey <# black>character into the <# purple>purple <# black>character above it;\n\n";
+    bodyText += "<font DejaVu Sans Mono, Courier_New, 12>";
+    bodyText += "<# red >      Α Β Γ Δ Ε Ζ Η Θ Ι Κ Λ Μ Ν Ξ Ο Π Ρ Σ Τ Υ Φ Χ Ψ Ω  α β γ δ ε ζ η θ ι κ λ μ ν ξ ο π ρ σ ς τ υ φ χ ψ ω\n";
+    bodyText += "<# grey>      A B G D E Z # 9 I K L M N X O P R S T U F H Y W  a b g d e z @ 0 i k l m n x o p r s c t u f h y w\n\n";
+    bodyText += "<# blue>      ∫ ∮ ∑ √ ± ° × ‹ › ≪ ≫ ‒ ‖ ┃ ℜ ℑ ℂ ℤ ℱ ⨍ ∂ ∇ ∞ ∡ ≈ ≠ ≡ ≤ ≥ ← → ↔ ↑ ↓ ¹ ² ³ ⁴ ⁵ ⁶ ⁷ ⁸ ⁹ ⁰ ⁺ ⁻\n";
+    bodyText += "<# grey>      i j S / + o x ( ) {  } - \"  | R I C Z F f d D @ A ~ # = < > [ ] _ ^ v 1 2 3 4 5 6 7 8 9 0 p m\n\n";
+    bodyText += "<# purple>      ₁ ₂ ₃ ₄ ₅ ₆ ₇ ₈ ₉ ₀ ₊ ₋ ‾ « »\n";
+    bodyText +=    "<# grey>      1 2 3 4 5 6 7 8 9 0 p m o { }\n\n\n\n";
+    bodyText += "</font><# Black>Some characters to copy, which do not currently have a hot key assignment:\n\n";
+    bodyText += "<# black>     ÷ ⁄ ‡ • ‧ … ℛ ℵ ₊ ₋ ↕ ↚ ↛ ⇒ ⇐ ∈ ∡ ∬ ∭ ∮ ∯ ∰ ⨍ ⋃ ⋂ ✔ ✘ ¼ ½ ¾ ⅓ ⅔ à â è ê é ì ò ô ù û ç ä ë ï ö ü ∝\n";
+ 
+    JD.PlaceBox(1100, 625, "last", "last"); // 'last' = future instances of the dialog are placed wherever the user left this instance.
     int btn = JD.Display("CHARACTERS NOT ON THE KEYBOARD", bodyText, true, true, false, "ACCEPT", "CANCEL");
     if (btn == 1  &&  JD.SelectedText != "")
     { BuffAss.InsertAtCursor(JD.SelectedText); }
   }
   private static string GreekLetters  = "αβγδεζηθικλμνξοπρσςτυφχψωΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩ";
   private static string GreekLtrCodes = "abgdez@0iklmnxoprsctufhywABGDEZ#9IKLMNXOPRSTUFHYW";
-  private static string MathChars     = "∫∮∑√±°×‹›≪≫‒‖┃ℜℑℂℤℱƒ∂∇∞∡≈≠≡≤≥∝←→↔↑↓¹²³⁴⁵⁶⁷⁸⁹⁰";
-  private static string MathCharCodes = "ijS/+ox(){}-\"|RICZFfdD@A~#=<>p[]_^v1234567890";
+  private static string MathChars     = "∫∮∑√±°×‹›≪≫‒‖┃ℜℑℂℤℱƒ∂∇∞∡≈≠≡≤≥←→↔↑↓¹²³⁴⁵⁶⁷⁸⁹⁰⁺⁻";
+  private static string MathCharCodes = "ijS/+ox(){}-\"|RICZFfdD@A~#=<>[]_^v1234567890pm";
+  private static string MoreChars     = "₁₂₃₄₅₆₇₈₉₀₊₋‾«»";
+  private static string MoreCharCodes = "1234567890pmo{}";
+
 
   // Does char. replacements based on the above method ("OnSpecialCharactersActionActivated")
   private void ChangeCharToLeft(int WhichTable)
@@ -983,9 +1002,13 @@ public partial class MainWindow : Gtk.Window
     { int n = GreekLtrCodes.IndexOf(ch);
       if (n >= 0) replacer = GreekLetters[n];
     }
-    else // Maths
+    else if (WhichTable == 1) // Maths
     { int n = MathCharCodes.IndexOf(ch);
       if (n >= 0) replacer = MathChars[n];
+    }
+    else // WhichTable = 2, for 'more chars':
+    { int n = MoreCharCodes.IndexOf(ch);
+      if (n >= 0) replacer = MoreChars[n];
     }
     if (replacer != '\u0000')
     { JTV.SelectText(BuffAss, cursorAt-1, 1);
@@ -1057,16 +1080,59 @@ public partial class MainWindow : Gtk.Window
         break;
       }
       // Replace displayed text with the doctored text:
-
-
     }
-
-
   }
 
+  protected void OnChangeLetterCaseActionActivated(object sender, EventArgs e)
+  { TextIter selPtStart, selPtEnd;
+    BuffAss.GetSelectionBounds(out selPtStart, out selPtEnd);
+    // SELECTION exists:
+    if (selPtStart.Offset != selPtEnd.Offset)
+    { string OrigText = BuffAss.GetText(selPtStart, selPtEnd, true);
+      string Title = "CHANGE LETTER CASE";
+      string Layout = "L|rrr";
+      string[] Texts = new string[] {"Click for the desired letter case adjustment:",  
+        "ALL LETTERS CAPITALIZED", "all letters lower case", "Letters. Capitalized after. A stop." };
+      int btn = JD.MultiBox(Title, ref Layout, ref Texts, "ACCEPT|CANCEL");
+      if (btn == 1)
+      { int n = Layout.IndexOf('R');
+        string Model = "";
+        if (n == 2) Model = "A";  else if (n == 3) Model = "a";  else if (n == 4) Model = "Aa.Aa";
+        if (Model.Length > 0) // i.e. if a radio button is ON (should never occur that none are on; but just in case...)
+        { string NewText = OrigText._CaseMatch(Model);
+          BuffAss.DeleteSelection(true, true);
+          BuffAss.InsertAtCursor(NewText);
+        }
+      }
+    }
+    else // NO SELECTION:
+    { JD.Msg("No text selected");
+    }
+  }
+
+  protected void OnShowUndoStackActivated(object sender, EventArgs e)
+  { string header = "CONTENTS OF \"UNDO\" STACK";
+    string bodytext = "";
+    string divider = "⇒⇒⇒⇒⇒⇒⇒⇒\n";
+    if (HistoryStack == null)
+    { bodytext = "The history stack is empty.\n";
+    }
+    else
+    { var sz = HistoryStack.Count;
+      for (int i=0; i < sz; i++)
+      { string ss = HistoryStack[i].OldStrip;
+        if (!String.IsNullOrEmpty(ss))
+        { if (ss[ss.Length-1] != '\u000A')  ss += "\u000A";
+          bodytext += ss + divider;
+        }
+      }
+    }
+    JD.Display(header, bodytext, false, true, false, new string[] {"CLOSE"});
+    int dummy = 1;
+  }
 
 //--------------------------------------------------------
-//  SEARCH MENU                                       //find
+//  SEARCH MENU                                       //find  //search
 
   protected virtual void OnFindActionActivated (object sender, System.EventArgs e)
   { FindInText(true, null, "", true, true, true, true); // First 'true' = ask via message box. Second, 'null',
@@ -2008,7 +2074,15 @@ public partial class MainWindow : Gtk.Window
         ss = alltext._FromTo(ptr+hop, opr-1);
         ss = ss.Trim(); // Allows internal spaces (for the case of keywords like 'public')
         int n = ss.LastIndexOf(' ');
-        if (n != -1) ss = ss._Extent (n+1); // If there are internal spaces, only look at the word after the last one.
+        if (n != -1)
+        { // One more source of error: if any char. other than a lower case Latin letter (for a C-like language) or a white space occurs between
+          // the fn. name and this space, it cannot be a function declaration. E.g. consider the code`ss = "Foo function"; <next line> x = Foo(y);`
+          //  As is, n points to the space before "Foo(y)", so thinks it has found the function declaration. But the stuff
+          //  between the word 'function' and the word 'Foo' necessarily contains punctuation.
+          string tt = ss._FromTo(0, n-1)._PurgeRange(0, -1, 'a', 'z')._Purge();
+          if (tt.Length > 0) ss = ""; 
+          else ss = ss._Extent (n+1); // If there are internal spaces, only look at the word after the last one.
+        }
         if (ss != FnNm) { ptr += hop; continue; }
         // function found, and has args.:
         userfnptr = ptr; // Used in later section.
@@ -2025,39 +2099,49 @@ public partial class MainWindow : Gtk.Window
    // FUNCTION NAME FOUND, so hunt for details in the file:
     string Header = "<# BLUE><B>" + FnNm + "(.) args:</B>  ";
     if (sysfnno >= 0) // SYSTEM FN.:
-    { if (showFunctionCode) // Menu item was "Display Fn Text":
+    { if (showFunctionCode) // Menu item was "Show | Function Code":
       { StringBuilder outcome;
-        Boost boodle = Filing.LoadTextFromFile(SysFn1FilePathName, out outcome);
-        if (!boodle.B) { JD.Msg("Unable to access source code file 'SysFn1'"); return; }
-        ss = outcome.ToString();
-        ptr = ss.IndexOf("case " + sysfnno.ToString() + ":");
-        if (ptr == -1)
-        { boodle = Filing.LoadTextFromFile(SysFn2FilePathName, out outcome);
-          if (!boodle.B) { JD.Msg("Unable to access source code file 'SysFn2'"); return; }
+        bool isHybrid = (F.SysFn[sysfnno].Hybrid == (byte) 2);
+        int ptr_start, ptrOp = 0, ptrCl = 0;
+        ss = "";
+        if (isHybrid) // hybrids are processed inSysFn2
+        { Boost boodle = Filing.LoadTextFromFile(SysFn2FilePathName, out outcome); // "outcome" will hold the text of the file
+          if (!boodle.B) { JD.Msg("Unable to access source code file '" + SysFn2FilePathName + "'\n\n"); return; }
           ss = outcome.ToString();
-          ptr = ss.IndexOf("case " + sysfnno.ToString() + ":");
+          ptr = ss.IndexOf("static void Hybrids");  if (ptr == -1) return; // The Hybrids section begins with this declaration.
+          ptr_start = ss.IndexOf("case " + sysfnno.ToString() + ":", ptr);
+          if (ptr_start == -1) return; // Not found.
         }
-        if (ptr >= 0)
-        { string tt = ss._Extent(ptr - 100, 100);
-          int n = tt._LastIndexOf('}');  if (n == -1) n = tt._LastIndexOf('{'); // last only the case for the first item in the switch statement.
-          if (n != -1) ptr = ptr - 99 + n; // Beginning of the line holding this 'case ' instance.
-          int ptrOp = ss.IndexOf('{', ptr);  if (ptrOp == -1) return; // Give up - too-hard basket.
-          int ptrCl = JS.CloserAt(ss, '{', '}', ptrOp);    if (ptrCl == -1) return;
-          ss = ss.Substring(ptr, ptrCl - ptr + 1);
-          // Do a bit of colouring: (Only for '//' remarks).
-          ptrCl = 0;
-          while (true)
-          { ptrOp = ss.IndexOf("//", ptrCl);  if (ptrOp == -1) break;
-            ss = ss._Insert(ptrOp, "<# magenta>");
-            ptrCl = ss.IndexOf('\n', ptrOp);  if (ptrCl == -1) break;
-            ss = ss._Insert(ptrCl+1, "<# blue>");
-            ptrCl += 8;
-          }
-          ss = "<# blue>" + ss;
-          JD.PlaceBox(Screen.Width - 200, Screen.Height - 200);
-          JD.Display("SOURCE CODE", ss, true, true, false, "CLOSE");
-          return;
+        else
+        { string fnm;
+          if      (sysfnno <= 200) fnm = SysFn1FilePathName;
+          else if (sysfnno <= 400) fnm = SysFn2FilePathName;
+          else fnm =                     SysFn3FilePathName;
+          Boost boodle = Filing.LoadTextFromFile(fnm, out outcome); // "outcome", a stringbuilder, will hold the text of the file
+            if (!boodle.B) { JD.Msg("Unable to access source code file '" + fnm + "'\n\n"); return; }
+          ss = outcome.ToString();
+          // Find the start of the first line which containst "case <sysfnno>:" (or leave start as is, if no LF in last 200 chars.)
+          ptr_start = ss.IndexOf("case " + sysfnno.ToString() + ":");
+          if (ptr_start == -1) return; // Not found.
         }
+        // Whatever the type of system function, the rest of the code is the same...
+        int line_start = ss._LastIndexOf('\n', ptr_start - 200, ptr_start);
+        if (line_start == -1) line_start = ptr_start;
+        ptrOp = 1 + ss.IndexOf(" {", ptr_start); // If the remarks section contains a brace, it should't have a spaces before it.
+        ptrCl = JS.CloserAt(ss, '{', '}', ptrOp);
+        if (ptrCl == -1) ptrCl = ptrCl + 1000; // should never happen.
+        ss = ss.Substring(line_start, ptrCl - line_start + 1);
+        ptr = 0; // Remember, ss is now just the substring of the file which contains this function's data.
+        while (true)
+        { ptr = ss.IndexOf("//", ptr);  if (ptr == -1) break;
+          ss = ss._Insert(ptr, "<# magenta>");
+          ptr = ss.IndexOf('\n', ptr);  if (ptr == -1) break;
+          ss = ss._Insert(ptr, "<# blue>");
+        }
+        ss = "<# blue>" + ss;
+        JD.PlaceBox(Screen.Width - 200, Screen.Height - 200);
+        JD.Display("SOURCE CODE", ss, true, true, false, "CLOSE");
+        return;
       }
       else // Menu item was "Display Fn Arg Description":
        // Get the function args. text:
@@ -2142,30 +2226,30 @@ public partial class MainWindow : Gtk.Window
     int noSignificantFigures = 4;   string GString = "G" + noSignificantFigures;
     string headline = "<stops 20, 130, 300, 370>" + 
       "<b>\tFunc\tName\tSize\tValue(s)</b>   (up to " + noValuesShown + " values, each to " + noSignificantFigures + " significant figures)\n";
-    string fnlvlstr = "", bodytext = "", ss = "",  longdash = "‒";
+    string fnlvlstr = "", bodytext = "", ss = "",  longdash = "‒",   constantdash = "—"; // unicodes 8210 (0x2012) and 8212 (0x2014)
     // Display variables of main level first; then, if the current focus is in a function, variables of that function:
     int[] levels;
-    int n = R.CurrentlyRunningUserFnNo;
-    if (n > 0) levels = new int[] {n, 0};  else levels = new int[] { 0 };
+    int CurrentFnNo = R.CurrentlyRunningUserFnNo;
+    if (CurrentFnNo > 0) levels = new int[] {CurrentFnNo, 0};  else levels = new int[] { 0 };
+    List<string> FinalDisplayLines = new List<string>();
     for (int i = 0; i < levels.Length; i++)
     { int thisFnLvl = levels[i];
       if (thisFnLvl == 0) fnlvlstr = "Main";  else fnlvlstr = P.UserFn[thisFnLvl].Name;
-      if (fnlvlstr.Length > 10) fnlvlstr = fnlvlstr.Substring(0, 10) + "…";            
+//####      if (fnlvlstr.Length > 10) fnlvlstr = fnlvlstr.Substring(0, 10) + "…";            
       List<TVar> variety = V.Vars[thisFnLvl];
-      List<string> DisplayLines = new List<string>();
+      List<string> LocalDisplayLines = new List<string>();
       string Clr = "";
       for (int j=0; j < variety.Count; j++)
       { TVar thisVar = variety[j];
-        if (thisVar.Use == 3  ||  thisVar.Use == 11) // ignore all others
+        if (thisVar.Use == 1  ||  thisVar.Use == 3  ||  thisVar.Use == 11) // ignore all others
         { 
           string nm = thisVar.Name;
-          if (nm.Length > 17) nm = nm.Substring(0, 17) + "…";            
+          if (nm._Extent(0, 2) == "__") continue; // We don't want system constants with internal usage only.
+//####          if (nm.Length > 17) nm = nm.Substring(0, 17) + "…";            
           ss = "\t" + fnlvlstr + "\t" + nm + '\t';
           // Scalars:
-          if (thisVar.Use == 3)
-          { ss += longdash + "\t" + thisVar.X.ToString("G5");
-
-          }
+          if (thisVar.Use == 1)      ss += constantdash + "\t" + thisVar.X.ToString("G5");
+          else if (thisVar.Use == 3) ss += longdash + "\t" + thisVar.X.ToString("G5");
           else
           { // Add the statement of dimensions:
             StoreItem sitem = R.Store[thisVar.Ptr];
@@ -2176,37 +2260,160 @@ public partial class MainWindow : Gtk.Window
             ss += "\t";
            // Add the first few data items:
             double[] dudu = sitem.Data._Copy(0, noValuesShown); // If smaller, will just copy the smaller amount of data.
-            for (int m = 0; m < dudu.Length; m++)
-            { ss += dudu[m].ToString(GString);
-              if (m < dudu.Length-1) ss += ", ";
+            if (dudu == null)
+            { ss += "NULL ARRAY"; }
+            else 
+            { for (int m = 0; m < dudu.Length; m++)
+              { ss += dudu[m].ToString(GString);
+                if (m < dudu.Length-1) ss += ", ";
+              }
+              if (sitem.Data.Length > noValuesShown) ss += "…";
             }
-            if (sitem.Data.Length > noValuesShown) ss += "…";
           }
-          DisplayLines.Add(ss);
+          LocalDisplayLines.Add(ss);
         }
       }
-      if (DisplayLines.Count > 1)
-      { DisplayLines.Sort();
+      if (LocalDisplayLines.Count > 1)
+      { LocalDisplayLines.Sort();
+        FinalDisplayLines.AddRange(LocalDisplayLines);
         // We could not add colour tags before sorting, so they go on now...
-        for (int ii = 0; ii < DisplayLines.Count; ii++)
-        { ss = DisplayLines[ii];
-          bool isScalar = (ss.IndexOf(longdash) > 0);
-          if (thisFnLvl == 0) { Clr = isScalar ? "<# blue>" : "<# red>"; }
-          else                { Clr = isScalar ? "<# dodgerblue>" : "<# magenta>"; }
-          DisplayLines[ii] = Clr + ss;
+        for (int ii = 0; ii < LocalDisplayLines.Count; ii++)
+        { ss = LocalDisplayLines[ii];
+          bool isConstant = (ss.IndexOf(constantdash) > 0);
+          bool isScalar = ( isConstant || ss.IndexOf(longdash) > 0);
+          if (thisFnLvl == 0) 
+          { if (isScalar) Clr = isConstant ?  "<# green>"  :  "<# blue>";
+            else Clr = "<# red>";
+          }
+          else { Clr = isScalar ? "<# dodgerblue>" : "<# magenta>"; }
+          LocalDisplayLines[ii] = Clr + ss;
         }
-        bodytext += String.Join("\n", DisplayLines.ToArray()) + "\n\n";
+        bodytext += String.Join("\n", LocalDisplayLines.ToArray()) + "\n";
       }
     }    
+    bodytext = "<# black>(If any part of a line is selected at closure, the first occurrence of its variable will be displayed.)\n"
+                  + bodytext;
     int displayWidth = 940, displayHeight = Screen.Height - 200,  topMgn = 100,  rightMgn = 100;  
     var startPosition = new Tetro(displayWidth,  displayHeight,  ScreenWidth - displayWidth/2 - rightMgn, displayHeight/2 + topMgn);
     if (LastVarsBoxPosition.X1 < 0)  JD.PlaceBox(startPosition);
     else JD.PlaceBox(LastVarsBoxPosition);
-    JD.Display("VALUES OF VARIABLES", headline + bodytext, true, false, false, "CLOSE");
+    string[] ButtonNames = (CurrentRunStatus > 0)  ?  new string[]{"SEEK", "ALTER", "CLOSE"}  :  new string[]{"SEEK", "CLOSE"};
+    int btn = JD.Display("VALUES OF VARIABLES", headline + bodytext, true, false, false, ButtonNames);
     LastVarsBoxPosition = new Tetro(JD.LastBoxSize.X, JD.LastBoxSize.Y, JD.LastBoxCentre.X, JD.LastBoxCentre.Y);
+    if (btn == 0 || btn == ButtonNames.Length || JD.SelectedText == "") return; // User cancelled out of the box, or there is no selection.
+    // TRACK DOWN THE VARIABLE, as the user wants either to "seek" the variable (find it in program code) or to "alter" its code.
+    // Move focus to the first occurrence of the word in the program text. (Could well be in a remarked 
+    //  section and in any function. Good enough for now...)
+    int ndx = JD.SelectionLine - 2; // '2' because the first two lines of the display are explanatory, not included in FinalDisplayLines.
+    if (ndx >= 0 && ndx < FinalDisplayLines.Count)
+    { ss = FinalDisplayLines[ndx]; // Unlike LocalDisplayLines, this string array does not have text tags included.
+      int[] tagptrs = ss._IndexesOf('\t');
+      if (tagptrs != null && tagptrs.Length > 2)
+      { string fnm = ss._Between(tagptrs[0], tagptrs[1]);
+        string varnm = ss._Between(tagptrs[1], tagptrs[2]);
+        if (btn == 2) // ALTER THE VALUE OF THE VARIABLE 
+        {
+          int var_no = V.FindVar(CurrentFnNo, varnm);
+          if (var_no >= 0) // If -1, var. not identified, so do nothing.
+          { 
+            bool boo = ChangeValueOfVariable(CurrentFnNo, var_no);
+            ss = boo ? "Value successfully changed.\n" : "Failed to change value of '" + varnm + "'";
+            JD.Msg(ss);
+          }
+          return;
+        }
+        // SEEK THE VARIABLE IN PROGRAM CODE
+        int start_ptr = 0; // applies if this is a main program variable.
+        if (fnm != "Main")
+        // Set the start of the search to the beginning of the function:
+        { string[] dummy1 = null, dummy2 = null;
+          int[] fnline = FindFunctionDeclarations(fnm, out dummy1, out dummy2, false, false);
+          if (fnline.Length > 0)
+          { start_ptr = BuffAss.GetIterAtLine(fnline[0]).Offset;
+          }
+        }
+        ss = BuffAss.Text;
+        int ptr = JTV.FindTextAndTagIt(BuffAss, varnm, ref ss, find_text, start_ptr, start_ptr, true, false,  P.IdentifierChars);
+        if (ptr >= 0)
+        { TextIter buffStartIt, buffEndIt;      
+          BuffAss.GetBounds(out buffStartIt, out buffEndIt);
+          TextIter thisIt = buffStartIt;
+          thisIt.ForwardChars(ptr);
+          REditAss.ScrollToIter(thisIt, 0.1, true, 0.0, 0.5); // '0.5' to get the line halfway up the screen, if possible.
+          // *** If the above fails - as it did in OnReplaceActionActivated(.) - q.v. - you have to use REditAss.ScrollToMark(.) instead.
+          BuffAss.PlaceCursor(thisIt); // *** If it is ever found a pest that the cursor moves from its prior position, remark this line out.
+          LastSoughtText = varnm;  LastMatchCase = true;   LastWholeWord = true;
+        }
+      }
+    }
     return;
   }
 
+  // For internal use only. No error detection - crash without message if any errors! Returns TRUE if value altered.
+  private bool ChangeValueOfVariable(int Fn, int At)
+  {
+    int var_use = V.GetVarUse(Fn, At);
+    if (var_use != 3 && var_use != 11) return false; // No changing constants or system variables or unassigned variables.    
+    string[] prompts, boxtexts;
+    string toptext;
+    int btn;
+    bool success;
+    // SCALAR:
+    if (var_use == 3)
+    { var x = V.GetVarValue(Fn, At);
+      prompts = new string[]{"Old value:", "New value:"};
+      boxtexts = new string[] {x.ToString(), ""};
+      toptext = "";
+      btn = JD.InputBox("CHANGE VALUE FOR SCALAR VARIABLE", toptext, prompts, ref boxtexts, new string[] {"ACCEPT", "CANCEL"});
+      if (btn != 1) return false;
+      double y = boxtexts[1]._ParseDouble(out success);
+      if (!success) return false;
+      V.SetVarValue(Fn, At, y);
+      return true;
+    }
+    else // ARRAY:
+    {
+      string fnname = V.GetVarName(Fn, At);
+      StoreItem sitem = R.Store[V.GetVarPtr(Fn, At)];
+      double[] olddata = sitem.Data._Copy();
+      int nodims = sitem.DimCnt;
+      string ttt;
+      toptext = "Array '" + fnname + "' ";
+      if (nodims == 1)
+      { ttt = "is one-dimensional, of length " + sitem.TotSz.ToString(); }
+      else
+      { ttt = "has dimensions " + sitem.DimSz[nodims-1].ToString();
+        for (int i = nodims-2; i >= 0; i--) ttt += " x " + sitem.DimSz[i].ToString();
+        ttt += "; total length " + sitem.TotSz.ToString();
+      }
+      toptext += "\n\nYou have to supply the ABSOLUTE address within the array, and then enter as many consecutive values as you want changed," +
+                 " separated by commas.\n\nIf more values are supplied than can fit, the excess will be ignored./n";
+      prompts = new string[]{"Absolute address:", "New value(s):"};
+      boxtexts = new string[] {"", ""};     
+      btn = JD.InputBox("CHANGE VALUES WITHIN AN ARRAY VARIABLE", "", prompts, ref boxtexts, new string[] {"ACCEPT", "CANCEL"});
+      if (btn != 1) return false;
+      double x = boxtexts[0]._ParseDouble(out success); 
+      if (success)
+      { x = Math.Round(x);      
+        if (x >= 0.0 && x < (double) sitem.TotSz)
+        { int ptr = (int) x; // We now have a valid absolute address for this array.
+          double[] newdata = boxtexts[1]._ToDoubleArray(",");
+          if (newdata != null && newdata.Length > 0)
+          {
+            int end_ptr = Math.Min(ptr + newdata.Length - 1, sitem.TotSz - 1);             
+            int length_to_copy = end_ptr - ptr + 1;
+            Array.Copy(newdata, 0, olddata, ptr, length_to_copy);
+            if (olddata.Length == sitem.Data.Length) // inequality should be impossible, but just in case...
+            {
+              sitem.Data = olddata;
+              return true;
+            }
+          }
+        }
+      }
+    }
+    return false;
+  }
 
   protected virtual void OnViewContentsOfSystemListActionActivated (object sender, System.EventArgs e)
   { int fsyslen;
@@ -2267,11 +2474,12 @@ public partial class MainWindow : Gtk.Window
     FindFunctionDeclarations("", out DeclarationOnly, out AndItsRemarks, true, true);
     if (AndItsRemarks.Length > 0)
     { string hdr = "<in 30><b>FUNCTIONS OF THIS PROGRAM</b>\n" +
-                   "To move focus to a particular function after the  box closes, highlight its name here before closing.\n\n";
+                   "To move focus to a particular function after the  box closes, highlight its name and click \"SEEK\".\n" +
+                   "If the program has been run, the no. of calls to a function is shown in square brackets after its name.\n";
       string uu = hdr + String.Join("\n", AndItsRemarks);
       JD.PlaceBox(0.9, 0.9, 0.5, 0.5);
-      JD.Display("FUNCTIONS OF THIS PROGRAM", uu, true, true, false, "!CLOSE");
-      if (JD.SelectedText != "") // text was highlighted in the dialog box before it was closed
+      int btn = JD.Display("FUNCTIONS OF THIS PROGRAM", uu, true, true, false, "SEEK", "!CLOSE");
+      if (btn == 1  &&  JD.SelectedText != "") // then we are to go to the function mentioned in the line holding the highlight:
       { int[] fuddle =  FindFunctionDeclarations(JD.SelectedText, out DeclarationOnly, out AndItsRemarks, true, true);
         if (fuddle.Length > 0)
         { JTV.PlaceCursorAtLine(REditAss, fuddle[0], 0, true);
@@ -2285,6 +2493,34 @@ public partial class MainWindow : Gtk.Window
       }
     }
   }
+
+//  protected void OnListAllFunctionsActionActivated (object sender, System.EventArgs e)
+//  { string[] DeclarationOnly, AndItsRemarks;
+//    FindFunctionDeclarations("", out DeclarationOnly, out AndItsRemarks, true, true);
+//    if (AndItsRemarks.Length > 0)
+//    { string hdr = "<in 30><b>FUNCTIONS OF THIS PROGRAM</b>\n" +
+//                   "To move focus to a particular function after the  box closes, highlight its name here before closing.\n" +
+//                   "If the program has been run, the no. of calls to a function is shown in square brackets after its name.\n";
+//      string uu = hdr + String.Join("\n", AndItsRemarks);
+//      JD.PlaceBox(0.9, 0.9, 0.5, 0.5);
+//      JD.Display("FUNCTIONS OF THIS PROGRAM", uu, true, true, false, "!CLOSE");
+//      if (JD.SelectedText != "") // text was highlighted in the dialog box before it was closed
+//      { int[] fuddle =  FindFunctionDeclarations(JD.SelectedText, out DeclarationOnly, out AndItsRemarks, true, true);
+//        if (fuddle.Length > 0)
+//        { JTV.PlaceCursorAtLine(REditAss, fuddle[0], 0, true);
+//          // Move the cursor till it is at the start of the function name:
+//          int ptr = (DeclarationOnly[0]).IndexOf(JD.SelectedText);
+//          if (ptr != -1)
+//          { TextIter titter = BuffAss.GetIterAtLineIndex(fuddle[0], ptr);
+//            BuffAss.PlaceCursor(titter);
+//          }
+//        }
+//      }
+//    }
+//  }
+//
+
+
 
   /// <summary>
   /// <para>Returns the line number(s) at which function declaration(s) occur, or an empty array if none.
@@ -2595,8 +2831,22 @@ public partial class MainWindow : Gtk.Window
   //------------------------------------------------------------------------------
   //  EXPERIMENTAL MENU                 //experimental
   void OnDoIt1ActionActivated (object sender, System.EventArgs e)
-  {
+  { AddTextToREditRes("\u000A", "append");
+    if (HistoryStack == null)
+    { AddTextToREditRes("The history stack is empty", "append");
+    }
+    else
+    { var sz = HistoryStack.Count;
+      for (int i=0; i < sz; i++)
+      { string ss = HistoryStack[i].OldStrip;
+        if (!String.IsNullOrEmpty(ss))
+        { if (ss[ss.Length-1] != '\u000A')  ss += "\u000A";
+          AddTextToREditRes(ss, "append");
+        }
+      }
+    }
 
+    int dummy = 1;
   }
 
   protected virtual void OnDoIt2ActionActivated (object sender, System.EventArgs e)
@@ -2848,6 +3098,7 @@ public partial class MainWindow : Gtk.Window
     { SpecialKeys.Add("CA_" + (i+9).ToString(), 230 + i); } // ctrl-1 to 9 (returning 230 to 239)
     SpecialKeys.Add("CS_42", 300); // Ctrl-Shift-G - Turn char. to the left into a Greek letter
     SpecialKeys.Add("CS_43", 301); // Ctrl-Shift-H - Turn char. to the left into a Maths character
+    SpecialKeys.Add("CS_44", 302); // Ctrl-Shift-J - Turn char. to the left into a Maths character
 
    // TWO-PRESS COMBINATIONS - You have to register the primary key combo in (1) below, then deal with the second key in (2) below.
    // (1) REGISTER THE PREFIX: (dictionary int value -1) [NB - for a 2-key pair, the prefix must go here AND the combo in next block below]
@@ -2892,7 +3143,7 @@ public partial class MainWindow : Gtk.Window
       }
     }
     else if (actionCode >= 220 && actionCode <= 239) GoToWordOccurrence(actionCode - 220);
-    else if (actionCode == 300 || actionCode == 301) ChangeCharToLeft(actionCode - 300);
+    else if (actionCode >= 300 && actionCode <= 302) ChangeCharToLeft(actionCode - 300);
 
 // TWO-KEY CODES:
     else if (actionCode >= 10000 && actionCode <= 10009) // Insert bookmark:
@@ -2944,7 +3195,7 @@ public partial class MainWindow : Gtk.Window
 
 
 /// <summary>
-/// <para>Returns in .SX the 'word' at the cursor, and in .SY an indicator of there being a selection (if so, .SX = "S"; if not, .SX is empty "").
+/// <para>Returns in .SX the 'word' at the cursor, and in .SY an indicator of there being a selection (if so, .SY = "S"; if not, .SY is empty "").
 ///   .IX and .IY point to the first and last characters of the identified 'word' in BuffAss. As to the identifying of a 'word':</para>
 /// <para>Case 1: If there is a selection, then the 'word' is simply whatever is selected, no matter what that is.</para>
 /// <para>Case 2: If there is no selection, a 'word' is defined as a continuum consisting only of A..Z, a..z, 0..9, '_'; moreover, if
@@ -3015,8 +3266,8 @@ public partial class MainWindow : Gtk.Window
    // VARIABLE of user's program?
     if (P.UserFn == null) return; // User hasn't run the program yet, so no dice.
     int noFns = P.UserFn.Length;  if (noFns == 0) return; // User hasn't run the program yet, so no dice.
-    if (noFns > 1 && P.UserFn[0].OpenerPtr == -1)
-    // CHECK if user fns have had fields OpenerPtr and CloserPtr assigned; if not, do so (values will remain until a new program is installed).
+    if (noFns > 1) // Set OpenerPtr and CloserPtr for all functions, every time (as the user may have added text, offsetting previous values)
+    // (With a large neuroscience program with loads of functions, searches took around 1/3 sec. to display, so the code below is not a time problem.)
     { for (int i = 1; i < noFns; i++)
       { TFn funky = P.UserFn[i];
         int pOpenerLineStart = 1 + BuffAss.Text._IndexOfNth("\n", funky.LFBeforeOpener); 
@@ -3042,11 +3293,24 @@ public partial class MainWindow : Gtk.Window
     }
     // LOOK FOR THE VARIABLE within this function:
     int hereitis = V.FindVar(thisFnNo, stroo);
+    if (hereitis == -1) // then maybe it is a constant, that has been mentioned in function "thisFnNo"...
+    { int whereisit = V.FindVar(0, stroo);
+      if (whereisit > 0)
+      {  byte use = V.GetVarUse(0, whereisit);
+        if (use == 1) // then this is a constant, so should go through to the stuff below, as if it were a main program variable:
+        { thisFnNo = 0;  
+          hereitis = whereisit;
+        }
+      }
+    }
     if (hereitis >= 0)
     { TFn funny = P.UserFn[thisFnNo];
       byte use = V.GetVarUse(thisFnNo, hereitis);
+      bool isConstant = (use == 1);
       string header = "<b>" + stroo + "</b>";
-      if (thisFnNo == 0) header += " (in main program)";  else header += " (in function '" + funny.Name + "')";
+      if (isConstant) header += " (global constant)";
+      else if (thisFnNo == 0) header += " (in main program)";
+      else header += " (in function '" + funny.Name + "')";
       if (use < 10) // a scalar:
       { if (use == 0)  header += ": Unassigned scalar";
         else // Normally just display the value; but if there are system lists, and if the value is integral and within range,
@@ -3088,8 +3352,8 @@ public partial class MainWindow : Gtk.Window
     }
   }
   // Services the above routine, and also the display of lists.
-  // VarType should be either "Array" or "System List" (or something equivalent, ready to have a space + VarName added to it).
-  // VarName should be the array name ("MyArr") or the list no. ("2").
+  // 'VarType' is text for display; typically it would be "Array" or "System List"; it will be followed by a space, then the VarName.
+  // 'VarName' should be the array name ("MyArr") or the list no. ("2").
   // NB!! No error checks!!
   public void DisplayArrayWithOptions(int Slot, string VarType, string VarName)
   { double wide = 0.55, high = 0.8, centreX = 0.67, centreY = 0.5; // Initial box dimensions and placement.
@@ -3357,7 +3621,7 @@ public partial class MainWindow : Gtk.Window
     string selecnText = "";
     if (isSelection)
     { selecnText = BuffAss.GetText(selPtStart, selPtEnd, true); // 'true' = return hidden characters
-      JTV.OverwriteSelectedText(BuffAss, "");
+      JTV.OverwriteSelectedText(BuffAss, "", false); // 'false' = don't select the newly implanted text
       ForceSelection = false;
     }
     else if (ForceSelection) // and no selection has been made
@@ -3614,12 +3878,14 @@ public partial class MainWindow : Gtk.Window
           BtnAbort.ModifyFg(StateType.Normal, "gray"._ParseColour(Black, true, out success)); // Inactive indicator. No need to disable - clicking it won't do a lot.
           if (BlockFileSave != null) BlockFileSave.Clear();
           // Before checking 'quack' for error or for re-runs, display any material accumulated for the Results Window:
-          if (UseREditAss)
+          if (UseREditAss) // i.e. this is a program visible in the Assts Window, not hidden from view.
           { // Prepare string for display:
-            int ln = BuffRes.Text.Length; ss = "";
+            int ln = BuffRes.Text.Length; 
+            ss = "";
             if (ln > 0 && BuffRes.Text[ln - 1] >= ' ') ss = "\n";
             ss += R.DisplayMainPgmUserScalars();
-            JTV.DisplayMarkUpText(REditRes, ref ss, "append");
+            if (DisplayScalarValuesAfterTheRun)
+            { JTV.DisplayMarkUpText(REditRes, ref ss, "append");  }
             if (RecordRunTime)
             { ss = "Duration of run: " +  ( RunDuration / 1000.0 ).ToString("G4") + " secs.\n";
               JTV.AppendText(BuffRes, ss, true);
@@ -4502,17 +4768,20 @@ public partial class MainWindow : Gtk.Window
 /// <summary>
 /// <para>Writes TheText to the window.  If WindowID = 'A' (case-sensitive), to the Asst. Window; if 'R', to the Results Window;
 /// anything else --> no effect.</para>
-/// <para>'Where' (case-sens.) values: "fill" = replace any current text with this text; "cursor" = at current cursor position;
+/// <para>'Where' (case-sens.) values: "fill" = replace any current text with this text; "cursor" = at current cursor position
+///   (overwriting any selected text);
 /// "start" = at start (moving existing text up);  "append" = append (i.e. at end of existing text); "1234" = start at
 ///  the specific character position 1234 (adjusted back to text extreme, if outside of existing text). Any other
 ///  value aborts the method.</para>
-///  <para>If Formatted TRUE, formatting tags are recognized (as at the bottom of file JTextView.cs); otherwise not.</para>
+///  <para>If 'Formatted' TRUE, formatting tags are recognized (as at the bottom of file JTextView.cs); otherwise not.</para>
+///  <para>If 'LeaveSelected' present and [0] is TRUE AND new text has been inserted, then that text will be selected.</para>
 /// </summary>
-  public void WriteWindow(char WindowID, string TheText, string Where, bool Formatted)
+  public void WriteWindow(char WindowID, string TheText, string Where, bool Formatted, params bool[] LeaveSelected)
   { TextView tv = null;
     if      (WindowID == 'A') tv = REditAss;
     else if (WindowID == 'R') tv = REditRes;
     else return;
+    bool leaveSelected = (LeaveSelected.Length > 0  && LeaveSelected[0]); 
     // FORMATTING TAGS HANDLED:
     if (Formatted)
     { JTV.DisplayMarkUpText(tv, ref TheText, Where);
@@ -4522,20 +4791,39 @@ public partial class MainWindow : Gtk.Window
     { TextBuffer Buff = tv.Buffer;
       int bufftextlen = Buff.Text.Length, buffOffset = 0;
       TextIter PutItHere;  bool clearBuff = false;
-      if      (Where == "fill" || bufftextlen == 0) { clearBuff = true;  PutItHere = Buff.StartIter; }
-      else if (Where == "start")  PutItHere = Buff.StartIter;
-      else if (Where == "cursor") { buffOffset = Buff.CursorPosition;  PutItHere = Buff.GetIterAtOffset(buffOffset); }
-      else if (Where == "append") { buffOffset = bufftextlen;  PutItHere = Buff.EndIter; }
-      else
-      { buffOffset = Where._ParseInt(-1);  if (buffOffset < 0) return;
-        if (buffOffset >= bufftextlen) { buffOffset = bufftextlen;  PutItHere = Buff.EndIter; }
-        else PutItHere = Buff.GetIterAtOffset(buffOffset);
+      if (Where == "cursor") // This option needs special treatment:
+      { buffOffset = Buff.CursorPosition; 
+        JTV.OverwriteSelectedText(Buff, TheText, leaveSelected);
+                 // Get rid of any existing selection before inserting the replacement
       }
-      // So... put it there.
-      if (clearBuff) Buff.Text = TheText;
-      else // Leave buffer text as is, and just add this new text into it at the desired position:
-      { Buff.PlaceCursor(PutItHere);
-        Buff.InsertAtCursor(TheText);
+      else // all the rest have a common last action:
+      {
+        if      (Where == "fill" || bufftextlen == 0) { clearBuff = true;  PutItHere = Buff.StartIter; }
+        else if (Where == "start")  PutItHere = Buff.StartIter;
+        else if (Where == "append") { buffOffset = bufftextlen;  PutItHere = Buff.EndIter; }
+        else
+        { buffOffset = Where._ParseInt(-1);  if (buffOffset < 0) return;
+          if (buffOffset >= bufftextlen) { buffOffset = bufftextlen;  PutItHere = Buff.EndIter; }
+          else PutItHere = Buff.GetIterAtOffset(buffOffset);
+        }
+        // So... put it there.
+        if (clearBuff) // then this must be "fill":
+        { Buff.Text = TheText;
+          if (leaveSelected) Buff.SelectRange(Buff.StartIter, Buff.EndIter);
+        }
+        else // "start" or a numerical offset or "append". Leave buffer text as is,
+             //   and just add this new text into it at the desired position:
+        { int selStartOffset = PutItHere.Offset; // this and the next one only used if text to stay selected.
+          int selEndOffset = selStartOffset + TheText.Length;
+          Buff.PlaceCursor(PutItHere);
+          Buff.InsertAtCursor(TheText);
+          // Where requested, have the added text selected:
+          if (leaveSelected)
+          { TextIter foo = Buff.StartIter;   foo.ForwardChars(selStartOffset);
+            TextIter bar = Buff.StartIter;   bar.ForwardChars(selEndOffset);
+            Buff.SelectRange(foo, bar);
+          }
+        }
       }
     }
   }
@@ -4659,7 +4947,7 @@ public partial class MainWindow : Gtk.Window
     else return result;
     // For all labels...
     if      (DoWhat == 'R') result = thisLabel.Text;
-    else if (DoWhat == 'W') thisLabel.Markup = NewText; // Allows Pango formatting tags.
+    else if (DoWhat == 'W') thisLabel.Markup = JTV.PrepareEscapedTextForPango(NewText); // Allows Pango formatting tags.
     else if (DoWhat == 'D' || DoWhat == 'E')
     { string ss = "";
       if      (WhichLabel == 'A') ss = LblAssDefaultText;
@@ -4670,6 +4958,7 @@ public partial class MainWindow : Gtk.Window
     }
     return result;
   }
+
 
 /// <summary>
 /// <para>Displays text with markup tags as defined at the end of source code file 'jTextView.cs'.</para>
@@ -4698,11 +4987,6 @@ public partial class MainWindow : Gtk.Window
   { while (Application.EventsPending ())   Application.RunIteration();
     return StopNow;
   }
-
-// This is called EITHER when user interrupts a run by clicking on 'GO' during looping (PauseIndex is -1)
-// OR when run focus hits a 'pause(.)' system function (PauseIndex is 0 to 9); or at a set break point (PauseIndex 100);
-// no checks for silly values.
-
 
 /// <summary>
 /// <para>This is called in three cases where the program run is to be suspended but be capable of resuming: (1) where the 'GO' ( = 'FREEZE')
@@ -4891,7 +5175,6 @@ public partial class MainWindow : Gtk.Window
 
   public void ColourOneLiners(TextBuffer thisBuffer, string CueStr, TextTag tagg, TextIter fromIt, TextIter toIt)
   { TextIter t1 = fromIt, m1, m2;
-    t1 = fromIt;
     bool found = true;
     int cueLen = CueStr.Length;
     while (found)
@@ -4926,15 +5209,15 @@ public partial class MainWindow : Gtk.Window
   ///  if present, will therefore take on their usual colours.
   /// </summary>
   public void ColourIgnoredText(TextBuffer thisBuffer, TextIter fromIt,  TextIter toIt)
-  { TextIter opener = fromIt, closer, m1, m2;
+  { TextIter opener = fromIt, closer, m1, m2, m3;
     bool found = true;
     while (found)
     { found = opener.ForwardSearch(IgnoreCueOpen, TextSearchFlags.TextOnly, out m1, out m2, toIt);
       if (found)
       { opener = m1;
-        found = m2.ForwardSearch(IgnoreCueClose, TextSearchFlags.TextOnly, out m1, out m2, toIt);
+        found = m2.ForwardSearch(IgnoreCueClose, TextSearchFlags.TextOnly, out m1, out m3, toIt);
         if (found)
-        { closer = m2; // 'closer' is set to just past the end of the IgnoreCueClose string.
+        { closer = m3; // 'closer' is set to just past the end of the IgnoreCueClose string.
           TextIter code1 = opener, code2 = closer; // We are looking for the combination "/*\ ... \*/", which means: don't recolour.
           code1.ForwardChars(2);  code2.BackwardChars(3);
           string ch1 = code1.Char, ch2 = code2.Char;
@@ -5083,7 +5366,7 @@ public partial class MainWindow : Gtk.Window
 
   /// <summary>
   /// Order of argument elements: New left, new top, new width, new height. Negative value = retain old value for this dimension.
-  /// For this overload, values > 0 and <= 1 are relative to Screen dimension; beyond that, taken as pixels (rounded). Negatives stay negative.
+  /// For this overload, values > 0 and ≤ = 1 are relative to Screen dimension; beyond that, taken as pixels (rounded). Negatives stay negative.
   /// </summary>
   public Tetro ChangeWindowLocation(double[] NewData)
   { int[] IntData = new int[4];

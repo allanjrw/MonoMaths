@@ -79,7 +79,7 @@ namespace MonoMaths
    //  example, the fn. may be happy with either a temp. or a reg'd array. (It
    //  would treat them differently, but would accept both.) Where it DOES matter,
    //  .REFsRegd is set to TRUE; in all other cases, to FALSE.
-   // REF args. must be the first in the list. They may have optional values.
+   // REF args. must be the first in the list. They may have optional values.  <==== ##### EH?? IF THIS IS TRUE, IT MUST BE MADE IMPOSSIBLE!
    //  Their no. must not exceed F.MaxREFArgs.
     public int REFArgCnt; // Different uses for the two function types. SYSTEM
       // fns.: No REF args. USER fns: recursion depth of call (nonrecursive call:
@@ -233,8 +233,24 @@ public class P
     // Initialize V.Vars[,], and give it its constant and readonly members.
     // Also initialize R.Assts[].
     InitializeArrays(RecordParsedAssts);
+
+  //######## TEMPORARY EXPERIMENTAL CODE!!! #################
+  //######## If the MAIN FUNCTION has the cue "DUO" at the start (suggested line: "DUO = 1", which must NOT be remarked out),
+  //########   then there will be a diversion into new experimental territory...
+    int nn = P.UserFn[0].Text.IndexOf("DUO");
+    if (nn >= 0  &&  nn < 10)
+    { bool keepGoing = DM.Experimental(P.UserFn);
+      if (!keepGoing) { result.S = "Experimental code aborted";  return result; }
+    }
+  //######## END OF EXPERIMENTAL CODE #######################
+
     // DEAL WITH STATEMENTS OF THE TYPE "A = exp1 ? exp2 : exp3"  and  "A = exp1 ? exp2 : exp3 : exp4"
     quo = ProcessQueryStatements();
+    nn = P.UserFn[0].Text.IndexOf("DUO");
+    if (nn >= 0  &&  nn < 10)
+    { bool keepGoing = DM.Experimental(P.UserFn);
+      if (!keepGoing) { result.S = "Experimental code aborted";  return result; }
+    }
     if (!quo.B)
     { result.S = C.Legible(quo.S, 2); result.I = quo.I;  return result; }
     // Finish parsing assignments and build the PreFlow string array:
@@ -589,7 +605,7 @@ public class P
 // Errors: .B FALSE, and .I stores error code. (.S not used for errors.)
   public static Quad ConvertArrayRefs(string InStr)
   { Quad que, result = new Quad(false);  int opbkt, clbkt;  string[] InBkts;
-    string ss;
+    string ss, tt;
     // KEEP: char[] choo = InStr.ToCharArray(); // here for testing only.
     while (true)
     { opbkt = InStr.IndexOf('[');  if (opbkt == -1)break; // no more array refs.
@@ -613,18 +629,38 @@ public class P
       ss = InStr._FromTo(opbkt, clbkt);
       que = GetDimensions(ss, -1, out InBkts);
       if (!que.B){ result.I = 5; return result;}// error in sq. bkt. parser.
-      ss = String.Join(",", InBkts);//e.g.by now, orig.[1][fn(x)+2] --> 1,fn(x)+2
+      tt = String.Join(",", InBkts);//e.g.by now, orig.[1][fn(x)+2] --> 1,fn(x)+2
+      // Allow for the word "last" in sq bkts; it must be the first content of the string of InBkts,
+      //  and followed by nil or by '-'.
+      if (tt.IndexOf("last") == 0 && tt.IndexOf(',') == -1) // this use of 'last' is only valid for one-dimensional arrays
+      { int len = tt.Length;
+        if (len == 4 || tt[4] == '-')
+        { // Identified as keyword, not as function 'last(.)':
+          tt = tt._Scoop(0, 4, "size(" + Nm + ")-__L1" );
+        }              
+      }
       // Array on LHS:  then e.g. "Arr1[2,3]=<exp.>" --> "__D = __assign(Arr1,2,3,<exp.>)":
       if (clbkt < InStr.Length-1 && InStr[clbkt+1]==C.CH[C.CHequal]) 
       { string rhs = InStr._Extent(clbkt+2);
-        InStr = C.GeneralDummyVarName + C.CH[C.CHequal] + C.ArrayFnLHS + '(' + Nm + ',' + ss + ',' + rhs + ')'; 
+        InStr = C.GeneralDummyVarName + C.CH[C.CHequal] + C.ArrayFnLHS + '(' + Nm + ',' + tt + ',' + rhs + ')'; 
       }
       // Array on RHS: then  e.g. Arr1[1,fn(..)] --> __segmt(Arr1,1,fn(..)):
-      else  { ss = C.ArrayFnRHS + '(' + Nm + ',' + ss + ')';  InStr = InStr._ScoopTo(NmPtr, clbkt, ss); }
+      else  { tt = C.ArrayFnRHS + '(' + Nm + ',' + tt + ')';  InStr = InStr._ScoopTo(NmPtr, clbkt, tt); }
     }
     result.S = InStr;  result.B = true;  return result;
   }
 
+
+  public static Quad HandleInject(string RHS, int FnLvl)
+  {
+    Quad result = new Quad(false);
+    if (RHS.IndexOf("inject(",0) != -1)
+    { if (FnLvl != 0) { result.S = "'inject' can only be used in the main program"; return result; }
+      if (RHS.IndexOf("inject(",0) != 0) { result.S = "'inject' must be the first word in the line"; return result; }
+      if (RHS.IndexOf("inject(text(__quote(") != 0) { result.S = "'inject' does not start with a literal character string"; return result; }
+    }
+    return result;
+  }
 //------------------------------------------------------------------------------
 // Convert e.g. "func(a,b,c)" to "func % (a) % (b) % (c)", where % represents
 //  the function operator, and a,b,c may be expressions. Result in .S.
@@ -643,13 +679,11 @@ public class P
         if (clbkt == -1)
         { result.S = "bracket mismatch";  return result; }
         // Identify the name before the '(': (above guarantees there is a name)
-
         int qtr = InStr._FirstFromEndNotIn(P.IdentifierChars, 0, opbkt-1); 
         name = InStr._FromTo(qtr+1, opbkt-1);
         pt = NameLocn(name, 0, false, out funtype);
         if (funtype != 'F' && funtype != 'U')
-        { result.S = "name before bracket is not a recognized function";
-          return result; }
+        { result.S = "the name before the bracket ('" + name + "') is not a recognized function";  return result; }
         snippet = InStr._FromTo(opbkt+1, clbkt-1);//e.g. "a, b, c"
         // Check that REF args are single variable names
         if (funtype=='F' && F.SysFn[pt.X].REFArgCnt > 0)
@@ -754,10 +788,15 @@ public class P
     bool[] insidefn = new bool [1 + AsstStr._CountChar('(')];// >= nec. size
     for (int i = 0; i < insidefn.Length; i++) insidefn[i] = false;
     bool equalfound = false; // true after '=' found.
+    bool expectOpener = false; // TRUE after a function name has been found, so that next char. should be '('
 
   // LOOP THROUGH ALL CHARACTERS:
     for (int chptr = 0; chptr <= Assig.Length; chptr++)//goes beyond end ('<=')
     { if (chptr == Assig.Length)thisch = nuthin; else thisch = Assig[chptr];
+      if (expectOpener)
+      { if (thisch == '(') expectOpener = false;
+        else { result.S = "function name without brackets";  return result; }
+      }
       is_alpha = false;   is_opn = 0xFF; // value equiv. to FALSE
       if (P.IdentifierChars.IndexOf(thisch) != -1) is_alpha = true;
       else
@@ -798,10 +837,7 @@ public class P
           }
           // NAME IS VALID BUT UNREGISTERED NAME, so take it as a new variable:
           if (nmtype == ' ') // NOT 'else if', as above 'if' can spawn it.
-          { //####if (nmstart != 0)// if it is, this is an LHS variable.
-            //####{ result.S= "cannot access an unassigned variable: " + Nm;  return result; } //"dim(" already dealt with, in ConvertFunctionRefs(.),
-                                                                    // so nametype now = 'V', and it won't fall prey to this error message.
-            // Add a new variable, which will be unassigned(.Use field = 0) UNLESS
+          { // Add a new variable, which will be unassigned(.Use field = 0) UNLESS
             //  it begins with '__', in which case it will have .Use set to 2.
             nmpt = AddNewVariable(Nm, FnLvl); //nmpt now has same mng. as above.
             term.Fn = (short) nmpt.Y;  term.At = (short) nmpt.X;
@@ -823,20 +859,18 @@ public class P
             term.VUse = 3; // a dummy, as will never be accessed till fn. has been
               // evaluated, and by that time VUse will have been reset by the fn.
             termstate = '+';
-            if (nestlvl + 1 >= insidefn.Length){ result.S = "function name without brackets";  return result; }
-            insidefn[nestlvl+1] = true;
+            expectOpener = true; // next char. must be '('
           }
         } // END OF PROCESSING A NAME JUST FINISHED
 
        // Continue processing non-name char:
        // Is a BRACKET:
         if (thisch == '(')
-        {
-          nestlvl++;
+        { nestlvl++;
+          insidefn[nestlvl] = true;
         }
         else if (thisch == ')')
-        {
-          insidefn[nestlvl] = false;
+        { insidefn[nestlvl] = false;
           nestlvl--;
           if (nestlvl < 0)
           { result.S= "unmatched ')' occurred. (This error can result from inadvertently using '=' where '==' intended, e.g. in 'x = (y = 1);'";  return result; }
@@ -1109,19 +1143,20 @@ public class P
         { result.S = "numerical error in '" + AssText + "':  " + quo.S;
           result.I = parag (fn, ass.IY-1); return result; }
   // FINAL PREPROCESSING OF ASSIGNMENT STRING:
-      quo = CheckCharSequences(AssText); // Detects illegal chars. and many wrong
-      // comb'ns. of legal ones, resolves redundancies, assigns Negator, and
-      // returns the doctored AsstStr in quo.S. Note that LFs are removed here,
-      // but that quo.I returns no. LFs removed, for reinsertion further down.
-      if (!quo.B){ result.S = "in '" + AssText + "', " + quo.S;  return result; }
-      LFcnt = quo.I;
-      qui = ConvertArrayRefs(quo.S); // returns doctored AsstStr in qui.S
-      if (!qui.B){result.S="array bracketting faulty in: "+AssText;return result;}
-      quo = ConvertFunctionRefs(qui.S, fn); // returns doctored AsstStr in quo.S
-      if (!quo.B){result.S="fault in '"+AssText+"': "+quo.S ;return result;}
-  // - - - - - - - - - - - - - -- - - - - -
-  // *** BUILD THE ROW IN R.ASSTS[][]:
-  // - - - - - - - - - - - - - -- - - - - -
+        quo = CheckCharSequences(AssText); // Detects illegal chars. and many wrong
+        // comb'ns. of legal ones, resolves redundancies, assigns Negator, and
+        // returns the doctored AsstStr in quo.S. Note that LFs are removed here,
+        // but that quo.I returns no. LFs removed, for reinsertion further down.
+        if (!quo.B){ result.S = "in '" + AssText + "', " + quo.S;  return result; }
+        LFcnt = quo.I;
+        qui = ConvertArrayRefs(quo.S); // returns doctored AsstStr in qui.S
+        if (!qui.B){result.S="array bracketting faulty in: "+AssText;return result;}
+  // DEAL WITH ARGUMENT LISTS OF FUNCTIONS  
+        quo = ConvertFunctionRefs(qui.S, fn); // returns doctored AsstStr in quo.S
+        if (!quo.B){result.S="fault in '"+AssText+"': "+quo.S ;return result;}
+    // - - - - - - - - - - - - - -- - - - - -
+    // *** BUILD THE ROW IN R.ASSTS[][]:
+    // - - - - - - - - - - - - - -- - - - - -
        que = BuildAsstRow(quo.S, fn);
         if (!que.B)
         { result.S = "In '" + AssText + "', " + que.S;
@@ -1318,7 +1353,8 @@ public class P
           Imbed = true;
         }
         else // unrecognized char.:
-        { result.S = "pgm. error - unrecognized PreFlow[] char";
+        { result.S = "unrecognized char '" + ch + "' (unicode " + Convert.ToInt32(ch) + ")";
+//        { result.S = "pgm. error - unrecognized PreFlow[] char";
           result.I = ParCnt;  return result; }
 
        // IMBED, IF 'Imbed' IS TRUE:

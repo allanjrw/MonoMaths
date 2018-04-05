@@ -7,6 +7,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 	ProjectSection(SolutionItems) = preProject
 		..\JonoLib\JGeneral.cs = ..\JonoLib\JGeneral.cs
 		..\JonoLib\JGeneral.cs = ..\JonoLib\JGeneral.cs
+		..\JonoLib\Printing.cs = ..\JonoLib\Printing.cs
 	EndProjectSection
 EndProject
 Global
@@ -25,6 +26,9 @@ Global
 	GlobalSection(MonoDevelopProperties) = preSolution
 		Policies = $0
 		$0.TextStylePolicy = $1
+		$1.FileWidth = 120
+		$1.TabWidth = 2
+		$1.IndentWidth = 2
 		$1.inheritsSet = VisualStudio
 		$1.inheritsScope = text/plain
 		$1.scope = text/x-csharp

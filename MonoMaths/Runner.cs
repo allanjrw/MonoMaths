@@ -304,9 +304,12 @@ public class V
 /// registered as its client. The new array's old existence (if it had one) is dereferenced.
 /// This one will NOT work with scalars.
 /// RETURNS 'true' if no error, 'false' if the 'From' variable has a null storeroom.
+/// [Added code, April 2017:] If the source and the destination are the same animal (as happens with "Arr1 = Arr1;"), 'true'
+///   is still returned, but no copying happens, for obvious reasons. 
 /// </summary>
   public static bool MakeCopy(int FromFn, int FromVarNo, int ToFn, int ToVarNo )
-  { TVar toVar = Vars[ToFn][ToVarNo],  fromVar = Vars[FromFn][FromVarNo];
+  { if (FromVarNo == ToVarNo  &&  FromFn == ToFn) return true; // and do nothing, as there is no point in copying something to itself.
+    TVar toVar = Vars[ToFn][ToVarNo],  fromVar = Vars[FromFn][FromVarNo];
     toVar.Use = fromVar.Use;
     toVar.X   = 0.0;
     R.DereferenceStoreRoom(ToFn, ToVarNo, true, true); // Nothing bad will happen, if To's ptr. was not pointing to a storeroom.
@@ -391,8 +394,8 @@ public class V
   { int storeCount = R.Store.Count;
     for (int i = 0; i < storeCount; i++)
     { if (i == ButNotThisStore) continue;
-      if (R.StoreUsage[i] == 1 && R.Store[i].ParentAsst == OnlyFromThisAsstInstance)
-      { R.Store[i].Demolish();  R.Store[i] = null;  R.StoreUsage[i]=0; } //null storeroom.
+      if (R.StoreUsage[i] == 1  && R.Store[i].ParentAsst == OnlyFromThisAsstInstance)
+      { R.Store[i].Demolish();  R.Store[i] = null;  R.StoreUsage[i] = 0; } //null storeroom.
   } }  
   ///<summary>
   /// <para>RETURNED: If no errors, .B is TRUE and .S holds the string to display; otherwise .B is FALSE and .S holds the error message.</para>
@@ -734,8 +737,9 @@ public class R             //run
 //------------------------------------------------------------------------------
 //store
   public static List<StoreItem> Store; // USER ARRAY DATA.
-  public static List<byte> StoreUsage; // For each Store slot holding data: 0 = unused, arrays null, other fields zero. 
-    // 1 = temp. storeroom (i.e. fields and arrays set, but client is (Fn = -1, VarNo = -1); 2 = registered array's storeroom.
+  public static List<byte> StoreUsage; // For each Store slot holding data:
+    // 0 = unused, arrays null, other fields zero;  1 = temp. storeroom (which has fields and arrays set, but client is [Fn = -1, VarNo = -1] );
+    // 2 = storeroom of an array registered in Vars[][].
     // Store and StoreUsage[] are setup once only, at startup (MainWindow).
   public static int StuffupSite = -1; // set by any error detected during Run(.).
      // Nec. because Run(.) is called by indirect recursions (with a layer of
@@ -818,7 +822,8 @@ public class R             //run
     bool lastwasIF = false;   char stopnow = ' ';
     ErrorTrap = new Quad(false); // no error trap.
     CurrentlyRunningUserFnNo = FnNo; // Allows methods called directly and indirectly from here to know which user fn. is being processed.
-    if (FnNo > 0) // Reset all local user-variables that persist from the last call to this function (as either 3 or 10):
+    if (FnNo > 0) // Reset all local user-variables that persist from the last call to this function (as either 3 or 10).
+                  // (This doesn't reset system variables like "__d1" which have use != 3, but they are never addressed before assigned, so no problem.) 
     { List<TVar> tvarList = V.Vars[FnNo];
       int noArgs = P.UserFn[FnNo].MaxArgs + P.UserFn[FnNo].NoSysVars,  tvarListCount = tvarList.Count;
       for (int i=noArgs; i < tvarListCount; i++) // skip the arguments, which are first on the list.
@@ -876,7 +881,7 @@ public class R             //run
       if (assno == IFMarker) lastwasIF = true;
      // ASSIGNMENT marker (.Ass >= 0):
       else if (assno >= 0)
-      { assoutcome = RunAssignment(assno);
+      { assoutcome = RunAssignment(assno, nxt);
         if (!assoutcome.B)
         { result.S = assoutcome.S;
           if ( assoutcome.I < -1) result.I = assoutcome.I; // a new-run request
@@ -884,7 +889,8 @@ public class R             //run
           { if (StuffupSite == -1) StuffupSite = FlowLine[FnNo][bub].Ref;
             result.I = StuffupSite; // passed on from an earlier recursion.
           }  
-          return result; }
+          return result;
+        }
       }
       // None of the other negative dummy markers have any impact on flow line
       //  running; their application is in parse time, in developing FlowLine.
@@ -916,7 +922,6 @@ public class R             //run
             result.I = assoutcome.I;
             if (result.I >= 0) // then return the array as a temporary array
             { Store[result.I].UnSetClient();
-              StoreUsage[result.I] = 1; 
             }
           }
           else {result.X = 0.0;  result.I = -1; } // a void return.
@@ -996,7 +1001,7 @@ public class R             //run
 // If no error, .B is TRUE and .X and .I are the values for the '=' operation.
 //  (Scalar: .I = -1, .X is data; Array: .I is storeroom ptr, .X is 0.)
 // Error returns .B and .S set as usual.
-  public static Quad RunAssignment(int AssNo) //runasst
+  public static Quad RunAssignment(int AssNo, int Bubble_Next) //runasst
   { LatestAssignment = AssNo;
     int ThisAssInstance = AssInstance;   AssInstance++; // Gives a unique instance no. for each run of this fn. (to distinguish recursion)
     Quad quid, result = new Quad(false);  result.X = 0.0;
@@ -1186,17 +1191,25 @@ public class R             //run
           result.X = victimX; // the only place where it is changed from default 0.
           result.I = -1;
         }
-        else // RHS --> an array result. The ONLY way this point can be reached
-          // is where the LHS array ref. will receive a complete array. Assts.
-          // like "Arr[1,2]=..." have long been changed to "__D =__assign(Arr,...".
+        else // RHS --> an array result. The ONLY way this point can be reached is where the LHS array ref. will receive a complete array.
+             //  Assts. like "Arr[1,2]=..." have long been changed to "__D =__assign(Arr,...".
         { int vic_fn = FnRT[victim], vic_at = AtRT[victim];
-          if (topuse==2 && V.GetVarName(top_fn, top_at)!= "__WH")
-           // A dummy array variable "__di" here has no use except where it follows
-           // 'return' in a fn., in which case this fn's .I will be returned.
-           // It shouldn't be registered in .Client, and so bypasses the below.
-          { if (vic_fn == TempArrayCode) result.I = vic_at;
-            else result.I = V.GetVarPtr(vic_fn, vic_at);
-            result.X = 0.0; }
+          if (topuse == 2) // the LHS is a dummy system variable:
+          { if (vic_fn == TempArrayCode)
+            { 
+              if (Bubble_Next == RETURNNext)
+              { result.I = vic_at; }
+              // Other temp arrays should not be preserved, so are simply ignored here; other code will eliminate them.
+              else
+              { // Dispose of the unneeded temporary array:
+                R.Store[vic_at].Demolish();  R.Store[vic_at] = null;  R.StoreUsage[vic_at] = 0;  //null storeroom.
+                result.I = -1; // dummy scalar result of assignment solving
+              }
+            }
+            else // RHS is a registered array variable:
+            { result.I = V.GetVarPtr(vic_fn, vic_at); }
+            result.X = 0.0;
+          }
           else // not a dummy variable on LHS:
           { if (topuse > 0 && topuse < 10)
             { result.S = "cannot assign an array expression to a scalar variable";
@@ -1392,7 +1405,7 @@ public class R             //run
               { // Check for unassigned variables: (NB - no equivalent test for single-arg functions; that is because the 
                 //   single argument is always a 'victim', and victims are always checked - search above for "if (vicuse == 0)" ).
                 if (v_use == 0)
-                { result.S = "argument '" + V.GetVarName(thisAsst[tm].Fn, thisAsst[tm].At) + " is an unassigned variable";
+                { result.S = "argument '" + V.GetVarName(thisAsst[tm].Fn, thisAsst[tm].At) + "' is an unassigned variable";
                   return result;
                 }
                 else  n = -1;
@@ -1415,7 +1428,7 @@ public class R             //run
                 P.UserFn[at_fld].ArgSource[cntr].X = AtRT[tm];            
               }
               cntr++;
-              if (cntr < noargs) thisAsst[tm].Valid=0;//kill intermed. terms
+              if (cntr < noargs) thisAsst[tm].Valid=0;// kill intermed. terms
               else // have reached the last term, which remains valid.
               { thisTopdog.OpCodeRT = thisAsst[tm].OpCodeRT;
                 thisTopdog.RatingRT = thisAsst[tm].RatingRT;
@@ -1738,6 +1751,8 @@ public class R             //run
     int offset = ThisTFn.NoSysVars;
     int maxargs = ThisTFn.MaxArgs;
     if (ThisTFn.MinArgs > 0)// if = 0, skip whole argument section below.
+      // By the way: there is no point in allowing for the case of all args. being optional, as the first arg. is always overruled,
+      //   since "Foo()" is internally equiv. to "Foo(0)". So all-args.-optional now raises an error after this block (as of April 2017).
     { if (arglen < ThisTFn.MinArgs)
       { result.S = "too few arguments for function " + ThisTFn.Name; return result; }
       if (arglen > maxargs)
@@ -1840,6 +1855,14 @@ public class R             //run
         }
       }
     }
+    else // MinArgs was zero. Nothing need be done - as there are no args. - unless there were optional args without set args. This is not
+      // allowed (because even void functions "Foo()" in fact supply an arg. of 0). So we detect the error here, before it raises an unassigned
+      // variable error later:
+    if (maxargs != 0)
+    { result.S = "Function " + ThisTFn.Name + " has only optional arguments. Optional args. must be preceded by at least one nonoptional arg";
+      return result;
+    }
+
    // --- RUN THE THING ----------------
     int holdit = CurrentlyRunningUserFnNo; // Only set in 'Run(.)'. We want it always to track the currently running user fn, so hold its old value.
     result = Run(Which);
@@ -1889,13 +1912,14 @@ public class R             //run
     return result;
   }
 
+
 // The following is necessary before running each new program. It does NOT kill SysFn, which can safely be reused.
   public static void KillData()     //kill
   {// Nullify Arrays and Parameters in this class:
     V.SetVarsToNull();
     Assts = null;
     for (int i=0; i<Store.Count; i++)
-    { if (StoreUsage[i]>0){ Store[i].Demolish(); } }
+    { if (StoreUsage[i] > 0){ Store[i].Demolish(); } }
     Store.Clear();  StoreUsage.Clear();
     FStack = null;  ClientStack = null;  RStack = null;
     SubstituteFn1 = 0;  SubstituteAt1 = -1;
@@ -1925,6 +1949,7 @@ public class R             //run
     if (thisWindow.BlockFileSave != null) thisWindow.BlockFileSave.Clear();
    // User-added submenus:
     thisWindow.InactivateExtraMenuSystem();
+    MainWindow.DisplayScalarValuesAfterTheRun = true; // the default.
     F.GraphAscension = double.NaN;  F.GraphDeclination = double.NaN;
   }
 
@@ -1964,7 +1989,7 @@ public class R             //run
   { StoreItem steve = new StoreItem(0);
     int slot = -1;
     for (int i = 0; i < Store.Count; i++)
-    { if (StoreUsage[i]==0) {slot = i; break;} }
+    { if (StoreUsage[i] == 0) {slot = i; break;} }
     if (slot >= 0)
     { Store[slot] = steve;  StoreUsage[slot] = 1; }
     else 

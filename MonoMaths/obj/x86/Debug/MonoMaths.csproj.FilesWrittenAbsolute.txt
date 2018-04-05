@@ -1,6 +1,7 @@
-/home/jon/MonoMaths Code/MonoMaths/obj/x86/Debug/.NETFramework,Version=v4.5.AssemblyAttribute.cs
-/home/jon/MonoMaths Code/MonoMaths/obj/x86/Debug/MonoMaths.gtk-gui.gui.stetic
-/home/jon/MonoMaths Code/MonoMaths/bin/Debug/MonoMaths.exe.mdb
-/home/jon/MonoMaths Code/MonoMaths/bin/Debug/MonoMaths.exe
-/home/jon/MonoMaths Code/MonoMaths/obj/x86/Debug/MonoMaths.exe
-/home/jon/MonoMaths Code/MonoMaths/obj/x86/Debug/MonoMaths.exe.mdb
+/home/jon/Projects_MonoDevelop/MonoMaths/obj/x86/Debug/.NETFramework,Version=v4.5.AssemblyAttribute.cs
+/home/jon/Projects_MonoDevelop/MonoMaths/obj/x86/Debug/MonoMaths.gtk-gui.gui.stetic
+/home/jon/Projects_MonoDevelop/MonoMaths/bin/Debug/MonoMaths.exe.mdb
+/home/jon/Projects_MonoDevelop/MonoMaths/bin/Debug/MonoMaths.exe
+/home/jon/Projects_MonoDevelop/MonoMaths/obj/x86/Debug/MonoMaths.exe
+/home/jon/Projects_MonoDevelop/MonoMaths/obj/x86/Debug/MonoMaths.exe.mdb
+/home/jon/Projects_MonoDevelop/MonoMaths/bin/Debug/FuncSet.dll

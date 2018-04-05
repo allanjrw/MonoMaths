@@ -9,9 +9,10 @@
     <OutputType>Exe</OutputType>
     <RootNamespace>MonoMaths</RootNamespace>
     <AssemblyName>MonoMaths</AssemblyName>
-    <ApplicationIcon>..\..\..\..\media\MonoMaths\MonoMaths\MiniMaths.ico</ApplicationIcon>
+    <ApplicationIcon>..\..\MonoMaths\MiniMaths.ico</ApplicationIcon>
     <CodePage>65001</CodePage>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <StartupObject>MonoMaths.MainClass</StartupObject>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
     <DebugSymbols>true</DebugSymbols>
@@ -62,6 +63,9 @@
     <Reference Include="System.Windows.Forms" />
     <Reference Include="Mono.Cairo" />
     <Reference Include="System.Numerics" />
+    <Reference Include="FuncSet">
+      <HintPath>..\JonoLib\FuncSet\FuncSet\bin\Debug\FuncSet.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="gtk-gui\gui.stetic">
@@ -100,6 +104,9 @@
     </Compile>
     <Compile Include="SysFns1.cs" />
     <Compile Include="SysFns2.cs" />
+    <Compile Include="..\JonoLib\Printing.cs" />
+    <Compile Include="Duo.cs" />
+    <Compile Include="SysFns3.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ProjectExtensions>

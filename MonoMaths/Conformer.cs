@@ -20,6 +20,7 @@ public class C
   public static int UserFnCnt = 0; // Always set to >= 1, function '0' being the main program.
   public static Duo[] FnExtremes;//fns. to be deleted between & incl. these ptrs.
   public static string Space_Par = " " + '\n'; // Used in sequences looking for the next char. which is not one of these.
+  public static string AllowedQuoteMarks = "\"\'`";  // "foo", 'foo', `foo`.  The last is unicode 96, a keyboard char.
 
 // TOKEN-RELATED FIELDS:
  //------------vvvvvvvvvvvvvvvv----------------------
@@ -158,7 +159,7 @@ public class C
     CHname[CHbkmark]    = "bkmark";
     CHname[CHnot]       = "!";
 
-    // Set up non-keyword elements:
+    // Set up non-keyword elements:         
     AssOpener = CH[CHassopener];   AssOpStr = AssOpener.ToString();
     AssCloser = CH[CHasscloser];   AssCloStr = AssCloser.ToString();
     Negator = CH[CHnegator];       
@@ -168,8 +169,9 @@ public class C
     CompCodes = new char[] { CH[CHeq_eq], CH[CHeq_gr], CH[CHgreater],
                              CH[CHeq_less], CH[CHless], CH[CHnot_eq] };
 
-    FlowBreakers = " " + CH[CHreturn] + CH[CHcontinue]+ CH[CHbreak] + CH[CHexit]; // NB! Keep 'return' first on list - posn. used later.
+    FlowBreakers = " " + CH[CHreturn] + CH[CHcontinue] + CH[CHbreak] + CH[CHexit]; // NB! Keep 'return' first on list - posn. used later.
     FlowBreakers = FlowBreakers.Remove(0, 1); // If you know a more elegant way of turning chars. into a string, bully for you.
+         // Save yourself 6 hours of trouble-shooting; don't try "Foo = new char[] { <list of chars> }; Flowbreakers = Foo.ToString();".   
     SpaceParAss = Space_Par + CH[CHassopener].ToString() + CH[CHasscloser].ToString();
   }
   // Internal codes using '__':
@@ -304,7 +306,10 @@ public class C
   //--------------------------------------------
     for (int fncnt = 0; fncnt < UserFnCnt; fncnt++)
     { // DELINEATE ASSIGNMENTS and REMOVE SEMICOLONS in the process:
-      string FnText = DelineateAssignments(ref P.UserFn[fncnt].Text); // This fn. does not have an error return.
+//######      string FnText = DelineateAssignments(ref P.UserFn[fncnt].Text); // This fn. does not have an error return.
+      Quad quiddle = DelineateAssignments(ref P.UserFn[fncnt].Text); // This fn. does not have an error return.
+      if (!quiddle.B)
+      { quiddle.I += P.UserFn[fncnt].LFBeforeOpener;   return quiddle; }
           // *** The following check has been remarked out, as the code of the above should guarantee its success;
           //       if significantly altering DelineateAssignments(.), reinstate it:
           // Quad qq = JS.BracketsCheck(ref FnText, AssOpener, AssCloser);
@@ -312,6 +317,7 @@ public class C
       // REPLACE SHORTHANDS: x++;  and x +=, x *=, ... 
       //   (Note that array square brackets - "aa[0]" - are only removed in unit Parser ("ConvertArrayRefs(.)");
       //    the code in the following functions assumes that the square brackets are not yet removed.
+        string FnText = quiddle.S;
       quo = ReplaceShorthand(ref FnText);
       if (!quo.B)
       { quo.I += P.UserFn[fncnt].LFBeforeOpener;   return quo; }
@@ -434,13 +440,13 @@ public class C
         StrArr[i] = replacemt; // replace the line in the REF argument.
         result = i;
       }
-      break; // either the directive line has been dealt with, or some other code found
+      else break; // some other code found
     }
     return result;
   }
 
 /// <summary>
-/// Fine the number of occurrences of '\n' up to (and including) InStr[ptr].
+/// Find the number of occurrences of '\n' up to (and including) InStr[ptr].
 /// </summary>
   public static int LFsToHere(ref string InStr, int ptr)
   { return InStr._CountChar('\n', 0, ptr);
@@ -477,8 +483,7 @@ public class C
 /// </summary>
   public static bool LegalName(string InStr)
   { if (InStr == "")return false;
-    if(JS.CharsNotInList(InStr, P.IdentifierChars.ToCharArray()) > 0 ||
-          JS.Digits.IndexOf(InStr[0]) != -1) return false;
+    if(JS.CharsNotInList(InStr, P.IdentifierChars.ToCharArray()) > 0 || JS.Digits.IndexOf(InStr[0]) != -1) return false;
     else return true;
   }
 
@@ -553,7 +558,8 @@ public class C
 
   public static Quad ReplaceQuotes(ref string Txt)
   { Quad result = new Quad(false);   string ss, tt, uu;
-    int m, startptr = 0, endptr; char[] qmks = {'\"', '\'', '`'}; // last is unicode 96, a keyboard char.
+    int m, startptr = 0, endptr; 
+    char[] qmks = AllowedQuoteMarks.ToCharArray();
     if (P.Quotation == null) P.Quotation = new List<string>(); // Only happens on first run. R.KillData() clears Quotation, but does not null it.
  // WORK THROUGH TXT, QUOTE BY QUOTE:
     while (true)
@@ -774,9 +780,14 @@ public class C
           if (optionalfound)
           { result.S = "obligatory arg. follows an optional (defaulted) one";
             result.I = LFsToHere(ref Txt, startptr + rr);  return result;
-        } }
+          }
+        }
         else // this is an optional parameter:
-        { optionalfound = true;  bool success;
+        { if (Trial.PassedByRef[i]) // Oops! This has just been declared a REF argument above, now it is trying to be optional!
+          { result.S = "a REF argument cannot also be an optional argument";
+            result.I = LFsToHere(ref Txt, startptr + rr);  return result;
+          }
+          optionalfound = true;  bool success;
           Trial.ArgDefaults[i] = arg._Extent(rr+1)._ParseDouble(out success);
           Trial.ArgDefaultStrings[i] = success ? "" : arg._Extent(rr+1);
             // Testing is left to run time. If the value planted in ArgDefaultStrings is not a constant,
@@ -860,24 +871,73 @@ public class C
     result.B = true;  return result;
   }
 
-// Put all assignments between AssOpener and AssCloser, removing all semicolons
-//  and all spaces in the process. However, any LFs stay buried in the assignment,
-//  except as the first char. or last char.
-  private static string DelineateAssignments(ref string Txt)
-  { if (Txt == "") return "";
+
+//######      if (qtr == -1) { result.S = "'++' does not follow a variable name";  result.I = LFsToHere(ref Txt, ptr);  return result; }
+
+
+/// <summary>
+/// Put all assignments between AssOpener and AssCloser, removing all semicolons
+///  and all spaces in the process. However, any LFs stay buried in the assignment,
+///  except as the first char. or last char.
+/// RETURN - NO ERRORS: .B = true, .S = the whole altered text, .I = 0, .X unused.
+/// RETURN IF ERROR: .B = false, .S = error message, .I = par. in Assts Window to select (after you add
+///  the fn. offset to it, in calling code).
+/// (Testing is NOT exhaustive. Most errors rely on detection at parse time.)
+/// </summary>
+  private static Quad DelineateAssignments(ref string Txt)
+  { var result = new Quad(0, 0.0, true, "");
+    if (Txt == "") return result;
     char[] stin = Txt.ToCharArray();  char ch;
+    char[] ConditionTakingBracket = new char[] {CH[CHif], CH[CHelseif], CH[CHfor], CH[CHwhile], CH[CHforeach]}; // SIFT statements are not dealt with here
     StringBuilder stout = new StringBuilder();
   // FILTER THE INPUT STRING, CHAR. BY CHAR., AND BUILD THE OUTPUT STRING:
     bool InAss = false; // TRUE if op. pt. is inside an assignment.
     bool IsLast = false; // TRUE for the last char. of the string.
-    bool isasschar;  int stinLast = stin.Length-1;
+    bool isasschar;
+    int stinLast = stin.Length-1;
+    bool conditional_in_operation = false;
+    int bkt_counter = 0;
     for (int i = 0; i <= stinLast; i++)
     { if (i == stinLast) IsLast = true;
       ch = stin[i];
-      isasschar = (AssignmentChars.IndexOf(ch) != -1);
       if (ch <= ' ' && ch != '\n')continue; // ignore blanks and control chars.
+      if (ConditionTakingBracket._Find(ch) != -1)
+      { 
+        if (InAss)
+        { stout.Append(AssCloser);
+        }
+        conditional_in_operation = true; // set to TRUE by the keyword, only to FALSE by the final bkt
+        if (bkt_counter != 0) 
+        { result = new Quad(LFsToHere(ref Txt, i), 0.0, false, "last conditional statement had no final ')'");
+          return result; 
+        }
+        stout.Append(ch);
+        stout.Append(AssOpener);
+        InAss = true;
+        continue;
+      }
+      else isasschar = (AssignmentChars.IndexOf(ch) != -1);
+
       if (InAss) // INSIDE AN ASSIGNMENT:
-      { if (isasschar)
+      { // First deal with brackets within / at bounds of CONDITIONAL statements: 
+        if (conditional_in_operation)
+        { if (ch == '(') bkt_counter += 1;
+          else if (ch == ')')
+          { bkt_counter -= 1;
+            if (bkt_counter == 0)
+            { isasschar = false;  // to trigger appending a closer after it, below.
+              stout.Append(ch);
+              conditional_in_operation = false;
+              ch = ';'; // *** This is a fudge, to stop the char. being added a second time below.
+            }
+          }
+          else if (bkt_counter < 1)
+          { result = new Quad(LFsToHere(ref Txt, i), 0.0, false, "faulty (or no) bracketting for a conditional statement");
+            return result; 
+          }
+        }
+        // Now deal with chars in general
+        if (isasschar)
         { stout.Append(ch); if (IsLast) stout.Append(AssCloser); }
         else
         { stout.Append(AssCloser); // *** This allows nonstandard characters through (e.g. greek letters where user forgot "ALLOW GREEK").
@@ -917,7 +977,8 @@ public class C
     // This might leave some empty assts., so eliminate them now:
     for (int i = stout.Length-2; i >= 0; i--)
     { if (stout[i]==AssOpener && stout[i+1]==AssCloser) stout.Remove(i,2); }
-    return stout.ToString();
+    result.S = stout.ToString();
+    return result;
   }
 
 // Deal with some shorthands: (1) as used in 'a++;'. (2) as used in 'a += 2;'.
@@ -988,7 +1049,7 @@ public class C
       else // stick the whole of the lhs into the rhs:
       { Txt = Txt._ScoopTo(assop + 1, assclo - 1, lhs + equalsCode + lhs + thisSign + rhs); }
     }
-  // For testing:  string asdf = Legible(Txt);
+    // For testing:  string asdf = Legible(Txt);
     result.B = true; return result; 
   }
 
@@ -1193,7 +1254,8 @@ public class C
       p = Txt._IndexOfNoneOf(SpaceParAss, pFOR+1);   
       if (p < 0 || Txt[p] != '(') { oops = 10; break; } // no '(' after 'for'
       q = JS.CloserAt(Txt, '(', ')', p);  // No error check, as unmatched brackets found much earlier in parsing.
-      int[] inty = InsertBracesIfNeeded(ref Txt, q);  if (inty[0] < 0) { oops = 20; break; } // nothing after 'for(..)'.
+      int[] inty = InsertBracesIfNeeded(ref Txt, q+1, true); // "DelineateAssignments(.)" has put in an assCloser straight after this ')'
+      if (inty[0] < 0) { oops = 20; break; } // nothing after 'for(..)'.
       // Now braces are always present. Next task: Is this the full syntax, or the shorthand form ("for (1,20).."?
       qq = Txt._CountChar(CH[CHassopener], pFOR, q); // count asst. openers (NOT closers) between 'for' and the final ')' of "for(..)".
       // Will be 1 for the shorthand form, 3 for the full form if no terminal semicolon ("if(...i++)"), 4 for same if terminal semicolon
@@ -1257,7 +1319,7 @@ public class C
      // At the same time, use it to find out whether curlies immediately follow the bracketted section, and whether syntax complete. 
       p = Txt._IndexOfNoneOf(SpaceParAss, pFOREACH+1);   if (p < 0 || Txt[p] != '(') { oops = 10; break; } // no '(' after 'foreach'
       q = JS.CloserAt(Txt, '(', ')', p);  // No error check, as unmatched brackets found much earlier in parsing.
-      int[] inty = InsertBracesIfNeeded(ref Txt, q);  if (inty[0] < 0) { oops = 20; break; } // nothing after 'foreach(..)'.
+      int[] inty = InsertBracesIfNeeded(ref Txt, q+1, true);  if (inty[0] < 0) { oops = 20; break; } // nothing after 'foreach(..)'.
       // Now braces are always present.
       pOPEN = Txt.IndexOf('{', pFOREACH); // No error check - we either found it or inserted it, above.
       pCLOSE = JS.CloserAt(Txt, '{', '}', pOPEN); // No error check - matching braces was tested for much earlier in parsing.
@@ -1331,7 +1393,7 @@ public class C
       pDO = Txt.IndexOf(CH[CHdo]);
       if (pDO == -1) break; // NORMAL EXIT from loop, if no errors.
      // If the next char. is not '{', insert '{}' around the first assignment.
-      int[] bracery = InsertBracesIfNeeded(ref Txt, pDO); // returns brace positions, whether inserted or originally present.
+      int[] bracery = InsertBracesIfNeeded(ref Txt, pDO, false); // returns brace positions, whether inserted or originally present.
       if (bracery[0] < 0) { oops = 10; break; } // nothing after 'do'.
       pOPEN = bracery[1]; pCLOSE = bracery[2];      
      // Expect a WHILE to be the next signif. character. 
@@ -1395,7 +1457,7 @@ public class C
      // The first printable character after 'while' should always be a '('. Get rid of this and its pair.
       p = Txt._IndexOfNoneOf(SpaceParAss, pWHILE+1);   if (p < 0 || Txt[p] != '(') { oops = 10; break; } // no '(' after 'while'
       q = JS.CloserAt(Txt, '(', ')', p);  // No error check, as unmatched brackets found much earlier in parsing.
-      int[] inty = InsertBracesIfNeeded(ref Txt, q);  if (inty[0] < 0) { oops = 20; break; } // nothing after 'while(..)'.
+      int[] inty = InsertBracesIfNeeded(ref Txt, q+1, true);  if (inty[0] < 0) { oops = 20; break; } // nothing after 'while(..)'.
       // We no longer need the encasing '(..)' as markers, so will remove them:      
       Txt = Txt.Remove(q, 1);  Txt = Txt.Remove(p, 1); 
       // There are now no '()'brackets encasing the loop-control part, and '{}' always encase the action part.
@@ -1471,6 +1533,18 @@ public class C
           sb.Append(Txt._FromTo(last_pColon+1, pBraceClos-1));
           break;
         }
+      // A valid colon has been identified:
+        // Check for a following statement without braces, in which case there will be nonspace chars. between the colon and the next AssCloser:
+        //  If the braces are there, the segment will look like: "╠ 1: ╣{╠ writeln(.."; if not, like: "╠ 2:writeln(..) ╣".
+        int pp = Txt.IndexOf(AssCloser, pColon);
+        string stroo = Txt._Between(pColon, pp)._Purge();
+        if (!String.IsNullOrEmpty(stroo)) // then there is text after the colon, so therefore no braces were included.
+        { Txt = Txt._Insert(pColon+1, AssCloStr + "{" + AssOpStr);
+          int qq = Txt.IndexOf(AssCloser, pColon+4);
+          Txt = Txt._Insert(qq+1, "}");
+          // All this has put pBraceClos out; so update it:
+          pBraceClos += 4;
+        }      
         pBeforeColon = Txt._LastIndexOf(AssOpener, last_pColon, pColon); // the asst. opener for the expression before this colon.
         if (pBeforeColon == -1) // #### check: I think it can occur if you try nesting instance-colon pairs after 'else:'.
         { result.S = "Some problem with the colon here (? acute colitis).";  result.I = LFsToHere(ref Txt, pColon);  return result; }
@@ -1481,7 +1555,7 @@ public class C
         else // Insert all the text up to (but not including) pBeforeColon; this should include all par. marks.
         { sb.Append(Txt._FromTo(last_pColon+1, pBeforeColon-1)); 
         }
-        // Convert the instance(s) of this asssignment to conditional statements:
+        // Convert the instance(s) of this assignment to conditional statements:
         instance = Txt.Substring(pBeforeColon+1,  pColon - pBeforeColon - 1); // all between start of par. and colon
         // Deal with "ELSE:":
         if (instance == "") // then we probably have "ELSE [[ : <code>".
@@ -1555,8 +1629,9 @@ public class C
       pEIF = Txt.IndexOfAny(if_elseif_else, pEIF + 1);
       if (pEIF == -1) break; // no more IFs or ELSEIFs    
      // The first printable character after 'if' should always be a '('. Locate this and its pair.
-      if (Txt[pEIF] == CH[CHelse]) q = pEIF; // then no bracketted condition follows, so set argmt. of fn. call to point to the token itself.
-      else // A bracketted condition expected; set argm.t of fn. call to point to the final ')':
+      if (Txt[pEIF] == CH[CHelse]) // then no bracketted condition follows, so set argmt. of fn. call to point to the token itself.
+      { InsertBracesIfNeeded(ref Txt, pEIF, false); } // If '{}' not present, insert them. The method's return is not used.
+      else // A bracketted condition expected; set argmt. of fn. call to just after the final ')':
       { p = Txt._IndexOfNoneOf(SpaceParAss, pEIF+1);   
         if (p < 0 || Txt[p] != '(') // no '(' after 'if'
         { result.S = "the condition after 'if' or 'else if' must be enclosed within brackets '(..)'"; 
@@ -1567,13 +1642,10 @@ public class C
         { result.S = "Somehow the delineating of assignments has failed. Typically this is because a nonlegal character has been inserted. " +
                         "E.g. you used a greek character but 'ALLOW GREEK' is not the first line of your program"; 
           result.I = LFsToHere(ref Txt, pEIF);  return result; 
-        } 
-      }
-     // If '{}' not present, insert them. 
-      InsertBracesIfNeeded(ref Txt, q); // we don't use the returned array from this fn. in this case.
-     // CHECK FOR '=' used instead of '=='; and in the process REMOVE THE BRACKETS, which have now done their duty.
-      if (Txt[pEIF] != CH[CHelse]) // then there is a condition, enclosed in brackets:
-      { pp = Txt.IndexOf(CH[CHequal], p);
+        }
+        InsertBracesIfNeeded(ref Txt, q+1, true); // If '{}' not present, insert them. The method's return is not used.
+        // CHECK FOR '=' used instead of '=='; and in the process REMOVE THE BRACKETS, which have now done their duty.
+        pp = Txt.IndexOf(CH[CHequal], p);
         if (pp != -1 && pp < q)
         { result.S = "the condition after 'if' or 'else if' must not contain '=' -- use '==' instead."; 
           result.I = LFsToHere(ref Txt, pEIF);  return result; 
@@ -1584,7 +1656,6 @@ public class C
 // STEP 2 -- LOOP THROUGH ALL 'IF' INSTANCES and (a) change all ELSEIFs to ELSE { IF ... }, and (b) replace all '{}', and 
 //               (c) replace user IF codes (CH[CHif]) with machine IF codes (CH[CHiffinal]):
     List<TRect> Iffy = null; // CODING for each TRect object:   .L is the type of the IF/ELSEIF/ELSE code(0=IF, 1=ELSEIF, 2=ELSE); 
-                                                             // .T is ptr to that code; .R is ptr. to ensuing '{', .B to '}'.
   // NB - we will update and keep Iffy for use in step 3.
     pIF = -1;  TRect wrecked;
     while (true)
@@ -1638,14 +1709,16 @@ public class C
     result.B = true;  return result;
   }
 
-// Used by the IF, DO, FOR, FOREACH, WHILE handlers. StartPoint is critical. In the case of tokens which must be followed by a bracketted
-//   statement (FOR, FOREACH, WHILE not at the end of a 'do' loop, IF, ELSEIF), StartPoint MUST point to the final ')' of that statement.
-// In the case of tokens which should be followed directly by '{' (ELSE, DO), StartPoint MUST point to the token itself.
-//  This fn. does not remove the '()' brackets, in the former case; that is left to the calling code, after this fn. has been called. 
+// Used by two groups of keyword codes:
+//   (1) Those which should be followed by "( ... )": namely codes of IF, ELSEIF, FOR, FOREACH, WHILE. ("BracketsShouldFollow" must be set to TRUE.)
+//   (2) Those which should be followed by "{": namely codes of ELSE, DO. ("BracketsShouldFollow" must be set to FALSE.)
+// For case (1), StartPoint MUST be set to the AssCloser that immediately follows the ')' of the bracketted segment.
+// For case (2), StartPoint MUST be set to the keyword itself.
 // RETURNED: 
 //  [0]: Error if negative ( = error code). Otherwise [0] is 1 if braces were inserted, or 0 if opening brace was already there.
 //  [1], [2]: Positions in Txt of '{', '}' (whether inserted here or not).
-  private static int[] InsertBracesIfNeeded(ref string Txt, int StartPoint)
+// NOTE that SIFT does not use this method, as it would be too difficult to do outside of the complete rewriting that occurs for SIFT.
+  private static int[] InsertBracesIfNeeded(ref string Txt, int StartPoint, bool BracketsShouldFollow)
   { int[] result = new int[3];
     // Find the first signif. character after StartPoint:
     int signif = Txt._IndexOfNoneOf(SpaceParAss, StartPoint+1); // Ignore spaces, '\n', asst. openers and closers.
@@ -1668,26 +1741,28 @@ public class C
       Txt = Txt.Insert(signif, "{");  result[1] = signif;
       return result;
     }
-    else if (q > 0) // (NB - not 'else if'.) Another flow breaker:
+    else if (q > 0) // One of: CONTINUE, BREAK, EXIT
     { Txt = Txt.Insert(signif + 1, "}");  result[2] = signif + 2;  // '+2', not '+1', because the '{' will be inserted before it, a bit later.
       Txt = Txt.Insert(signif, "{");  result[1] = signif;
       return result;
     }
-   // To get here, we have an unbraced assignment following StartAfterThis.
-    int p = Txt.IndexOf(CH[CHasscloser], StartPoint);
-    Txt = Txt.Insert(p+1, "}");  
-    if (Txt[StartPoint] == ')') // then we are dealing with IF or ELSEIF or WHILE or FOR, which take '(..)' after them:
-   // E.g. If Txt was: "if (i < 10) i = i+1;" we would now be looking at this (using '>>' for asst. opener, '<<' for closer):
-   //  "if >>(i < 10)a = a+1 <<". We now convert this to "if >>(i < 10)<<{>>a = a+1 <<}".
-    { Txt = Txt.Insert(StartPoint+1, AssCloStr + "{" + AssOpStr);  
-      result[1] = StartPoint+1;  result[2] = p + 4;
+   // To get here, we have an unbraced assignment following a keyword that requires a bracketted condition:
+    if (BracketsShouldFollow)
+    { int p = Txt.IndexOf(CH[CHasscloser], StartPoint+1);
+      Txt = Txt.Insert(p + 1, "}");  
+      Txt = Txt.Insert(StartPoint+1, "{");  
+      result[1] = StartPoint+1;  result[2] = p + 2;
     }
-    else // we are dealing with ELSE or DO, and StartPoint points to the token for same:
-    { Txt = Txt.Insert(StartPoint+1, "{");  
+    else  // we are dealing with ELSE or DO, and StartPoint points to the token for same:
+    { int p = Txt.IndexOf(CH[CHasscloser], StartPoint);
+      Txt = Txt.Insert(p + 1, "}");  
+      Txt = Txt.Insert(StartPoint+1, "{");  
       result[1] = StartPoint+1;   result[2] = p + 2;
     }
     return result;
   }
+
+
 //leg
 /// <summary>
 /// <para>Returns 'Txt' with all codes recorded in CH[.] replaced by a user-friendly translation. </para>

@@ -83,7 +83,7 @@ internal partial class F
     Rando = new Random(); // Will operate until the user invokes 'seed(..)'.
     // Set up the array of system functions:
     Palette = PaletteStr.Split(new [] {'|'}); 
-    SysFnCnt = 450;
+    SysFnCnt = 457;
     SysFn = new TFn[SysFnCnt];
     SysFn[0] = new TFn(0);  SysFn[0].Name = "____"; // Dummy only, but accessed in searches, so make the name impossible.
     SysFnNames = new List<string>(SysFnCnt);
@@ -114,10 +114,13 @@ internal partial class F
 
     //                 NAME,        MIN/MAXargs REFArgCnt  REFsRegd Hybrid
     SysFn[1]   = new TFn("dim",       2, MaxREFArgs, MaxREFArgs, false,1); // <--- if changing name or details, change ref. in units Parser & Conformer.
-    SysFn[2]   = new TFn("inc",       1, 1,      1,        true,       1);
-    SysFn[3]   = new TFn("dec",       1, 1,      1,        true,       1);
-    SysFn[4]   = new TFn("rotate",    1, MaxREFArgs, MaxREFArgs, false,1);
-    SysFn[5]   = new TFn("sqr",       1, 1,      0,        false,      2);
+    SysFn[2]   = new TFn("dimlike",   2, MaxREFArgs, MaxREFArgs, false,1); // <--- if changing name or details, change ref. in Parser
+    SysFn[3]   = new TFn("__array",   1, MaxREFArgs, MaxREFArgs,false, 1); // <--- if changing name or details, change ref. in units Parser & Conformer.
+  //  case 348: DIMLIKE(load of arrays) -- see case 1 - "DIM(.)"
+//    SysFn[254] = new TFn("__array",   1, MaxREFArgs, MaxREFArgs,false, 1); // <--- if changing name or details, change ref. in units Parser & Conformer.
+
+    SysFn[4]   = new TFn("inc",       1, 1,      1,        true,       1);
+    SysFn[5]   = new TFn("dec",       1, 1,      1,        true,       1);
     SysFn[6]   = new TFn("deg",       1, 1,      0,        false,      2);
     SysFn[7]   = new TFn("rad",       1, 1,      0,        false,      2);
     SysFn[8]   = new TFn("sin",       1, 1,      0,        false,      2);
@@ -153,9 +156,9 @@ internal partial class F
     SysFn[37]  = new TFn("fill",      2, 1000,   1,        false,      1);
     SysFn[38]  = new TFn("__quote",   1, 1,      0,        false,      1);
     SysFn[39]  = new TFn("polystring",1, 4,      0,        false,      1);
-    SysFn[40]  = new TFn("gridx",     2, 4,      0,        false,      1);
-    SysFn[41]  = new TFn("gridy",     2, 4,      0,        false,      1);
-    SysFn[42]  = new TFn("gridz",     2, 4,      0,        false,      1);
+    SysFn[40]  = new TFn("gridx",     2, 5,      0,        false,      1);
+    SysFn[41]  = new TFn("gridy",     2, 5,      0,        false,      1);
+    SysFn[42]  = new TFn("gridz",     2, 5,      0,        false,      1);
     SysFn[43]  = new TFn("killplot",  1, 1000,   0,        false,      1);
     SysFn[44]  = new TFn("killgraphs",2, 2,      0,        false,      1);
     SysFn[45]  = new TFn("addplot",   2, 1000,   0,        false,      1);
@@ -175,9 +178,9 @@ internal partial class F
     SysFn[59]  = new TFn("neat",      1, 3,      0,        false,      1);
     SysFn[60]  = new TFn("copy",      2, 3,      0,        false,      1);
     SysFn[61]  = new TFn("copyto",    3, 3,      0,        false,      1);
-    SysFn[62]  = new TFn("boolstr",   1, 1000,   0,        false,      1);
-    SysFn[63]  = new TFn("findall",   3, 4,      0,        false,      1);
-    SysFn[64]  = new TFn("reverse",   1, 1,      1,        true,       1);
+    SysFn[62] = new TFn("find",       3, 4,      0,        false,      1);
+    SysFn[63] = new TFn("finds",      3, 4,      0,        false,      1);
+    SysFn[64]  = new TFn("findall",   3, 4,      0,        false,      1);
     SysFn[65]  = new TFn("transpose", 1, 1,      0,        false,      1);
     SysFn[66]  = new TFn("dot",       2, 2,      0,        false,      1);
     SysFn[67]  = new TFn("mxmult",    2, 3,      0,        false,      1);
@@ -271,7 +274,7 @@ internal partial class F
     SysFn[155] = new TFn("lists",     3, 4,      0,        false,      1);
     SysFn[156] = new TFn("lists_to",  3, 4,      0,        false,      1);
     SysFn[157] = new TFn("clear",     1, MaxREFArgs, MaxREFArgs,true,  1);
-    SysFn[158] = new TFn("expunge",   2, 4,      0,        false,      1);
+    SysFn[158] = new TFn("extract_values",3,3,   1,        true,       1);
     SysFn[159] = new TFn("iok",       1, 1,      0,        false,      1);
     SysFn[160] = new TFn("iomessage", 1, 1,      0,        false,      1);
     SysFn[161] = new TFn("iofile",    1, 1,      0,        false,      1);
@@ -282,10 +285,10 @@ internal partial class F
     SysFn[166] = new TFn("list_new",  1, 1,      0,        false,      1);
     SysFn[167] = new TFn("lists_new", 1, 1,      0,        false,      1);
     SysFn[168] = new TFn("list_clear",1, 1000,   0,        false,      1);
-    SysFn[169] = new TFn("lists_clear",2,2,      0,        false,      1);
-    SysFn[170] = new TFn("lists_clear_to",2,2,   0,        false,      1);
+    SysFn[169] = new TFn("__UNUSED",  2, 2,      0,        false,      1);
+    SysFn[170] = new TFn("__UNUSED",  2, 2,      0,        false,      1);
     SysFn[171] = new TFn("lists_kill",1,1,       0,        false,      1);
-    SysFn[172] = new TFn("lists_preserve",1,1,  0,        false,      1);
+    SysFn[172] = new TFn("lists_preserve",1,1,   0,        false,      1);
     SysFn[173] = new TFn("list_add",  2, 1000,   0,        false,      1);
     SysFn[174] = new TFn("lists_count",1,1,      0,        false,      1);
     SysFn[175] = new TFn("list_size", 1,1,       0,        false,      1);
@@ -296,7 +299,7 @@ internal partial class F
     SysFn[180] = new TFn("lists_read_to",3,4,    0,        false,      1);
     SysFn[181] = new TFn("list_push", 2, 2,      0,        false,      1);
     SysFn[182] = new TFn("list_pop",  2, 2,      2,        false,      1);
-    SysFn[183] = new TFn("placement", 2, 3,      0,        false,      1);
+    SysFn[183] = new TFn("placement", 2, 2,      0,        false,      1);
     SysFn[184] = new TFn("isplot",    1, 1000,   0,        false,      1);
     SysFn[185] = new TFn("isgraph",   1, 1000,   0,        false,      1);
     SysFn[186] = new TFn("push",      3, 4,      1,        true,       1);
@@ -317,8 +320,8 @@ internal partial class F
     SysFn[201] = new TFn("select",    2, 4,      0,        false,      1);
     SysFn[202] = new TFn("substitute",3, 4,      0,        false,      1);
     SysFn[203] = new TFn("removedups",1, 3,      0,        false,      1);
-    SysFn[204] = new TFn("find",      3, 4,      0,        false,      1);
-    SysFn[205] = new TFn("finds",     3, 4,      0,        false,      1);
+    SysFn[204] = new TFn("boolstr",   1, 1000,   0,        false,      1);
+    SysFn[205] = new TFn("reverse",   1, 1,      1,        true,       1);
     SysFn[206] = new TFn("selectrows",2,2,       0,        false,      1);
     SysFn[207] = new TFn("selectcols",2,2,       0,        false,      1);
     SysFn[208] = new TFn("pause",     1, 1,      0,        false,      1);
@@ -335,7 +338,7 @@ internal partial class F
     SysFn[219] = new TFn("insertcols",3, 4,      0,        false,      1);
     SysFn[220] = new TFn("plotshape", 7, 12,     0,        false,      1);
     SysFn[221] = new TFn("copyshape", 2, 6,      0,        false,      1);
-    SysFn[222] = new TFn("plotbins",  1, 8,      0,        false,      1);
+    SysFn[222] = new TFn("plotbins",  1, 9,      0,        false,      1);
     SysFn[223] = new TFn("sumrows",   1, 3,      0,        false,      1);
     SysFn[224] = new TFn("sumcols",   1, 3,      0,        false,      1);
     SysFn[225] = new TFn("deleterows",2, 3,      0,        false,      1);
@@ -367,7 +370,7 @@ internal partial class F
     SysFn[251] = new TFn("scalefit",  1, 4,      0,        false,      1);
     SysFn[252] = new TFn("plotmesh",  2, 14,     0,        false,      1);
     SysFn[253] = new TFn("plotmesh3d",3, 15,     0,        false,      1);
-    SysFn[254] = new TFn("__array",   1, MaxREFArgs, MaxREFArgs,false, 1); // <--- if changing name or details, change ref. in units Parser & Conformer.
+    SysFn[254] = new TFn("sqr",       1, 1,      0,        false,      1);
     SysFn[255] = new TFn("finddup",   2, 4,      0,        false,      1);
     SysFn[256] = new TFn("perturb",   3, 3,      0,        false,      1);
     SysFn[257] = new TFn("mesh",      2, 3,      0,        false,      1);
@@ -387,8 +390,8 @@ internal partial class F
     SysFn[271] = new TFn("gxclick",   1, 1,      0,        false,      1);
     SysFn[272] = new TFn("paintshape",3, 6,      0,        false,      1);
     SysFn[273] = new TFn("mxdiag",    1, 3,      0,        false,      1);
-    SysFn[274] = new TFn("__UNUSED",  2, 5,      0,        false,      1);
-    SysFn[275] = new TFn("__UNUSED",  2, 5,      0,        false,      1);
+    SysFn[274] = new TFn("lufact",    3, 3,      3,        true,       1);//################# TEMPORARY
+    SysFn[275] = new TFn("determ",    1, 2,      0,        false,      1);//################# TEMPORARY
     SysFn[276] = new TFn("compare",   2, 5,      0,        false,      1);
     SysFn[277]  = new TFn("str",      1, 2,      0,        false,      1);
     SysFn[278]  = new TFn("valuetostring",1,2,   0,        false,      1);
@@ -400,8 +403,8 @@ internal partial class F
     SysFn[284] = new TFn("indexed",   2, 3,      0,        false,      1);
     SysFn[285] = new TFn("keyed",     1, 2,      1,        false,      1);
     SysFn[286] = new TFn("findinmx",  3, 5,      0,        false,      1);
-    SysFn[287] = new TFn("cap",       3, 3,      0,        false,      1);
-    SysFn[288] = new TFn("list_opn",  4, 5,      0,        false,      1);
+    SysFn[287] = new TFn("cap",       3, 7,      0,        false,      1);
+    SysFn[288] = new TFn("capped",    3, 7,      0,        true,       1);
     SysFn[289] = new TFn("hsl",       1, 2,      0,        false,      1);
     SysFn[290] = new TFn("hsl_to_rgb",1, 3,      0,        false,      1);
     SysFn[291] = new TFn("scalejumpx",3, 3,      0,        false,      1);
@@ -413,7 +416,7 @@ internal partial class F
     SysFn[297] = new TFn("prodcols",  1, 4,      0,        false,      1);
     SysFn[298] = new TFn("product",   1, 2,      0,        false,      1);
     SysFn[299] = new TFn("rgb",       1, 2,      0,        false,      1);
-    SysFn[300] = new TFn("join",      3, 4,      0,        false,      1);
+    SysFn[300] = new TFn("join",      2, 4,      0,        false,      1);
     SysFn[301] = new TFn("graphkey",  1, 1,      0,        false,      1);
     SysFn[302] = new TFn("graphcolours",1, 7,    0,        false,      1);
     SysFn[303] = new TFn("evict",     2, 2,      0,        false,      1);
@@ -421,7 +424,7 @@ internal partial class F
     SysFn[305] = new TFn("programfile",1,1,      0,        false,      1);
     SysFn[306] = new TFn("solve_de",  3, 4,      0,        false,      1);
     SysFn[307] = new TFn("unjag",     2, 3,      0,        false,      1);
-    SysFn[308] = new TFn("jag",       3, 6,      0,        false,      1);
+    SysFn[308] = new TFn("linefit",   2, 3,      0,        false,      1);
     SysFn[309] = new TFn("differences",1,1,      0,        false,      1);
     SysFn[310] = new TFn("progressive",2,2,      0,        false,      1);
     SysFn[311] = new TFn("rowvec",    1, 1000,   0,        false,      1);
@@ -431,7 +434,7 @@ internal partial class F
     SysFn[315] = new TFn("lop",       2, 3,      0,        false,      1);
     SysFn[316] = new TFn("pad",       3, 4,      0,        false,      1);
     SysFn[317] = new TFn("truncate",  2, 2,      0,        false,      1);
-    SysFn[318] = new TFn("readtable", 3, 5,      0,        false,      1);
+    SysFn[318] = new TFn("readtable", 3, 6,      0,        false,      1);
     SysFn[319] = new TFn("intersection",2,1000,  0,        false,      1);
     SysFn[320] = new TFn("__importscalar", 1, MaxREFArgs, MaxREFArgs, false, 1); // <--- if changing name or details, change ref. in units Parser & Conformer.
     SysFn[321] = new TFn("__importarray",  1, MaxREFArgs, MaxREFArgs, false, 1); // <--- if changing name or details, change ref. in units Parser & Conformer.
@@ -441,27 +444,27 @@ internal partial class F
     SysFn[325] = new TFn("bitop",     2, 1000,   0,        false,      1);
     SysFn[326] = new TFn("exec",      1, 1000,   0,        false,      1);
     SysFn[327] = new TFn("kill_on_exit",1,1,     0,        false,      1);
-    SysFn[328] = new TFn("table",     1, 100,      0,        false,      1);//##############
-    SysFn[329] = new TFn("tableget",  3, 6,      0,        false,      1);
-    SysFn[330] = new TFn("tableset",  4, 4,      0,        false,      1);
-    SysFn[331] = new TFn("placetable",2, 3,      0,        false,      1);
-    SysFn[332] = new TFn("killtable", 1, 1000,   0,        false,      1);
-    SysFn[333] = new TFn("tableappend",1, 2,     0,        false,      1);
-    SysFn[334] = new TFn("tablecall", 1, 1,      0,        false,      1);
-    SysFn[335] = new TFn("tableinfo", 2, 2,      0,        false,      1);
-    SysFn[336] = new TFn("tablesetparam",3,1000, 0,        false,      1);
-    SysFn[337] = new TFn("istable",   1, 1,      0,        false,      1);
-    SysFn[338] = new TFn("tablistget",4, 4,      0,        false,      1);
+    SysFn[328] = new TFn("expect_sd", 2, 2,      0,        false,      1);
+    SysFn[329] = new TFn("expunge",   2, 4,      0,        false,      1);
+    SysFn[330] = new TFn("expunge_range",3, 3,   0,        false,      1);
+    SysFn[331] = new TFn("swing",     2, 6,      0,        false,      1);
+    SysFn[332] = new TFn("list_opn",  4, 5,      0,        false,      1);
+    SysFn[333] = new TFn("icon",      1, 1,      0,        false,      1);
+    SysFn[334] = new TFn("revolve",   1, 3,      0,        false,      1);
+    SysFn[335] = new TFn("revolved",  1, 3,      0,        false,      1);
+    SysFn[336] = new TFn("graphfont", 4, 4,      0,        false,      1);
+    SysFn[337] = new TFn("__UNUSED",  1, 1,      0,        false,      1);
+    SysFn[338] = new TFn("__UNUSED",  1, 1,      0,        false,      1);
     SysFn[339] = new TFn("unicode",   1, 1000,   0,        false,      1);
     SysFn[340] = new TFn("overlay",   3, 5,      0,        false,      1);
-    SysFn[341] = new TFn("swing",     2, 6,      0,        false,      1);
+    SysFn[341] = new TFn("overlaid",  3, 5,      1,        true,       1);
     SysFn[342] = new TFn("keydown",   1, 1,      0,        false,      1);
     SysFn[343] = new TFn("unbin",     1, 2,      0,        false,      1);
     SysFn[344] = new TFn("bestsquare",1, 1,      0,        false,      1);
     SysFn[345] = new TFn("charpoly",  1, 2,      0,        false,      1);
     SysFn[346] = new TFn("submatrix", 3, 3,      0,        false,      1);
     SysFn[347] = new TFn("cofactor",  3, 4,      0,        false,      1);
-    SysFn[348] = new TFn("dimlike",   2, MaxREFArgs, MaxREFArgs, false, 1); // <--- if changing name or details, change ref. in Parser
+    SysFn[348] = new TFn("rotate",    1, MaxREFArgs, MaxREFArgs, false,1);
     SysFn[349] = new TFn("copymx",    3, 5,      0,        false,      1);
     SysFn[350] = new TFn("copymxto",  5, 5,      0,        false,      1);
     SysFn[351] = new TFn("tozero",    1, 2,      0,        false,      2);
@@ -495,7 +498,7 @@ internal partial class F
     SysFn[379] = new TFn("ladderclr", 3, 6,      0,        false,      1);
     SysFn[380] = new TFn("structure", 1, MaxArrayDims, 0,  false,      1);
     SysFn[381] = new TFn("boardplacemt",1, 1,    0,        false,      1);
-    SysFn[382] = new TFn("window",    2, 5,      0,        false,      1);
+    SysFn[382] = new TFn("window",    2, 6,      0,        false,      1);
     SysFn[383] = new TFn("smash",     1, 3,      0,        false,      1);
     SysFn[384] = new TFn("thislineno",1, 1,      0,        false,      1);
     SysFn[385] = new TFn("findbrackets",4,4,     0,        false,      1);
@@ -514,7 +517,7 @@ internal partial class F
     SysFn[398] = new TFn("cursordata",1,1,       0,        false,      1);
     SysFn[399] = new TFn("persistent_array",1,1, 0,        false,      1);
     SysFn[400] = new TFn("lettercase",2,2,       0,        false,      1);
-    SysFn[401] = new TFn("bracketlevel",4,4,     0,        false,      1);
+    SysFn[401] = new TFn("__UNUSED",4,4,     0,        false,      1);
     SysFn[402] = new TFn("exit_plus",  1,3,      0,        false,      1);
     SysFn[403] = new TFn("insert_image",4,4,     0,        false,      1);
     SysFn[404] = new TFn("isnan",     1, 1,      0,        false,      2);
@@ -545,24 +548,31 @@ internal partial class F
     SysFn[429] = new TFn("multibox",  4, 5,      3,        true,       1);
     SysFn[430] = new TFn("setbox",    1, 4,      0,        false,      1);
     SysFn[431] = new TFn("count",     2, 4,      0,        false,      1);
-    SysFn[432] = new TFn("getsegmt",  3, 3,      0,        false,      1);
+    SysFn[432] = new TFn("getsegmt",  3, 5,      0,        false,      1);
     SysFn[433] = new TFn("setsegmt",  4, 4,      1,        true,       1);
     SysFn[434] = new TFn("findsegmt", 3, 6,      0,        false,      1);
     SysFn[435] = new TFn("findany",   3, 4,      0,        false,      1);
     SysFn[436] = new TFn("defluff",   2, 2,      1,        true,       1);
     SysFn[437] = new TFn("randum",    1, 1,      0,        false,      1);
-    SysFn[438] = new TFn("equal",     3, 3,      0,        false,      1);
+    SysFn[438] = new TFn("equal",     2, 3,      0,        false,      1);
     SysFn[439] = new TFn("ini_data",  1, 1,      0,        false,      1);
     SysFn[440] = new TFn("train",     1, 5,      0,        false,      1);
     SysFn[441] = new TFn("removeruns",1, 2,      0,        false,      1);
     SysFn[442] = new TFn("seekno",    1, 5,      0,        false,      1);
-    SysFn[443] = new TFn("inject",    1, 3,      0,        false,      1);
+    SysFn[443] = new TFn("enrol",     3, 4,      0,        false,      1);
     SysFn[444] = new TFn("hotkeysoff",1, 1,      0,        false,      1);
     SysFn[445] = new TFn("findlineno",1, 2,      0,        false,      1);
     SysFn[446] = new TFn("firfilter", 2, 5,      0,        false,      1);
     SysFn[447] = new TFn("graphtitle",2, 2,      0,        false,      1);
-    SysFn[448] = new TFn("monotonicity",2,4,     0,        false,      1);
+    SysFn[448] = new TFn("monotonicity",2,5,     0,        false,      1);
     SysFn[449] = new TFn("divmod",    2, 2,      0,        false,      1);
+    SysFn[450] = new TFn("express",   2, 2,      0,        false,      1);
+    SysFn[451] = new TFn("swaprows",  3, 3,      1,        true,       1);
+    SysFn[452] = new TFn("swapcols",  3, 3,      1,        true,       1);
+    SysFn[453] = new TFn("addtorows", 2, 3,      1,        false,      1);
+    SysFn[454] = new TFn("addtocols", 2, 3,      1,        false,      1);
+    SysFn[455] = new TFn("graphimage",2, 9,      1,        false,      1);
+    SysFn[456] = new TFn("reflect",   5, 7,      1,        false,      1);
 
 
 
@@ -629,19 +639,22 @@ internal partial class F
     }
 
   // NON-HYBRIDS:
-    // The huge switchboard of functions used to come here; but I have had to cut it in half so that the IDE can handle the text, so call
-    // the two halves as separate methods here, one in each half of the SysFns pair.
-    bool wasIdentified;
-    Quad result1 = Switchboard_A(Which, NoArgs, Args, result, out wasIdentified);
-    if (!wasIdentified) result1 = Switchboard_B(Which, NoArgs, Args, result);
+    // These functions are divided currently across three files - this one, SysFns2.cs and SysFns3.cs.
+    Quad result1;
+    if (Which <= 200)
+    { result1 = SystemFunctionSet_A(Which, NoArgs, Args, result); }
+    else if (Which <= 400)
+    { result1 = SystemFunctionSet_B(Which, NoArgs, Args, result); }
+    else 
+    { result1 = SystemFunctionSet_C(Which, NoArgs, Args, result); }
     return result1;
   }
 
-  public static Quad Switchboard_A(int Which, int NoArgs, PairIX[] Args, Quad result, out bool FnIdentified)
-  { FnIdentified = true; // only made false if 'default:' is reached.
+  public static Quad SystemFunctionSet_A(int Which, int NoArgs, PairIX[] Args, Quad result)
+  { 
     switch (Which)
     {
-      case 1: case 254: case 348: // DIM  /  __ARRAY  /  DIMLIKE
+      case 1: case 2: case 3: // DIM  /  DIMLIKE  /  __ARRAY
       // All three take 'Victims' as first set of 1 or more args. These may be: (a) names not in use (either not occurring in code before 
       //  this, or else of variables eniolated by 'kill(.)'); (b) names of existing arrays. (Temporary arrays not allowed.)
       // The final args. depend on the function:
@@ -653,7 +666,7 @@ internal partial class F
       // DIMLIKE(array(s) Victims, assigned array Model) -- if the dimensions of Model were (say) M3xM2xM1, this would be equivalent
       //   to 'dim(Victims, M3, M2, M1)' (M3 being the outermost dimension).
       { int slot = -1, firstscalar = -1, n;
-        int spareMe = -1;  if (Which == 348) spareMe = NoArgs-1; // rescues the final array of 'dimlike(.)' from being eviscerated below.
+        int spareMe = -1;  if (Which == 2) spareMe = NoArgs-1; // rescues the final array of 'dimlike(.)' from being eviscerated below.
         for (int i = 0; i < NoArgs; i++) // make sure all arrays are unassigned, up to the first scalar.
         { n = REFArgLocn[i].Y;
           if (n < 0 || n >= C.UserFnCnt)
@@ -678,16 +691,16 @@ internal partial class F
           }
         }
         int[] DimSizes = null; 
-        if (Which == 254)  // ARRAY(..): set up as if there was a numerical argument of 1:
-        { DimSizes = new int[1];  DimSizes[0] = 1;  
-          firstscalar = NoArgs; // it isn't really, but this value ensures that the general code at the end works properly.
-        }
-        else if (Which == 348) // DIMLIKE(..):
+        if (Which == 2) // DIMLIKE(..):
         { firstscalar = NoArgs-1; // it isn't really, but this value ensures that the general code at the end works properly.
           n = Args[firstscalar].I; // If this is -1 it doesn't (as usual) mean that the arg. is a scalar, but that it is an UNASSIGNED name,
                                    // which the twiddly bit in the Parser has converted to an unassigned array (see '//dim' in Parser).
           if (n == -1) return Oops(Which, "the last arg. is not a declared array");
           DimSizes = R.Store[n].DimSz._Copy();          
+        }
+        else if (Which == 3)  // ARRAY(..): set up as if there was a numerical argument of 1:
+        { DimSizes = new int[1];  DimSizes[0] = 1;  
+          firstscalar = NoArgs; // it isn't really, but this value ensures that the general code at the end works properly.
         }
         else // DIM(..): 
         { if (firstscalar < 1)
@@ -703,12 +716,14 @@ internal partial class F
         }
         // Applies whether DIM(..) or ARRAY(..):
         for (int arr = 0; arr < firstscalar; arr++)
-        { slot = V.GenerateTempStoreRoom(DimSizes);
-          V.TransferTempArray(slot, REFArgLocn[arr].Y, REFArgLocn[arr].X); // Even if Use was 0, it will be reset to 11 here.
+        { n = REFArgLocn[arr].Y;
+          if (n < 0) return Oops(Which, "syntax is really screwed up somehow"); // E.g. you call "Foo(array aa)", forgetting to remove word 'array'.
+          slot = V.GenerateTempStoreRoom(DimSizes);
+          V.TransferTempArray(slot, n, REFArgLocn[arr].X); // Even if Use was 0, it will be reset to 11 here.
         }
         break;
       }
-      case 2: case 3: // X = INC(Y), X = DEC(Y). Meant to work with integer-like
+      case 4: case 5: // X = INC(Y), X = DEC(Y). Meant to work with integer-like
       // values, hence output is rounded (to avoid numerical errors, whereby
       //  not 1 but 0.99999... is added to the number).
       // These are NOT PRIMARILY VOID functions. Therefore they must do 2 things:
@@ -718,7 +733,7 @@ internal partial class F
       { int oldslot = Args[0].I;
         if (oldslot == -1) // argument is scalar:
         { result.X = Args[0].X;
-          if (Which==2) result.X += 1.0; else result.X -= 1.0;
+          if (Which == 4) result.X += 1.0; else result.X -= 1.0;
           result.X = Math.Round(result.X);
           int n = V.SetVarValue(REFArgLocn[0].Y, REFArgLocn[0].X, result.X);
           if (n < 0) // variable value refuses to be set (i.e. is a constant):
@@ -732,128 +747,16 @@ internal partial class F
           double[] olddata = R.Store[oldslot].Data, newdata = R.Store[newslot].Data;
           for (int i = 0; i < arrsize; i++)
           { xx = olddata[i];
-            if (Which == 2) xx += 1.0; else xx -= 1.0;  xx = Math.Round(xx);
+            if (Which == 4) xx += 1.0; else xx -= 1.0;  xx = Math.Round(xx);
             olddata[i] = xx;  newdata[i] = xx; }
                // as mentioned in heading, two stores are req'd for the same data.
           result.I = newslot;
         }
         break;
       }
-      case 4: // ROTATE(.) --  a void function which alters its first argument. There are THREE versions, differentiated by the
-      // mix of arrays and scalars. FOR ALL VERSIONS, the POSITIVE DIRECTION of rotation is mvmt of data from lower index to higher index.
-      // Version 1: ROTATE(variables A, B, C, ... M): all of same size (scalar or array), though structure not accessed. The WHOLE
-      //    contents of A goes to B, of B goes to C, ... and finally of M goes to A.
-      // Version 2: ROTATE(Array [, scalar NoTimes]): contents of ABSOLUTE addresses in Array rotate up: [n] --> [n+1]; last --> [0].
-      //    At least, that's what happens if NoTimes is absent or 1; otherwise it rotates that no. times; if neg., in the opposite
-      //    direction. (If zero, simply nothing happens.) Structure is ignored.
-      // Version 3: ROTATE(Matrix, bool IsRows, scalar NoTimes [, scalar / array NewEndValue] ) -- Note: 3 args at least, array + 2 scalars.
-      //    Rotates rows or columns, dependent on IsRows. NoTimes as for version 2. If no 4th. argument, wrapping occurs as for the
-      //    other 2 versions. If a scalar, a row / column full of this value goes on one end as the other end drops off into eternity.
-      //    If an array, it MUST size-match the matrix, or crasho.
-      // NB: In this version (rewritten May 2014) the arrays do NOT have to be named arrays; e.g. you could do "rotate(aa, bb+1, cc)"
-      //    (all being arrays), in which case bb is unaltered afterwards, but cc = bb+1, and aa = old value of cc.
-      //    It remains true that SCALARS MUST BE NAMED. This could be changed with some effort, but at present I have no motivation to do so.
-      {
-        // Deal with the case of all-scalar args. first:
-        if (Args[0].I == -1)
-        { int n, p;
-          for (int i = 0; i < NoArgs; i++)
-          { if (Args[i].I != -1) return Oops(Which, "if the 1st. arg. is scalar, then all args. must be scalar");
-            if (i == 0) p = NoArgs-1; else p = i-1;
-            n = V.SetVarValue(REFArgLocn[i].Y, REFArgLocn[i].X, Args[p].X);
-            if (n < 0) // variable value refuses to be set (i.e. is a constant):
-            { if (n == -1) return Oops(Which, "some unexpected program error - hope it never happens");
-              else return Oops(Which, "cannot change the value of a constant");
-            }
-          }
-          break;
-        }
-        // Now the first arg. is guaranteed to be an array
-        int NoTimes = 1;
-        StoreItem firstIt = R.Store[Args[0].I];
-        double[] indata = firstIt.Data;
-        double[] outdata = null;
-        int inlen = indata.Length;
-        // Either Array alone, or Array + scalar + no more args.; therefore version 2:
-        if (NoArgs == 1 || (NoArgs == 2 && Args[1].I == -1) )
-        { if (NoArgs == 2)
-          { NoTimes = Convert.ToInt32(Args[1].X);   if (NoTimes == 0) break; } // Nothing doing, for rotating zero times.
-          int indx;
-          outdata = new double[inlen];
-          for (int i = 0; i < inlen; i++)
-          { indx = (i - NoTimes) % inlen;  if (indx < 0) indx += inlen;
-            outdata[i] = indata[indx];
-          }
-          firstIt.Data = outdata;
-          break;
-        }
-        if (NoArgs == 2  || Args[2].I != -1) 
-        // either two arrays, or 3+ arrays:
-        { StoreItem[] allIts = new StoreItem[NoArgs];
-          for (int i = 0; i < NoArgs; i++)
-          { if (Args[i].I == -1) return Oops(Which, "if the 1st. 2 args. are arrays, then all args. must be arrays");
-            allIts[i] = R.Store[Args[i].I];
-            if (allIts[i].TotSz != inlen) return Oops(Which, "arrays must have equal total size");
-          }
-          double[] holdstuff = allIts[NoArgs - 1].Data._Copy();
-          for (int i = NoArgs-1; i > 0; i--)
-          {  allIts[i].Data = allIts[i-1].Data._Copy(); }
-          allIts[0].Data = holdstuff;
-          break;
-        }
-        // VERSION 3 is all that remains possible; guaranteed to be at least three arguments.
-        int[] dims = firstIt.DimSz;
-        int noRows = dims[1];  if (noRows == 0) return Oops(Which, "This deployment of args. requires that the 1st. be a matrix");
-        int noCols = dims[0];
-        if (Args[1].I != -1  ||  Args[2].I != -1) return Oops(Which, "wrong deployment of args.");
-        NoTimes = Convert.ToInt32(Args[2].X);
-        bool isRows = (Args[1].X != 0.0);
-        int noStrips = (isRows) ? noRows : noCols;
-        int stripLen = (isRows) ? noCols : noRows;
-        List<double> outlist = new List<double>(inlen);
-        double[] holdings = null;
-        int donor;
-        if (NoArgs > 3)
-        { if (Args[3].I == -1) // fill the row/col with this scalar:
-          { holdings = new double[stripLen];
-            double x = Args[3].X;
-            for (int i=0; i < stripLen; i++) holdings[i] = x;
-          }
-          else
-          { holdings = R.Store[Args[3].I].Data._Copy();
-            if ( holdings.Length != stripLen )
-            { string ss = (isRows) ? "row" : "column";
-              return Oops(Which, "for matrix {0} operation, the size of the 4th. argument must equal the {0} size of the matrix", ss);
-            }
-          }
-        }
-        if (isRows)  
-        { for (int recipient = 0; recipient < noStrips; recipient++)
-          { donor = recipient - NoTimes;
-            if (NoArgs == 3) // then wrapping is required, so guarantee that the donor is an existing row:
-            { donor = donor % noStrips;  if (donor < 0) donor += noStrips; }
-            if (donor < 0 || donor >= noRows) outlist.AddRange(holdings);
-            else outlist.AddRange(indata._Copy(donor * noCols, noCols));
-          }
-        }
-        else // columns:
-        { for (int i = 0; i < noRows; i++)
-          { for (int recipient = 0; recipient < noCols; recipient++)
-            { donor = recipient - NoTimes;
-              if (NoArgs == 3) // then wrapping is required, so guarantee that the donor is an existing row:
-              { donor = donor % noStrips;  if (donor < 0) donor += noStrips; }
-              if (donor < 0 || donor >= noCols) outlist.Add(holdings[i]);
-              else outlist.Add(indata[i * noCols + donor] );
-            }
-          }             
-        }      
-        if (outlist.Count != inlen) return Oops(Which, "some awful programming mistake - better complain to the management");
-        firstIt.Data = outlist.ToArray();
-        break;
-      }
 
 //  DEALT WITH BY 'HYBRIDS(..)':
-//    cases 5 through 12, and 14 through 27, and then later 48, 86, 351, 352, 376.
+//    cases 6 through 12, and 14 through 27, and then later 48, 86, 351, 352, 376.
 
       case 13: // (1) ARCTAN(scalar/array YY): returns the arctan in the range -/+ PI/2 - i.e. always in the 1st. or 4th. quadrant.
                // (2) ARCTAN(scalars/arrays YY, XX): returns the angle(s) with tan = YY/XX, in the range -/+ PI - i.e. in any quadrant.
@@ -1392,74 +1295,68 @@ internal partial class F
         StringToStoreroom(result.I, ss);  R.Store[result.I].IsChars = true;
         break; 
       }
-      case 40:  case 41:  case 42:// GRIDX, GRIDY, GRIDZ (scal GraphID, 3 vals. in any form) -- NB - GraphID is not optional.  NONVOID.
-      case 74:                    // GRID([scal GraphID,] 6 or 9 vals. in any form) - 6 for 2D. 9 for 3D.   NONVOID.
-      // In the case of grid(.) ALONE, if the graph ID is missing, or is 0 or negative, the values will be held over till
-      // the next graph and then will apply to it. Those held-over values will be annulled at every call to grid..(.) and
-      // by every call to graph(.) or graph3d(.).
+      case 40:  case 41:  case 42:// GRIDX, GRIDY, GRIDZ (scalar GraphID; 3 to 4 values, however packed:
+      //                                                              LowValue, HighValue, NoCuts [, RememberTheOriginal ] ).
+      // If 'RememberTheOriginal' present and TRUE, then the graph does NOT forget the prior scaling, so that menu item "Scaling | Original..."
+      //  will revert to the scale PREEXISTING the call to "grid..(.)". In all other cases - as for ALL CASES OF "grid(.)" - the internal
+      //  record of the original scale is replaced with the new value. (To overcome this, you would need to replace 'grid(.)' with
+      //  separate calls "gridx(...); gridy(....);". 
+      case 74:                    // GRID(scalar GraphID; 6 or 9 vals. in any form) - 6 for 2D. 9 for 3D.   NONVOID.
       // RETURNED: If success, an array of size 3 or 6 (2D) or 3 or 9 (3D), depending on which function was called. This array
       //  may conveniently be used as the argument for a later call to grid..(.) for a different graphing event.
-      // ERRORS do not crash, but instead return an array of size 1, value NaN. (No error message; detect with fn. 'empty(.)'.)
-      // (But even an error situation will reset internal held-over values to their unusable defaults.)
       { NextXCornerReal = 0.0;  NextXTipReal = 0.0;  NextXSegments = 0; // Nulled whether or not other errors abort below.
         NextYCornerReal = 0.0;  NextYTipReal = 0.0;  NextYSegments = 0;
         NextZCornerReal = 0.0;  NextZTipReal = 0.0;  NextZSegments = 0;
-        double[] aa = AccumulateValuesFromArgs(Args);
-        bool forNextGraph = (Which == 74 && (aa.Length == 6 || aa.Length == 9) ); // grid(.) with graph ID omitted, so settings are for the next graph.
-        double[] values;
-        if (forNextGraph) values = aa; else values = aa._Copy(1);
+        double[] values = AccumulateValuesFromArgs(Args, 1);
         int noValues = values.Length;
-        if ( (Which == 74 && noValues != 6 && noValues != 9) || (Which != 74 && noValues != 3) )
-        { return Oops(Which, "the wrong no. of values has been supplied"); }
         int graphID = (int) Args[0].X;
         Graph graf;    Trio trill;
-        double[] outdata = null; // It will remain NULL for all error cases.
         // Deal with GRID(.) FIRST:
         if (Which == 74)
-        { if (forNextGraph) // then no graph is being referenced, and values are simply to be stored for the next graph.
-          { outdata = values;
-            NextXCornerReal = values[0];  NextXTipReal = values[1];  NextXSegments = Convert.ToInt32(values[2]);
-            NextYCornerReal = values[3];  NextYTipReal = values[4];  NextYSegments = Convert.ToInt32(values[5]);
+        { if (noValues != 6  &&  noValues != 9) { return Oops(Which, "the wrong no. of values has been supplied"); }
+          trill = Board.GetBoardOfGraph(graphID, out graf);
+          if (graf != null)
+          { graf.OrigLowX = graf.LowX = values[0];  graf.OrigHighX = graf.HighX = values[1];
+            graf.OrigSegsX = graf.SegsX = Convert.ToInt32(values[2]);
+            if (graf.SegsX <= 0) return Oops(Which, "no. of X segments can't be less than 1");
+            graf.OrigLowY = graf.LowY = values[3];  graf.OrigHighY = graf.HighY = values[4];
+            graf.OrigSegsY = graf.SegsY = Convert.ToInt32(values[5]);
+            if (graf.SegsY <= 0) return Oops(Which, "no. of Y segments can't be less than 1");
             if (NoArgs >= 9)
-            { NextZCornerReal = values[6];  NextZTipReal = values[7];  NextZSegments = Convert.ToInt32(values[8]); }
-          }
-          else // a particular graph specified:
-          { trill = Board.GetBoardOfGraph(graphID, out graf);
-            if (graf != null)
-            { outdata = values;
-              graf.OrigLowX = graf.LowX = values[0];  graf.OrigHighX = graf.HighX = values[1];
-              graf.OrigSegsX = graf.SegsX = Convert.ToInt32(values[2]);
-              graf.OrigLowY = graf.LowY = values[3];  graf.OrigHighY = graf.HighY = values[4];
-              graf.OrigSegsY = graf.SegsY = Convert.ToInt32(values[5]);
-
-              if (NoArgs >= 9)
-              { graf.OrigLowZ = graf.LowZ = values[6];  graf.OrigHighZ = graf.HighZ = values[7];
-                graf.OrigSegsZ = graf.SegsZ = Convert.ToInt32(values[8]);
-              }
-              Board.ForceRedraw(trill.X, false);
+            { graf.OrigLowZ = graf.LowZ = values[6];  graf.OrigHighZ = graf.HighZ = values[7];
+              graf.OrigSegsZ = graf.SegsZ = Convert.ToInt32(values[8]);
+              if (graf.SegsZ <= 0) return Oops(Which, "no. of Z segments can't be less than 1");
             }
+            Board.ForceRedraw(trill.X, false);
           }
         }
         else // GRIDX, GRIDY, GRIDZ:
-        { trill = Board.GetBoardOfGraph(graphID, out graf);
+        { if (noValues < 3 || noValues > 4) { return Oops(Which, "incorrect no. of values has been supplied"); }
+          trill = Board.GetBoardOfGraph(graphID, out graf);
           if (graf != null)
-          { outdata = values;  int n = Convert.ToInt32(values[2]);
+          { int n = Convert.ToInt32(values[2]);
+            if (n <= 0) return Oops(Which, "no. of segments can't be less than 1");
+            bool resetOrig = (values.Length <= 3  ||  values[3] == 0.0);
+            if (values.Length > 3) values = values._Copy(0, 3);
             if      (Which == 40)
-            { graf.OrigLowX = graf.LowX = values[0];  graf.OrigHighX = graf.HighX = values[1];  graf.OrigSegsX = graf.SegsX = n; }
+            { graf.LowX = values[0];  graf.HighX = values[1];  graf.SegsX = n;
+              if (resetOrig) { graf.OrigLowX = values[0];  graf.OrigHighX = values[1];  graf.OrigSegsX = n; }
+            }
             else if (Which == 41)
-            { graf.OrigLowY = graf.LowY = values[0];  graf.OrigHighY = graf.HighY = values[1];  graf.OrigSegsY = graf.SegsY = n; }
+            { graf.LowY = values[0];  graf.HighY = values[1];  graf.SegsY = n;
+              if (resetOrig) { graf.OrigLowY = values[0];  graf.OrigHighY = values[1];  graf.OrigSegsY = n; }
+            }
             else if (Which == 42)
-            { graf.OrigLowZ = graf.LowZ = values[0];  graf.OrigHighZ = graf.HighZ = values[1];  graf.OrigSegsZ = graf.SegsZ = n; }
+            { graf.LowZ = values[0];  graf.HighZ = values[1];  graf.SegsZ = n;
+              if (resetOrig) { graf.OrigLowZ = values[0];  graf.OrigHighZ = values[1];  graf.OrigSegsZ = n; }
+            }
             Board.ForceRedraw(trill.X, false);
           }
         }
         // The return array:
-        if (outdata == null) result.I = EmptyArray();
-        else
-        { int newslot = V.GenerateTempStoreRoom(outdata.Length);
-          R.Store[newslot].Data = outdata;
-          result.I = newslot;
-        }
+        int newslot = V.GenerateTempStoreRoom(values.Length);
+        R.Store[newslot].Data = values;
+        result.I = newslot;
         break;
       }
       case 43: // KILLPLOT(any number of values, as scalars or arrays) - if values are identifiable current plots,
@@ -1988,68 +1885,70 @@ internal partial class F
         R.Store[newslot].IsChars = R.Store[oldslot].IsChars;
         result.I = newslot;  break; 
       }
-      case 62: // BOOLSTR(any no. arrays or scalars, char. array Key). If last arg. not a char. array, default used for Key.
-     // Key: if [0] is 'T','t', words are 'true'/'false'; if '/', then expects two strings like '/green/brown', the first corresponding
-     // to 'true', the second to 'false'. (If no second, will just use 'false' for it.) Any other Key[0] crashes.
-     // If just one value, returns char. list array a/c to Key. If > 1, returns jagged char. matrix, col. length = length of longest Key word.
-     // Case of Key[0] = 'T' or 't': sets case of first letter, while [1] - if present - sets case of 2nd. letter onwards. Hence,
-     // 'TR' --> 'TRUE/FALSE', 'Tr' --> 'True/False', 'tr' --> the default, which is 'true/false'. Where Key[0] is '/', the outputs
-     // are used exactly as presented after the '/'s.  Key is not trimmed.
-     // The last arg is taken as NOT boolean in all cases where it is a char. array, even if no sense could be made of it as Key.
-      { int lastboolarg = NoArgs-1, keyslot = Args[NoArgs-1].I;
-       // SET 'TRUE' AND 'FALSE' STRINGS:
-        string ss="", Tstr = "true",  Fstr = "false";
-        if (keyslot >= 0 && R.Store[keyslot].IsChars) // then the last arg. is indeed the Key:
-        { lastboolarg--; // i.e. last arg. is not to be checked as a boolean.
-          string keystuff = StoreroomToString(keyslot, false, false); // cannot be empty, as keyslot is valid.
-          // Throughout the next block, IF possibilities not specified end up in the use of above defaults for Tstr +/- Fstr.
-          char ch0 = keystuff[0], ch1 = ' ';  if (keystuff.Length > 1) ch1 = keystuff[1];
-          if (ch0 == 'T') 
-          { if (ch1 == 'r') { Tstr = "True"; Fstr = "False"; }  
-            else if (ch1 == 'R' || ch1 == ' ') { Tstr = "TRUE"; Fstr = "FALSE"; } 
-          }
-          else if (ch0 == 't' && ch1 == 'R'){ Tstr = "tRUE"; Fstr = "fALSE"; } // bit silly, but let it be possible.
-          else if (ch0 == '/') // look for the user's own creations:
-          { string[] foo = keystuff.Split('/');
-            if (foo.Length >= 2) Tstr = foo[1]; // foo[0] will always be an empty string.
-            if (foo.Length >= 3) Fstr = foo[2]; // '>' allows for silly user inserting a terminal '/'.
+      case 62: case 63: case 64: // FIND / FINDS / FINDALL(ArrayToSearch, scalar StartPtr, (array or scalar) SearchFor [, (scalar) OtherLimit].
+      // All three take the same arguments; they differ only in what they return. 
+      // THE STRUCTURE OF ArrayToSearch IS IGNORED; finds are returned as absolute addresses within its data strip.
+      // StartPtr: Crashes, if this is negative. Does not crash, if StartPtr beyond end of ArrayToSearch; simply returns the code for failed search.
+      // Four argument form: 3rd. must be scalar, and represents one limit (e.g. the lower limit) for values
+      // answering to the search; OtherLimit is then the other (e.g. the higher limit). Both inclusive.
+      // RETURNED: For 'find(.)', a scalar - position of the find, or -1 if no find. For 'finds(.)', an
+      //  array of fixed size: [0] = no. finds (0 if none); [1] = locn. of first find (or -1); [2] =
+      //  locn of last find (or -1). For 'findall(.)', a list array of length N, where N is the number of finds; 
+      //  [i] is the locn of the ith. find. (Their values can be accessed using fn. 'select(.)'.) If no finds,
+      //  returns an array of size 1, [0] = -1.
+      { int argtypes = ArgTypesCode(Args);  
+        char findtype = 'D'; if (Which == 63) findtype = 'S'; else if (Which == 64) findtype = 'A'; // (fin)D, (find)S, (find)A(ll).
+        if (argtypes != 211 && argtypes != 212 && argtypes != 2111) return Oops(Which, "arg. types are not correct"); // 2 = array, 1 = scalar
+        int inslot = Args[0].I,  startptr = (int) Args[1].X;
+        if (startptr < 0) return Oops(Which, "the pointer to search start is negative");
+        int inlen = R.Store[inslot].TotSz;  double[] indata = R.Store[inslot].Data;
+        double[] finds = null;  if (findtype == 'S') finds = new double[] {0.0,  -1.0,  -1.0};
+        List<double> findptrs = null; if (findtype == 'A') findptrs = new List<double>();
+        int foundat=-1;
+        if (argtypes == 212) // search for an array:
+        { int soughtslot = Args[2].I;
+          int soughtlen = R.Store[soughtslot].TotSz;  double[] soughtdata = R.Store[soughtslot].Data;
+          int ptr = startptr;
+          while (ptr <= inlen - soughtlen)
+          { foundat = -1;
+            if (indata[ptr] == soughtdata[0])
+            { foundat = ptr;
+              for (int j=1; j < soughtlen; j++){ if (indata[ptr+j] != soughtdata[j]){ foundat = -1; break; } }// break from FOR loop, NOT from fn.
+            }
+            if (foundat >= 0)
+            { if (findtype == 'D') break; // 'finD(.)'  Break from WHILE loop, NOT from fn.
+              else if (findtype == 'S') // 'findS(.)'
+              { finds[2] = (double)ptr;  finds[0] = finds[0] + 1.0;  if (finds[0] == 1.0) finds[1] = finds[2]; }
+              else if (findtype == 'A')findptrs.Add( (double)ptr); // 'findAll(.)':
+              ptr += soughtlen-1; // '-1' because 'ptr++' is coming up real soon now.
+            }
+            ptr++;
           }
         }
-       // EVALUATE BOOLEANS         
-       // Case 1 -- just one scalar to evaluate, so return a list array (no padding).
-        if (lastboolarg == 0 && Args[0].I == -1) // only one boolean arg., and it is scalar:
-        { if (Args[0].X == 0.0) ss = Fstr;  else ss = Tstr;
-          if (ss == "") ss = " "; // in case user entered e.g. "//yak".
-          result.I = V.GenerateTempStoreRoom(ss.Length);
-          StringToStoreroom(result.I, ss);
+        else
+        { foundat = -1;
+          double searchlo = Args[2].X, searchhi = searchlo;  
+          if (NoArgs == 4) searchhi = Args[3].X;
+          if (searchhi < searchlo){ double x = searchlo;  searchlo = searchhi;  searchhi = x; }
+          for (int i=startptr; i < inlen; i++)
+          { if (indata[i] >= searchlo && indata[i] <= searchhi) 
+            { foundat = i;  
+              if (findtype == 'D') break; // 'finD(.)'    Break from FOR loop, NOT from fn.
+              else if (findtype == 'S')
+              { finds[2] = (double)i;  finds[0] = finds[0] + 1.0;  if (finds[0] == 1.0) finds[1] = finds[2]; }
+              else if (findtype == 'A') findptrs.Add((double)i); // 'findAll(.)'
+            }
+          }
         }
-        else 
-       // Case 2 -- just one array, or more than one args. (they being of any type):
-        { double[] values = AccumulateValuesFromArgs(Args, 0, lastboolarg);
-          // Give the two strings have their equal final length:
-          int nocols = Tstr.Length; if (Fstr.Length > nocols) nocols = Fstr.Length;
-          while (Tstr.Length < nocols) Tstr += " ";    while (Fstr.Length < nocols) Fstr += " ";
-          double[] troo = StringToStoreroom(-1, Tstr),   forls = StringToStoreroom(-1, Fstr);
-          int outslot = V.GenerateTempStoreRoom(nocols, values.Length);  
-          R.Store[outslot].IsChars = true;
-          List<double> outlist = new List<double>();
-          for (int i=0; i < values.Length; i++)
-          { if (values[i] == 0.0) outlist.AddRange(forls);  else outlist.AddRange(troo); }
-          if (outlist.Count != R.Store[outslot].TotSz) return Oops(Which, "unexpected error. Call the programmer");
-          R.Store[outslot].Data = outlist.ToArray();
-          result.I = outslot;                              
-        }        
-        break;
+        if (findtype == 'D') result.X = (double)foundat;
+        else if (findtype == 'S') { result.I = V.GenerateTempStoreRoom(3); R.Store[result.I].Data = finds; }
+        else if (findtype == 'A') 
+        { int n = findptrs.Count;
+          if (n == 0){ result.I = V.GenerateTempStoreRoom(1); R.Store[result.I].Data[0] = -1.0; }
+          else { result.I = V.GenerateTempStoreRoom(n); findptrs.CopyTo(R.Store[result.I].Data); }
+        }  
+        break; // The ONLY break which is a break from this fn.        
       }
-   // case 63: // FINDALL -- see case 204.
-      case 64: // REVERSE(Named Array) - VOID; reverses contents of the array. (For nonvoid function, see REVERSED(..).)
-         // No accessing of structure or chars. rating.
-      { int slot = Args[0].I; if (slot == -1) return Oops(Which, "an array arg. is required");
-        int len = R.Store[slot].TotSz;
-        double[] oldstuff = R.Store[slot].Data;   double[] newstuff = new double[len];
-        for (int i = 0; i < len; i++) newstuff[i] = oldstuff[len-i-1];
-        R.Store[slot].Data = newstuff;  break; 
-      }  
       case 65: // TRANSPOSE(Array) - Returns transposed copy of Array. If DimCnt is 1 - list array - Array is regarded as
       // a row vector; a column vector is returned. DimCnt must not be > 2.
       { int oldslot = Args[0].I;
@@ -2135,15 +2034,21 @@ internal partial class F
         result.I = newslot;  break;
       }
       case 68: case 69: case 70: case 71: // MAX / MAXAT / MAXABS / MAXABSAT (Var,Var,Var,....) - arrays and scalars can be mixed.
-      // Gives max. value / max. absolute value within all scalars and all array elements. MAXAT returns an array, with information about 
-      // the FIRST find of the maximum: [0] = max. value; [1] = which arg. holds it (to base 0); [2] = its absolute position within 
-      // that argument (to base 0).
-      { double maxo = double.MinValue, maxabso = 0.0;  int slot;
+      // MAX returns a scalar, the signed maximum value.  MAXAT returns a scalar, the ABSOLUTE value of the element with the maximum ABSOLUTE value;
+      //   that is, the sign is lost. If you want the sign, you have to use 'maxabsat(.)' instead.
+      // MAXAT returns an array of size 3:
+      //     [0] = signed maximum value; [1] = no. of argument containing it (to base 0);  [2] = ABSOLUTE index within that argument.
+      // MAXAT returns an array of size 4:
+      //     [0] = the maximum absolute value - ALWAYS POSITIVE; [1] = no. of argument containing it (to base 0);  
+      //     [2] = ABSOLUTE index within that argument;  [3] = the SIGNED version of [0]; i.e. the actual element indicated by [1] and [2].
+      { int slot;
+        double x, maxo, maxosigned = 0.0; // 'maxo' is used in the algorithm; 'maxosigned' simply holds a return value.
         int argno = 0, pos = 0; // locators of the max. value (for MAXAT(.))
           // Set to 0, in the unlikely event that all values of all args. are
           //  double.MinValue, so that loops below do not reset them.
         if (Which <= 69) // MAX, MAXAT:
-        { for (int var = 0; var < NoArgs; var++)
+        { maxo = double.MinValue;
+          for (int var = 0; var < NoArgs; var++)
           {//If a scalar, check .X field against current maxo:
             if (Args[var].I == -1)
             { if (Args[var].X > maxo)
@@ -2153,26 +2058,42 @@ internal partial class F
               double[] xx = R.Store[slot].Data;
               for (int i = 0; i < totSz; i++)
               { if (xx[i] > maxo) { maxo = xx[i];  argno = var;  pos = i; } }
-        } } }
+            }
+          }
+        }
         else // MAXABS, MAXABSAT:
-        { for (int var = 0; var < NoArgs; var++)
+        { maxo = 0.0;
+          for (int var = 0; var < NoArgs; var++)
           {//If a scalar, check .X field against current maxo:
             if (Args[var].I == -1)
-            { if (Args[var].X > maxabso || Args[var].X < -maxabso)
-              { maxo = Args[var].X;  maxabso = Math.Abs(maxo);  argno = var;  pos = 0; } }
+            { x = Args[var].X;
+              if (x > maxo || x < -maxo)
+              { maxosigned = x;  maxo = Math.Abs(maxosigned);  argno = var;  pos = 0; }
+            }
             else //If an array, check through its entries:
             { slot = Args[var].I;   int totSz = R.Store[slot].TotSz;
               double[] xx = R.Store[slot].Data;
               for (int i = 0; i < totSz; i++)
-              { if (xx[i] > maxabso || xx[i] < -maxabso) { maxo = xx[i];  maxabso = Math.Abs(maxo);  argno = var;  pos = i; } }
-        } } }
-        // Set up the return values
-        if (Which == 68 || Which == 70) result.X = maxo; // MAX(.), MAXABS(.); the latter returns the signed value with highest abs. value.
+              { x = xx[i];
+                if (x > maxo || x < -maxo)
+                { maxosigned = x;  maxo = Math.Abs(maxosigned);  argno = var;  pos = i; }
+              }
+            }
+          } 
+        }
+       // Set up the return values
+        if (Which == 68 || Which == 70) result.X = maxo; // MAX(.), MAXABS(.); the latter always returns a positive value, as explained in header.
         else // MAXAT(.) and MAXABSAT(.) returns array with localizing data as well:
-        { int newslot = V.GenerateTempStoreRoom(3);  double[] yy = R.Store[newslot].Data;
-          yy[0] = maxo;
-          yy[1] = argno; // to base 0.
-          yy[2] = pos; // to base 0, as usual for arrays.
+        { 
+          double[] outdata;
+          if (Which == 69) // MAXAT
+          { outdata = new double[] {maxo, argno, pos};
+          }
+          else // MAXABSAT
+          { outdata = new double[] {maxo, argno, pos, maxosigned};
+          }
+          int newslot = V.GenerateTempStoreRoom(outdata.Length);
+          R.Store[newslot].Data = outdata;
           result.I = newslot;
         }
         break;
@@ -2227,8 +2148,8 @@ internal partial class F
         { int[] indexes = new int[keyLen];
           for (int i=0; i < keyLen; i++) indexes[i] = i;
           JS.SortByKey(indexes, keydata, ascending, startptr, endptr);
-          // Now we reorganize all the data arrays accordingly:
-          for (int j=0; j < firstScalar; j++)
+          // Now we reorganize all the data arrays prior to the key array:
+          for (int j=0; j < firstScalar-1; j++)
           { double[] thisdata = R.Store[Args[j].I].Data;
             if (thisdata.Length != keyLen)  return Oops(Which, "all of the 'data' and 'key' arrays must have the same length.");
             double[] newdata = new double[keyLen];
@@ -2842,14 +2763,16 @@ internal partial class F
       }
    // case 89: BETWEEN - see case 60
 
-      case 90: // SIGN( array/scalar XX [, ValueForZero [, ValueForPositive [, ValueForNegative [, VirtualZero ] ] ] ]);
-      // Defaults: ValueForZero defaults to 0; ValueForPositive to 1;  ValueForNegative to -1, VirtualZero to 0.
+      case 90: // SIGN( array/scalar XX [, ValueForZero [, ValueForPositive [, ValueForNegative [, scalar VirtualZero ] ] ] ]);
+      // If "ValueFor..." is an array - any array - then it is the null operator: do not substitute for values in this category.
+      // Defaults: ValueForZero defaults to 0; ValueForPositive to 1;  ValueForNegative to -1, VirtualZero to 0 (incl. if is an array).
       // Values with absol. value ≤ VirtualZero are taken as 0. (The absolute value of VirtualZero is used.)
       { 
         double forZero = 0.0, forPositive = 1.0, forNegative = -1.0, VirtualZero = 0.0;
-        if (NoArgs > 1) forZero = Args[1].X;
-        if (NoArgs > 2) forPositive = Args[2].X;
-        if (NoArgs > 3) forNegative = Args[3].X;
+        bool leaveAloneZero = false, leaveAlonePositive = false, leaveAloneNegative = false;
+        if (NoArgs > 1) { forZero     = Args[1].X;   leaveAloneZero     = (Args[1].I >= 0); }
+        if (NoArgs > 2) { forPositive = Args[2].X;   leaveAlonePositive = (Args[2].I >= 0); }
+        if (NoArgs > 3) { forNegative = Args[3].X;   leaveAloneNegative = (Args[3].I >= 0); }
         if (NoArgs > 4) VirtualZero = Math.Abs(Args[4].X);
         double[] indata;
         StoreItem sitem = null;
@@ -2864,9 +2787,10 @@ internal partial class F
         double x;
         for (int i=0; i < dataLen; i++)
         { x = indata[i];
-          if      (x > VirtualZero) outdata[i] = forPositive;
-          else if (x < -VirtualZero) outdata[i] = forNegative;
-          else outdata[i] = forZero;
+          if      (x > VirtualZero)  { if (!leaveAlonePositive) x = forPositive; }
+          else if (x < -VirtualZero) { if (!leaveAloneNegative) x = forNegative; }
+          else if (!leaveAloneZero) x = forZero;
+          outdata[i] = x;
         }
         if (inslot == -1)  result.X = outdata[0];
         else
@@ -2875,7 +2799,7 @@ internal partial class F
         }
         break;
       }
-      case 91: // INTEGRAL(YValues array, X low, X high). Simpson's rule.
+     case 91: // INTEGRAL(YValues array, X low, X high). Simpson's rule.
       // YValues must be of ODD length >= 3.
       { int slot = Args[0].I;
         if (slot == -1) return Oops(Which, "the 1st. arg. must be an array (the integrand)");
@@ -3302,8 +3226,8 @@ internal partial class F
         R.Store[newslot].IsChars = true;
         result.I = newslot; break;
       }
-      case 108: // LAST(array [, N] ): returns the last value in the array, if N is 0 or absent. Otherwise if N = either +1 or -1,
-      // returns the last-but-oneth. element; and so on for higher absolute N. If N is oversized, crasho.
+      case 108: // LAST(array [, N] ): returns the last value in the array, if N is 0 or absent. Otherwise if N is an integer,
+      // returns the element indexed by (last index of array) - |N|; crashes if the address is out of range.
       { int slot = Args[0].I;
         if (slot==-1) return Oops(Which, "the first arg. must be an array");
         int sz = R.Store[slot].Data.Length,  indx = sz-1;
@@ -4175,7 +4099,8 @@ internal partial class F
         int badlen = badguys.Length;
         char whereat = 'A';//(All). Other values can be: 'L', 'R', 'T', as explained above.
         if (NoArgs == 3) 
-        { x = R.Store[Args[2].I].Data[0];
+        { if (Args[2].I == -1) return Oops(Which, "3rd. arg. must be an array");
+          x = R.Store[Args[2].I].Data[0];
           if (x == 76 || x == 108) whereat = 'L';  else if (x == 82 || x == 114) whereat = 'R';  
           else if (x == 84 || x == 116) whereat = 'T';  // else leave it at 'A'.
         }
@@ -4620,76 +4545,65 @@ internal partial class F
         }
         break;
       }
-      case 158: // EXPUNGE(array InArray, scalar or array Target [, scalar FromPtr [, scalar Extent ] ] -- in a copy, remove all instances of
-      // Target from the indicated extent of InArray. RETURNS a list array, whatever the input array type; [NaN], if would be an empty array.
-      // No Extent --> go to end of InArray; no FromPtr --> whole array processed.
-      // If only part of a target instance occurs within the indicated range, that instance will not be removed.
-      // Errors: crash if InArray scalar, or FromPtr or Extent negative. No check on arrayhood of last two args. Ranges partly or
-      // wholly out of range --> whatever is in range is processed, without error message; so nothing happens, if all out of range, or Extent 0.
+      case 158: // EXTRACT_VALUES (NAMED char. array Warnings, char. array InString, array DoWhat ) 
+      // Returns the chosen operation involving identified, and thus parsed, values represented in the string. Rules of engagement:
+      //  (1) values may contain nondigit characters "-.eE" used according to the normal formatting rules.
+      //  (2) Spaces are significant; "12 34" will be interpreted as two separate values, 12 and 34. Also, "- 1" will be interpreted as 1, not -1.
+      //  (3) Instances of "-.eE" not contiguous with digit(s) are simply ignored ("2 euros" - 'e' ignored. "2euros" - 'e' not ignored.).
+      //  (4) Where an entity cannot be parsed (like this "2euros") it will be excluded from the output, but "Warnings" will record the failure.
       {
-        int inSlot = Args[0].I;  if (inSlot == -1) return Oops(Which, "1st. arg. must be an array");
-        StoreItem sitem = R.Store[inSlot];
-        double[] inData = sitem.Data;
-        bool isChars = sitem.IsChars;
-        int inLen = inData.Length;
-        int targetSlot = Args[1].I;
-        // Sort out fromPtr and extent, and only go to the next section if a valid segment of inData is indicated by them:
-        int fromPtr = 0;     if (NoArgs > 2) fromPtr = Convert.ToInt32(Args[2].X);
-        int extent = inLen;  if (NoArgs > 3) extent  = Convert.ToInt32(Args[3].X);
-        if (fromPtr < 0 || extent < 0) return Oops(Which, "start pointer and extent must be nonnegative");
-        Trio tree = JS.SegmentData(inLen, true, fromPtr, extent); // sorts out the various oddities, and leaves you with valid values.
-        if (tree.X == -1) // impossible extent of array, so just return the input data (as a list array).
-        { result.I = V.GenerateTempStoreRoom(inLen);  R.Store[result.I].Data = inData._Copy();  R.Store[result.I].IsChars = isChars;
-          break;
+        if (Args[0].I == -1) return Oops(Which, "1st. arg. must be an array"); // But we access it only via REFArgLocn[0].
+        string InStr = StoreroomToString(Args[1].I, true, true, true);
+        if (InStr == "") return Oops(Which, "2nd. arg. must be an array");
+        string DoWhat = StoreroomToString(Args[2].I, true, true, true);
+        bool doSumming = (DoWhat == "sum");
+        if (!doSumming && DoWhat != "array") return Oops(Which, "3rd. arg. is not a recognized value");
+        string Digital = JS.Digits;
+        char[] DigChars = JS.DigitList;
+        string Numeral = Digital + "-.eE";
+        string Warnings = "";        
+        // Convert non-number chars. to '\e000' (reserved special character):
+        char[] inchars = InStr.ToCharArray();
+        char delimiter = '\ue000';
+        for (int i=0; i < inchars.Length; i++)
+        { if (Numeral._IndexOf(inchars[i]) == -1) inchars[i] = delimiter;
         }
-        fromPtr = tree.X;   int toPtr = tree.Y;   extent = tree.Z;
-        // Valid segment of array. If there is data before fromPtr, stick it in:
-        List<double> outList = new List<double>(inLen);
-        if (fromPtr > 0) outList.AddRange(inData._Copy(0, fromPtr));
-
-        // Scalar target:
-        if (targetSlot == -1)
-        { double targ = Args[1].X;
-          for (int i=fromPtr; i <= toPtr; i++)
-          { if (inData[i] != targ) outList.Add(inData[i]); }
+        // Turn it into a string array, and parse
+        string EditedInStr = inchars._ToString();
+        string[] SubStrings = EditedInStr.Split(new char[]{ delimiter }, StringSplitOptions.RemoveEmptyEntries);
+        double x, summation = 0.0;
+        List<double> out_array = null;
+        bool success;
+        if (!doSumming) out_array = new List<double>();
+        int array_len = SubStrings.Length;
+        if (array_len == 0)
+        { Warnings = "No numerical data identified\n";
+          if (!doSumming) out_array.Add(double.NaN);
         }
-        // Array target:
-        else
-        { double[] target = R.Store[targetSlot].Data;
-          int targLen = target.Length;
-          double firstVal = target[0];
-          int ptr = fromPtr;
-          while (ptr <= toPtr - targLen + 1)
-          { if (inData[ptr] == firstVal)
-            { bool isMatch = true;
-              for (int j = 1; j < targLen; j++)
-              { if (inData[ptr+j] != target[j]) { isMatch = false;  break; }
-              }
-              if (isMatch) ptr += targLen; // skip over the matching length, recording nothing in outList.
-              else // not a find, so add it to outList:
-              { outList.Add(inData[ptr]);
-                ptr++;
-              }
-            }
-            else // not a find, so add it to outList:
-            { outList.Add(inData[ptr]);
-              ptr++;
-            }
+        for (int i = 0; i < array_len; i++)
+        { x = SubStrings[i]._ParseDouble(out success);
+          if (success)
+          { if (doSumming) summation += x;
+            else out_array.Add(x);
           }
-          // Now add on any nonmatch characters left at the end of the string:
-          for (int i = ptr; i <= toPtr; i++)
-          { outList.Add(inData[i]); }
-
+          else
+          { if (SubStrings[i].IndexOfAny(DigChars) == -1) continue; // No numerals, so ignore the substring.
+            Warnings += "Unable to parse '" + SubStrings[i] + "' to a number\n";
+          }
         }
-        // If there is data after the segment of the input array, tack it onto the end:
-        if (toPtr < inLen-1) outList.AddRange(inData._Copy(toPtr+1));
-        // Set up the output and go home:
-        double[] outData = null;
-        if (outList.Count == 0) outData = new double[] { double.NaN };
-        else outData = outList.ToArray();
-        result.I = V.GenerateTempStoreRoom(outData.Length);
-        R.Store[result.I].Data = outData;
-        R.Store[result.I].IsChars = isChars;
+        // Deal with "Warnings"
+        if (Warnings == "") Warnings = " ";
+        int newslot = V.GenerateTempStoreRoom(Warnings.Length);
+        StringToStoreroom(newslot, Warnings);
+        R.Store[newslot].IsChars = true;
+        int Fn = REFArgLocn[0].Y, At = REFArgLocn[0].X;
+        V.TransferTempArray(newslot, Fn, At);
+        // Set up the returns.
+        if (doSumming)
+        { result.X = summation;   break; }        
+        // Left with the case where we return an array:
+        result.I = V.GenerateTempStoreRoom(out_array.Count);
+        R.Store[result.I].Data = out_array.ToArray();
         break;
       }
       case 159: // IOK() -- returns TRUE if the last File I/O opn. was successful (or if none yet), FALSE if it failed. Note that
@@ -4832,15 +4746,8 @@ internal partial class F
         for (int i = 0; i < IDs.Length; i++) { Sys[IDs[i]].LIST.Clear(); }
         break;
       }
-      case 169:   case 170: // LISTS_CLEAR(start, extent), LISTS_CLEAR_TO(first, last).
-      // All lists covered by the argument extents must exist, or crasho.
-      { int first = (int) Args[0].X;
-        int extent = 1;
-        if (Which == 169) extent = (int) Args[1].X;  
-        else if (Which == 170) extent = (int) Args[1].X - first + 1;
-        if (first < 0 || first >= NoSysLists || extent < 1 || first + extent > NoSysLists)
-        { return Oops(Which, "one or more of the indicated lists do not yet exist"); }
-        for (int i=0; i < extent; i++){ Sys[first+i].LIST.Clear(); }
+      case 169:   case 170: // __ UNUSED
+      {
         break;
       }
       case 171: // LISTS_KILL(list no.) -- kills all lists from list no. upwards. If argument out of range,
@@ -4979,59 +4886,63 @@ internal partial class F
         Sys[listno].LIST.RemoveRange(newlistlen, varlen);
         break; // with result.X set already.
       }
-      case 183: // PLACEMENT(scalar/array Value, array RefArray [, scalar StartIndex ] ) -- Given a reference array which is
-      // ASSUMED WITHOUT TESTING to be sorted (you get back nonsense if it isn't), tells you where an element of Value would fit,
-      // as a sort of index. The structure of the returned data is the same as that of Value. Each returned datum is either a whole number
-      // (if fortuitously RefArray[N] = Value, then N is returned); or a fractional number (e.g. if n1 = RefArray[N] and n2 = RefArray[N+1],
-      // and Value V lies between n1 and n2, the return will be N + (V-n1)/(n2-n1) ). NO EXTRAPOLATION OCCURS; if V < 0, you get back
-      // NB! If Values is an array, operation is MUCH FASTER if it is (even approximately) sorted in ascending order. This is because
-      // if Values[i] is > Values[i-1] then the placement of Values[i-1] is used as the starting point for searching for Values[i].
-      // NEGINF; if V > (length of RefArray) - 1, you get back POSINF. (To avoid tiny numerical handling errors evoking this, a value
-      // closer to any RefArray[i] than ± 1e-10 will be readjusted to equal RefArray[i].)
-      // SPECIAL CASE: Two or more successive values in RefArray are equal. In that case, the successive values will be hopped over.
-      // E.g. for RefArray [10, 20, 20, 20, 30], Value 15 returns 0.5, 20 returns 1, 25 returns 3.5.
-      // ARG. StartIndex: If present, the search only begins at this index in the array. If fractional, at floor(StartIndex). If negative,
-      //   starts at 0. If beyond end, will inevitably return POSINF as above. Take care; e.g. for the above RefArray example, if Value is 25,
-      //   then StartIndex of MINREAL to 1.999... returns 1.5; but StartIndex of 2 returns NEGINF.
+      case 183: // PLACEMENT(scalar/array Value, array RefArray) -- Given a reference array RefArray which is sorted in ascending order,
+      //   returns the pseudo-index(es) for Value(s) in RefArray.
+      // If Value[n] exactly matches RefArray[p], the return is p. Otherwise: (a) if Value[n] - call it 'V' - lies between RefArray[p]
+      //   and RefArray[p+1], the return is p + δ, where δ is a fraction determined by linear interpolation. If V < RefArray[0], the return
+      //   is minus infinity; if V > last(RefArray), the return is infinity. (No allowance made for rounding errors.)
+      // RefArray MUST BE IN ASCENDING SORTED ORDER, or you get back GARBAGE. (There is no test for its sorting order, so no error can be raised.)
+      // If Value is an array, it is always tested to see if it is in ascending sort order. If it is found to be so sorted, then the search
+      //   for a Value[n] match will begin from the RefArray index at or just below the floor of the latest pseudo-index. If not sorted,
+      //   searching for a match for Value[n] will always begin from RefArray[0]. This is not significant if array RefArray is small, but is
+      //   important for long RefArray: the function is MUCH FASTER if Values is sorted so that the shortened search method can be used.
+      // In the case where Value is sorted, and Value[i] returns the pseudo-index ‒Infinity, then the search for placement of Values[i+1]
+      //   starts at RefArray[0].
       {
-        double virtZero = 1e-10;
-        int valslot = Args[0].I, refslot = Args[1].I;
+        int testslot = Args[0].I, refslot = Args[1].I;
         if (refslot == -1) return Oops(Which, "2nd. arg. must be an array");
         double[] RefArray = R.Store[refslot].Data;
-        double[] Values;
-        bool isScalar = (valslot == -1);
-        StoreItem valItem = null;
-        if (isScalar) Values = new double[] { Args[0].X };  
-        else { valItem = R.Store[valslot];   Values = valItem.Data; }
-        int valLen = Values.Length, refLen = RefArray.Length;
-        double val, diff, lastdiff = 0, place = 0.0, lastplace = -1.0;
-        double[] places = new double[valLen];
-        int startindex = 0;
-        if (NoArgs > 2)
-        { startindex = (int) Math.Floor(Args[2].X);
-          if (startindex < 0) startindex = 0;
-        }
-        int newstartindex; // if this value in Values > the previous value, then better start the search from the last placement.
-        for (int i=0; i < valLen; i++)
-        { val = Values[i];
-          if (i > 0 && val > Values[i-1]) newstartindex = (int) lastplace;  else newstartindex = startindex;
-          for (int j=newstartindex; j < refLen; j++)
-          { diff = val - RefArray[j];
-            if (diff < -virtZero) // then either the value is below RefArray[0] or else it is between RefArray[j-1] and RefArray[j]:
-            { if (j == newstartindex) { place = double.NegativeInfinity;  break; }
-              else { place = j-1 + lastdiff / (RefArray[j] - RefArray[j-1]);  break; }
+        double[] TestArray;
+        bool isScalar = (testslot == -1);
+        StoreItem testItem = null;
+        if (isScalar) TestArray = new double[] { Args[0].X };  
+        else { testItem = R.Store[testslot];   TestArray = testItem.Data; }
+        int testLen = TestArray.Length, refLen = RefArray.Length;
+        double thistestval, prevtestval = 0.0; // Initial value of prevtestval is irrelevant, as the first use of the line
+        double[] output = new double[testLen];
+        int startrefindex = 0, nextstartrefindex = 0;
+        double firstrefval = RefArray[0], finalrefval = RefArray[refLen-1];
+        for (int i = 0; i < testLen; i++)
+        { thistestval = TestArray[i];
+          if (thistestval < firstrefval)
+          { output[i] = double.NegativeInfinity;  continue; }
+          if (thistestval > finalrefval)
+          { output[i] = double.PositiveInfinity;  continue; }
+          // So now 'thistestval' is guaranteed to lie within the limits of the reference array.
+          startrefindex = (thistestval >= prevtestval) ? nextstartrefindex : 0;
+          double thisrefval, prevrefval; // Any change to coding MUST ensure that thisrefval cannot possibly be < prevrefval
+              // at entry to the loop below. This involves care with assigning startrefindex within the loop.
+          for (int j = startrefindex; j < refLen; j++)
+          { thisrefval = RefArray[j];
+            if (thistestval == thisrefval)
+            { output[i] = (double) j;  break; } // and nextstartrefindex is left as is.
+            else if (thistestval < thisrefval)
+            { prevrefval = RefArray[j-1]; // This point can't be reached if j = 0, thanks to earlier test for thistestval < firstrefval.
+              output[i] = (double) (j-1) + (thistestval - prevrefval) / (thisrefval - prevrefval);
+              nextstartrefindex = j-1; // j must be > 0, thanks to earlier test for thistestval < firstrefval.
+                // nextstartrefindex is set in this 'j' loop but is only used in the outer 'i' loop.
+              break;
             }
-            else if (diff <= virtZero) { place = (double) j;  break; }
-            // If diff is > virtZero, then let the next loop decide on val's placement, unless this is the last loop...             
-            if (i == valLen-1) place = double.PositiveInfinity;
-            lastdiff = diff;
+            // If focus is here, thistestval > thisrefval; so do nothing except reloop.
+            // Note that the loop will always  be exited at one of the two breaks above; focus cannot fall through the loop end. This is because
+            //  there will always be a value of j such that thistestval <= RefArray[j], thanks to earlier test: thistestval > finalrefval.
           }
-          places[i] = lastplace = place;
+          prevtestval =thistestval;
         }
-        if (isScalar) result.X = place;
+        if (isScalar) result.X = output[0];
         else
-        { result.I = V.GenerateTempStoreRoom(valItem.DimSz);
-          R.Store[result.I].Data = places;
+        { result.I = V.GenerateTempStoreRoom(testItem.DimSz);
+          R.Store[result.I].Data = output;
         }
         break;
       }
@@ -5315,35 +5226,6 @@ internal partial class F
         R.Store[result.I].Data = Sums;
         break;
       }
-
-
-
-//      case 193: // DISTANCE(Variable1, Variable2 [, DontTakeSqRoot [, DontTakeMean ] ])
-//      // If only two args., returns the square root of the mean of the differences between corresponding Variable1 and Variable2 elements.
-//      // The two booleans are independent of one another. If both present and nonzero, you simply get back the sum of the squares
-//      //  of the differences. The geometrical distance between two points in a Cartesian system (the 'euclidean' distance) would 
-//      //  be returned if the first boolean were 'false' and the second were 'true'.
-//      { int len0 = 0, len1 = 0, slot0 = Args[0].I, slot1 = Args[1].I;   
-//        double x0 = Args[0].X, x1 = Args[1].X, xx=0, sum = 0.0;
-//        double[] d0=null, d1=null;
-//        if (slot0 >= 0) { len0 = R.Store[slot0].TotSz;  d0 = R.Store[slot0].Data; }
-//        if (slot1 >= 0) { len1 = R.Store[slot1].TotSz;  d1 = R.Store[slot1].Data; }
-//        int maxlen = len0;  if (len1 > maxlen) maxlen = len1;
-//       // compute the sum of the squares of the differences ('sum'):
-//        if (len0 > 0 && len1 > 0) // both arrays:
-//        { if (len0 != len1) return Oops(Which, "array lengths must be the same");
-//          for (int i=0; i < len0; i++) { xx = d0[i] - d1[i]; sum += xx*xx; }
-//        }
-//        else if (maxlen == 0) { xx = x0 - x1; sum = xx*xx; } // both scalars: pretty trivial.
-//        else if (len0 == 0){ for (int i=0; i < len1; i++) { xx = x0 - d1[i]; sum += xx*xx; } }
-//        else for (int i=0; i < len0; i++) { xx = d0[i] - x1; sum += xx*xx; }
-//        bool NoSqRt = (NoArgs > 2 && Args[2].X != 0.0);
-//        bool NoMean = (NoArgs > 3 && Args[3].X != 0.0);
-//        if (maxlen == 0) maxlen = 1; // in case both were scalars.
-//        if (NoMean) result.X = sum; else result.X = sum / (double) maxlen;
-//        if (!NoSqRt) result.X = Math.Sqrt(result.X);
-//        break;
-//      }
       case 194: // PIXELS(one arg.). Two forms:
       // Form 1: SCALAR arg.: a Graph ID. Describes the blue-lined frame enclosing the graph proper. In the case of 2D, the frame
       //   is the extreme of the plottable region. For 2D, it contains the graph proper (which occupies a smaller area) along with
@@ -5490,8 +5372,10 @@ internal partial class F
       // **** NB: If you change the name of this function, also change the ref. to it in unit Parser, where along with 'dim' it is preprocessed.
       { int donorslot = Args[0].I;
         if (donorslot == -1) return Oops(Which, "the first arg. must be an array");
-        double[] donor = R.Store[donorslot].Data;  
-        int cnt = 0,  donorlen = R.Store[donorslot].TotSz; // cnt keeps track of how much space is available for receiving donations.
+        StoreItem donoritem = R.Store[donorslot];
+        double[] donor = donoritem.Data;  
+        bool donorTemporary = (donoritem.ClientFn == -1);
+        int cnt = 0,  donorlen = donoritem.TotSz; // cnt keeps track of how much space is available for receiving donations.
                                                            //  It also is the next spot in donor to access, while donor has data left.
         for (int arg = 1; arg < NoArgs; arg++)
         { int Fn = REFArgLocn[arg].Y,  At = REFArgLocn[arg].X;
@@ -5513,7 +5397,11 @@ internal partial class F
           }
           else return Oops(Which, "args. cannot be constants or unassigned arrays");
         }
-        result.X = donorlen - cnt;  break;
+        result.X = donorlen - cnt;
+        if (donorTemporary) // then eliminate it. (Where the donor is a user function returning an array, it doesn't automatically get eliminated.)
+        { donoritem.Demolish();  donoritem = null;  R.StoreUsage[donorslot] = 0;
+        }
+        break;
       }
       case 199: case 200: // BINOM(ial coefficient) / LOGBINOM (Scalar TopNo,  Scalar LowBtmNo [, Scalar HighBtmNo]). TopNo must be >= 0 and:
       // (a) for BINOM(.), <= 170 (only limit for LOGBINOM(.) is Int32.MaxValue). LowBtmNo must be >= 0 and <= TopNo;
@@ -5541,7 +5429,7 @@ internal partial class F
 
     // . . . . . . . . . . . . .
 
-      default: { FnIdentified = false;  break; }                                //default  //last
+      default: break;                                //default  //last
     }
   // - - - - - - - - - - - - - - - - - - - -
     return result;
