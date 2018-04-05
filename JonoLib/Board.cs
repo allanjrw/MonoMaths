@@ -143,6 +143,62 @@ namespace JLib
     }
   }
 
+  // The width and height and the location are private fields because altering these requires constructing a new Gdk.Pixbuf object.
+  //   Width and height can be altered by method ("Resize(.)"), but ImageLocation never. All three are accessible as properties.
+  // The top left coordinates are public, and can be changed at will as they have no effect on the image.
+  public struct Imagery
+  { public Gdk.Pixbuf Image;
+    private string IDName; // Any string you like; some way of identifying the image.
+    private string ImageLocation;
+    private int Width, Height; // Your hoped-for PIXEL dimensions of the image. The Pixbuf constructor keeps the original image proportions
+                              //  and sets the image size to the largest that could fit into the box of your dimensions.
+    public double ScaledLeft, ScaledTop; // The SCALED coordinates on the graph for the TOP LEFT corner of the image.
+    public int Layer; // Legitimate values: 0 = behind everything; 1 = over hairlines, under curves; 2 = over curves also.
+
+    // CONSTRUCTOR. If the image can't be found all the fields will have been set, but the field Image will be NULL.
+    public Imagery(string SomeSuitableName, string ImageLocn, int Wd, int Ht, double LeftX, double TopY, int GraphLayer)
+    { Image = null; 
+      IDName = SomeSuitableName;
+      ImageLocation = ImageLocn;  
+      Width = Wd;  Height = Ht;  ScaledLeft = LeftX;  ScaledTop = TopY;
+      Layer = GraphLayer;
+      try
+      { Image = new Gdk.Pixbuf(ImageLocation, Wd, Ht); }
+      catch
+      { Image = null; }   
+    }
+
+    public string Name {get {return IDName;} }
+    public int Wide {get {return Width;} }
+    public int High {get {return Height;} }
+    public string FileLocn {get {return ImageLocation;} }
+
+    /// <summary>
+    /// Resize the image. In fact it kills the prior image (if any), and tries to create a new one from the same file location.
+    ///  If successful, all fields are updated, and TRUE is returned. Otherwise Image is (re)set to null, and other fields are unchanged.
+    /// </summary>
+    public bool Resize(int NewWd, int NewHt)
+    { if (Image != null) Image.Dispose();
+      try
+      { Image = new Gdk.Pixbuf(ImageLocation, NewWd, NewHt); }
+      catch
+      { Image = null; }   
+      if (Image == null) return false;
+      Width = NewWd;  Height = NewHt;
+      return true;            
+    }
+    public override string ToString ()
+    { string validity = (Image == null) ?  "NULL"  :  "valid";
+      return string.Format(
+        "Name = {0}; Location = {1}; Image is {2}; Width = {3} pixels; Height = {4} pixels; ScaledLeft = {5}; ScaledTop = {6}; Layer = {7}",
+          IDName, ImageLocation, validity, Width, Height, ScaledLeft, ScaledTop, Layer);
+    }
+
+
+  }
+
+// ==================================================================
+
   public class Board : Gtk.Window
   {
 
@@ -178,7 +234,7 @@ namespace JLib
     protected static MouseRec LastMouseUnclick = new MouseRec(0, 0, 0, 0, 0, 0, 0, 0, 0); // Set by every release of a mouse button.
       public static MouseRec LastUnclick { get { return LastMouseUnclick; } }
     public static int ClickedGraph = 0;
-    public static long AccessKey; // used to limit access across classes in this unit.
+    public static long AccessKey; // used to limit access across classes in this unit.B
     public static int BoardIDBase = 0,  GraphIDBase = 10000,  PlotIDBase = 100000; // Keep both GraphIDBase and PlotIDBase at least this high,
       // so that in MonoMaths arguments which are plot nos. can be distinguished from much smaller args. that are e.g. angles, unicodes.
     /// <summary>
@@ -893,8 +949,10 @@ namespace JLib
     protected Gtk.MenuBar MainMenu;
     protected Gtk.Menu FileSubMenus;
       protected Gtk.MenuItem FileMenu;
-      protected Gtk.MenuItem File_SaveImage;
-      protected Gtk.MenuItem File_SaveImageAs;
+      protected Gtk.MenuItem File_SaveGraphPlus;
+      protected Gtk.MenuItem File_SaveGraphPlusAs;
+      protected Gtk.MenuItem File_SaveGraphOnly;
+      protected Gtk.MenuItem File_SaveGraphOnlyAs;
       protected Gtk.MenuItem File_Exit;
     protected Gtk.Menu ZoomSubMenus;
       protected Gtk.MenuItem ZoomMenu;
@@ -993,7 +1051,10 @@ namespace JLib
     public string ImageFileName = ""; // Set by the first call to SaveImage in the CairoGraphic class, but can be set beforehand.
                                       // File | Save Image will save without asking for a file name, if this is nonnull.
                                       // accessed via static 'Get..' 'Set..' properties, so that it can be got in class CairoHelper.
-    public bool SaveImagePlease  = false; // Set TRUE by a file|save menu click; the code there also forces a redraw.
+    public int SaveGraphAsImage = 0;  // 0 = don't save it; 1 = save it using the Board's method, which does not include the footer;
+                                      // 2 = save it using the CairoHelper object, which includes the footer.
+
+    public bool SaveImagePlease  = false; // Set TRUE by a file|save menu click; the code there also forces a redraw. @!@
                                           // The redraw ( = OnExpose event) immediately resets SaveImagePlease to false after doing so.
 
     // Keypress fields: Nothing in this unit detects keypresses. The calling code should invoke a KeySnooper for the whole application,
@@ -1051,15 +1112,23 @@ namespace JLib
       FileSubMenus = new Menu(); // This is a design shell; it leaves all the appearance and signalling stuff to its contained MenuItem list.
       FileMenu.Submenu = FileSubMenus; // A collection of all the submenus. (Pity the property name is note in the plural, as it is not just one submenu.)
         // You could concatenate the last two lines as "FileMenu.Submenu = new Menu();" but code would fail at 'Append' below - see the explanation there.
-      // File | Save Image:
-      File_SaveImage = new MenuItem("Save Image");  File_SaveImage.Name = "SaveImage";
-      File_SaveImage.Activated += new EventHandler(OnSaveImageActionActivated);
-      FileSubMenus.Append(File_SaveImage); // You can't shortcut by eliminating FileSubMenus and simply writing "FileMenu.Submenu.Append(.); this is
+      // File | Save Graph + Description:
+      File_SaveGraphPlus = new MenuItem("Save Graph + Description");  File_SaveGraphPlus.Name = "SaveGraphAndDescription";
+      File_SaveGraphPlus.Activated += new EventHandler(OnSaveGraphPlusActionActivated);
+      FileSubMenus.Append(File_SaveGraphPlus); // You can't shortcut by eliminating FileSubMenus and simply writing "FileMenu.Submenu.Append(.); this is
                                       // because "Submenu = " is just a property which adds to / reads from the collection FileSubMenus.
-      // File | Save Image As:
-      File_SaveImageAs = new MenuItem("Save Image As");  File_SaveImageAs.Name = "SaveImageAs";
-      File_SaveImageAs.Activated += new EventHandler(OnSaveImageAsActionActivated);
-      FileSubMenus.Append(File_SaveImageAs);
+      // File | Save Graph + Description As:
+      File_SaveGraphPlusAs = new MenuItem("Save Graph + Description, As");  File_SaveGraphPlusAs.Name = "SaveGraphAndDescriptionAs";
+      File_SaveGraphPlusAs.Activated += new EventHandler(OnSaveGraphPlusAsActionActivated);
+      FileSubMenus.Append(File_SaveGraphPlusAs);
+      // File | Save Graph only:
+      File_SaveGraphOnly = new MenuItem("Save Graph only");  File_SaveGraphOnly.Name = "SaveGraphOnly";
+      File_SaveGraphOnly.Activated += new EventHandler(OnSaveGraphOnlyActionActivated);
+      FileSubMenus.Append(File_SaveGraphOnly);
+      // File | Save Graph only As:
+      File_SaveGraphOnlyAs = new MenuItem("Save Graph only, As");  File_SaveGraphOnlyAs.Name = "SaveGraphOnlyAs";
+      File_SaveGraphOnlyAs.Activated += new EventHandler(OnSaveGraphOnlyAsActionActivated);
+      FileSubMenus.Append(File_SaveGraphOnlyAs);
       // File | Exit:
       File_Exit = new MenuItem("E_xit");   File_Exit.Name = "Exit";
       File_Exit.AddAccelerator("activate", HotKeys, new AccelKey(Gdk.Key.x, Gdk.ModifierType.ControlMask, AccelFlags.Visible)); // Ctrl-X as hot key.
@@ -1342,29 +1411,56 @@ namespace JLib
 // ===================================================================
 //     MAIN MENU                              //menu
 // -------------------------------------------------------------------
-
+//#########START HERE: Separate 'ImageFileName' into two different variables.
 // ---- FILE MENU:                            //file
-    protected virtual void OnSaveImageActionActivated (object o, System.EventArgs args)
+    protected virtual void OnSaveGraphPlusActionActivated (object o, System.EventArgs args)
     { MainSubMenuClicked.S = ((Gtk.MenuItem) o).Name;
       MainSubMenuClicked.X = JS.Tempus('L', false);
       MainSubMenuClicked.B = true; // NB: .I is not accessed. The user is free to put stuff there; it will be untouched by this unit.
       SaveImagePlease = true; // The redraw call (OnExpose event in class CairoGraphic) will do the saving, and then reset this to FALSE.
       if (ImageFileName == "") ImageFileName = FileNameDialog();
       if (ImageFileName != "")
-      { SaveImagePlease = true; // The redraw call (OnExpose event in class CairoGraphic) will do the saving, and then reset this to FALSE.
+      { SaveGraphAsImage = 2; // Save using CairoHelper, which includes the footer.
+//      { SaveImagePlease = true; // The redraw call (OnExpose event in class CairoGraphic) will do the saving, and then reset this to FALSE.@!@
         Board.ForceRedraw(this.boardID, false);
       }
     }
-    protected virtual void OnSaveImageAsActionActivated (object o, System.EventArgs args)
+    protected virtual void OnSaveGraphPlusAsActionActivated (object o, System.EventArgs args)
     { MainSubMenuClicked.S = ((Gtk.MenuItem) o).Name;
       MainSubMenuClicked.X = JS.Tempus('L', false);
       MainSubMenuClicked.B = true; // NB: .I is not accessed. The user is free to put stuff there; it will be untouched by this unit.
       ImageFileName = FileNameDialog();
       if (ImageFileName != "")
-      { SaveImagePlease = true; // The redraw call (OnExpose event in class CairoGraphic) will do the saving, and then reset this to FALSE.
+      { SaveGraphAsImage = 2; // Save using CairoHelper, which includes the footer.
+//      { SaveImagePlease = true; // The redraw call (OnExpose event in class CairoGraphic) will do the saving, and then reset this to FALSE.@!@
         Board.ForceRedraw(this.boardID, false);
       }
     }
+
+    protected virtual void OnSaveGraphOnlyActionActivated (object o, System.EventArgs args)
+    { MainSubMenuClicked.S = ((Gtk.MenuItem) o).Name;
+      MainSubMenuClicked.X = JS.Tempus('L', false);
+      MainSubMenuClicked.B = true; // NB: .I is not accessed. The user is free to put stuff there; it will be untouched by this unit.
+      SaveImagePlease = true; // The redraw call (OnExpose event in class CairoGraphic) will do the saving, and then reset this to FALSE.
+      if (ImageFileName == "") ImageFileName = FileNameDialog();
+      if (ImageFileName != "")
+      { SaveGraphAsImage = 1; // Save using Board, which excludes the footer.
+//      { SaveImagePlease = true; // The redraw call (OnExpose event in class CairoGraphic) will do the saving, and then reset this to FALSE.@!@
+        Board.ForceRedraw(this.boardID, false);
+      }
+    }
+    protected virtual void OnSaveGraphOnlyAsActionActivated (object o, System.EventArgs args)
+    { MainSubMenuClicked.S = ((Gtk.MenuItem) o).Name;
+      MainSubMenuClicked.X = JS.Tempus('L', false);
+      MainSubMenuClicked.B = true; // NB: .I is not accessed. The user is free to put stuff there; it will be untouched by this unit.
+      ImageFileName = FileNameDialog();
+      if (ImageFileName != "")
+      { SaveGraphAsImage = 1; // Save using CairoHelper, which includes the footer.
+//      { SaveImagePlease = true; // The redraw call (OnExpose event in class CairoGraphic) will do the saving, and then reset this to FALSE.@!@
+        Board.ForceRedraw(this.boardID, false);
+      }
+    }
+
     // **** I have not been able to raise the OnDeleteEvent from here, as it uses System.DeleteEventArgs, which
     //       is opaque in Mono. (You can do "Gtk.DeleteEventArgs dargs = new DeleteEventArgs();  OnDeleteEvent(0, dargs);",
     //       and indeed end up in the OnDeleteEvent handler; but args.RetVal there does nothing, as 'dargs' has null fields,
@@ -1630,13 +1726,29 @@ namespace JLib
         // Y starts below the title, at the top of the menu, but allows for a margin below the label. H: margin top and bottom.
       int boardID = (this.Name.Substring(1))._ParseInt(0);
       Board bordeaux = Board.GetBoardForExpose(this, boardID);  if (bordeaux == null) return false;
-      foreach( Graph graph in bordeaux.GraphsExtant) graph.DrawGraph(g, w, h); // Plots will be drawn as well.
-
-      if (bordeaux.SaveImagePlease)
+      foreach( Graph graph in bordeaux.GraphsExtant)
+      { graph.DrawGraph(g, w, h); // Plots will be drawn as well, and images implanted if required.
+      }
+      // Save image of this graph, if requested:
+      if (bordeaux.SaveGraphAsImage > 0)
+    
+      //@!@if (bordeaux.SaveImagePlease)
       { string fnm = bordeaux.ImageFileName;
-        if (fnm != "") { g.GetTarget().WriteToPng(fnm);  bordeaux.SaveImagePlease = false; }
+        if (fnm != "") 
+        { if (bordeaux.SaveGraphAsImage == 1)
+          { // Save without Cairo (no footer will be included):
+           var foo = Gdk.Pixbuf.FromDrawable(win, win.Colormap, 0, 0, 0, 0, w, h);
+           foo.Save(fnm, "png"); // Only "png" and "jpeg" are supported as the 2nd. arg.
+          }
+          else // == 2: save with Cairo (footer is included)
+          { g.GetTarget().WriteToPng(fnm);
+            //bordeaux.SaveImagePlease = false;@!@
+          }
+          bordeaux.SaveGraphAsImage = 0;
           // *** "g.GetTarget()" does not create a new instance; it simply gets the instance which g has created. Hence can be
           //      repeated, as below when disposing.
+        // You get a similar result by the following:
+        }
       }
       bordeaux = null; // The workings of this wrapper class are mysterious and nonstandard, so better dereference the pointer here.
       g.GetTarget ().Dispose ();
@@ -1712,7 +1824,7 @@ namespace JLib
     public static Gdk.Color  DefClrHairLines   = JTV.Blue; // Hairlines across the graphing surface.
     public static Gdk.Color  DefClrTickStrings   = JTV.Blue;
     public static Gdk.Color  DefClrAxisName    = JTV.Blue;
-    public static string DefFontName = "Ubuntu";
+    public static string DefFontName = "Source Han Sans CN Normal"; // *** On Fedora installations. Change, if using another system.
     public static int DefNameFontSize = 14, DefUnitsFontSize = 10; // Pixel sizes of axis names and of axis units (usually looks better smaller).
                                                             // Pixel size has to be set a bit higher than the desired point size.
     public static double ZoomFactor = 2,  MoveFactor = 0.5,  SmallMoveFactor = 0.1; // multipliers of graph axis span for menu actions
@@ -1794,6 +1906,8 @@ namespace JLib
       public double PivotX { get { return pivotX; } }
       public double PivotY { get { return pivotY; } }
       public double RayLen { get { return rayLen; } }
+    public List<Imagery> Images; // This is entirely maintained by calling code; nothing in this file adds, removes or alters this list's contents.
+                                 //   Calling code should be sure to call the graph instance method "ForceRedraw" after changes to the list.
 
    // RARELY ALTERED FIELDS
    // Colours (all use Gdk colours, which are converted internally to Cairo colours)
@@ -1833,7 +1947,6 @@ namespace JLib
       TintTickStrings = new Tint(ClrTickStrings);
       TintAxisName  = new Tint(ClrAxisName);
 
-
       FontName = DefFontName;
       NameFontSize = DefNameFontSize;   UnitsFontSize = DefUnitsFontSize;
       GapsX = GapsY = GapsZ = new double[] {1};
@@ -1846,6 +1959,7 @@ namespace JLib
       SuppressSuffixIfZeroX = SuppressSuffixIfZeroY = SuppressSuffixIfZeroZ = false;
       FudgeFactorX = FudgeFactorY = FudgeFactorZ = 1.0;
       ValueFormatX = ValueFormatY = ValueFormatZ = DefValueFormat;
+      Images = new List<Imagery>(); // NB - must exist, even if no images, or e.g. DrawGraph(.) will crash,
     }
     // Intended for 2D graphs.
     // Errors result from: Board unrecognized; Xlow = Xhigh (but it may be > Xhigh); Xsegs < 1.
@@ -2101,6 +2215,8 @@ namespace JLib
       gr.FillPreserve();
       gr.SetSourceRGB(TintPerimeter.r, TintPerimeter.g, TintPerimeter.b);
       gr.Stroke ();
+      // Add images IF they have been tagged to occur in layer 0, i.e. behind everything (hairlines, curves):
+      if (Images.Count > 0) DrawImagesOnGraph(gr, 0); // i.e. layer 0, which is the background.
      // Draw the frame, if this is 3D:
       if (is3D) // Then the coordinate frame has to be drawn. (For 2D, the coordinate frame is coincident with the graph box perimeter.)
       { double coeff = 0.61; // Value ensures that at its worst, the rotating frame in the viewer will just touch the edges of the box.
@@ -2343,10 +2459,31 @@ namespace JLib
           }
         }
       }
+      // Add images IF they have been tagged to occur in layer 1, i.e. over hairlines but under curves:
+      if (Images.Count > 0) DrawImagesOnGraph(gr, 1);
+
       // Now the plots...
       SourceValue = DateTime.Now.Ticks;
       foreach (Plot plotto in PlotsExtant) Plot.Draw(this, plotto, gr, width, height); // The static handler separates out different plot children.
+      // Add images IF they have been tagged to occur in layer 2, i.e. over all, hairlines and curves:
+      if (Images.Count > 0) DrawImagesOnGraph(gr, 2);
+
     }
+
+// Used only by method DrawGraph(.), which references it several times. Should only be called if certain that List "Images" is not null or empty.
+  private void DrawImagesOnGraph(Cairo.Context gr, int CurrentLayer)
+  {
+    foreach (Imagery imogen in Images)
+    { if (imogen.Layer == CurrentLayer  &&  imogen.Image != null)
+      { // convert scaled left and top to pixel left and top:
+        double pixelLeft = boxLeft + boxWidth * (imogen.ScaledLeft - LowX) / (HighX - LowX);
+        double pixelTop =  boxTop + boxHeight * (HighY - imogen.ScaledTop) / (HighY - LowY);
+        Gdk.CairoHelper.SetSourcePixbuf(gr, imogen.Image, pixelLeft, pixelTop);
+        gr.Paint();
+      }
+    }
+  }
+
 
   public void AddPlot(params Plot[] Plots)
   { if (this.artID < 1) return; // No error message, but no action either.
@@ -2457,7 +2594,6 @@ namespace JLib
     if (ApplySetting[3]) { ClrMarginBgd   =  NewColours[3];   TintMarginBgd = new Tint(ClrMarginBgd); }
     if (ApplySetting[4]) { ClrTickStrings =  NewColours[4];   TintTickStrings = new Tint(ClrTickStrings); }
     if (ApplySetting[5]) { ClrAxisName    =  NewColours[5];   TintAxisName  = new Tint(ClrAxisName); }
-
     ForceRedraw();
   }
   /// <summary>
@@ -2510,10 +2646,14 @@ namespace JLib
 /// <summary>
 /// All arguments reflect instance fields of class Graph; the instance fields all prefix X, Y or Z to the arg. names below.
 /// Note that TickStrings itself is not altered; it is simply used to set the protected field tickstrings[] which is what is actually displayed.
+/// If TickStrings has an element exactly equal to 'dont_overwrite_symbol', that element will be replaced by the natural scale value. (Spaces are
+///   significant, so if a space were either side of this symbol, it would not have this meaning, and the string would be printed at the hairline.)
 /// </summary>
   public static void ProcessTickStrings(ref string[] TickStrings, ref string[] tickstrings, int[] TickStringsVisible,  double LoVal, double HiVal,
                   int Segs, string Suffix, bool SuppressValueIfOne, bool SuppressSuffixIfZero, double FudgeFactor, string ValueFormat)
-  {// Set up the visibility array:
+  { string dont_overwrite_symbol = "@"; // If user entered "scaleoverx(g, "foo,@,bar") for natural scale 0, 10, 20, then
+                                        //   the scale display would be: "foo  10   bar".
+    // Set up the visibility array:
     int n = 0, tsVisLen = TickStringsVisible._Length();
     bool[] tsVisible = new bool[Segs+1];
     bool makeAllVisible = false;
@@ -2538,22 +2678,92 @@ namespace JLib
     int tsLen = TickStrings._Length();  if (tsLen == -1) tsLen = 0;
     tickstrings = new string[Segs+1];
     int mino = Math.Min(tsLen, Segs+1);
-    for (int i=0; i < mino; i++) { if (tsVisible[i]) tickstrings[i] = TickStrings[i];  else tickstrings[i] = ""; }
+    var Overwrite = new bool[Segs+1]; // default values being 'false'
+    for (int i=0; i < mino; i++)
+    { if (tsVisible[i])
+      { string ss = TickStrings[i];
+        if (ss != dont_overwrite_symbol)
+        { tickstrings[i] = TickStrings[i];
+          Overwrite[i] = true;
+        }
+      }
+      else tickstrings[i] = "";
+    }
     // Generate values for unfilled positions:
     double val, span = HiVal - LoVal;   string unit;
-    for (int i = mino; i <= Segs; i++)
-    { unit = "";
-      if (tsVisible[i])
-      { if (i == Segs) val = HiVal;   else val = LoVal + span * i / Segs;
-        val *= FudgeFactor;
-        unit = val.ToString(ValueFormat);
-        if (SuppressValueIfOne) // a rare event, hence the above setting, which is reset on rare occasions below.
-        { if (val == 1.0) unit = ""; else if (val == -1.0) unit = "-"; }
-        if (!SuppressSuffixIfZero || val != 0.0) unit += Suffix;
+    double nearly_zero = span * 1e-4; // If the scale marking 'val', calculated below, is closer to zero than this, it is reset to zero.
+      // This (hopefully) prevents scale markings like "1.234E-23" where a zero is expected: an occasional problem I have struck.
+      // Rationale for 1e-4: Graph widths would rarely be more than 1000 pixels; rounding to 1/10 of this should not affect the display.
+    for (int i = 0; i <= Segs; i++)
+    { if (!Overwrite[i])
+      { unit = "";
+        if (tsVisible[i])
+        { if (i == Segs) val = HiVal;   else val = LoVal + span * i / Segs;
+          if (Math.Abs(val) < nearly_zero) val = 0.0; // see comment at definition of 'nearly_zero'.
+          val *= FudgeFactor;
+          unit = val.ToString(ValueFormat);
+          if (SuppressValueIfOne) // a rare event, hence the above setting, which is reset on rare occasions below.
+          { if (val == 1.0) unit = ""; else if (val == -1.0) unit = "-"; }
+          if (!SuppressSuffixIfZero || val != 0.0) unit += Suffix;
+        }
+        tickstrings[i] = unit;
       }
-      tickstrings[i] = unit;
     }
   }
+//############vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv ORIGINAL:
+/// <summary>
+/// All arguments reflect instance fields of class Graph; the instance fields all prefix X, Y or Z to the arg. names below.
+/// Note that TickStrings itself is not altered; it is simply used to set the protected field tickstrings[] which is what is actually displayed.
+/// </summary>
+//  public static void ProcessTickStrings(ref string[] TickStrings, ref string[] tickstrings, int[] TickStringsVisible,  double LoVal, double HiVal,
+//                  int Segs, string Suffix, bool SuppressValueIfOne, bool SuppressSuffixIfZero, double FudgeFactor, string ValueFormat)
+//  {// Set up the visibility array:
+//    int n = 0, tsVisLen = TickStringsVisible._Length();
+//    bool[] tsVisible = new bool[Segs+1];
+//    bool makeAllVisible = false;
+//    if (tsVisLen < 2) makeAllVisible = true;
+//    else
+//    { for (int i=0; i < tsVisLen; i++)
+//      { n += TickStringsVisible[i];
+//        if (n < 0 || (n == 0 && i > 0)) { makeAllVisible = true;  break; }
+//        else if (n > Segs) break; // Note, by the way, that deliberately setting TSV[0] > Segs results in no tick strings being visible.
+//         tsVisible[n] = true;
+//      }
+//      if (!makeAllVisible && n < Segs)
+//      { int diff = TickStringsVisible[tsVisLen-1];
+//        while (true)
+//        { n += diff;  if (n > Segs) break;
+//           tsVisible[n] = true;
+//        }
+//      }
+//    }
+//    if (makeAllVisible) { for (int i=0; i <= Segs; i++) tsVisible[i] = true; }
+//   // Set up the output strings array:
+//    int tsLen = TickStrings._Length();  if (tsLen == -1) tsLen = 0;
+//    tickstrings = new string[Segs+1];
+//    int mino = Math.Min(tsLen, Segs+1);
+//    for (int i=0; i < mino; i++) { if (tsVisible[i]) tickstrings[i] = TickStrings[i];  else tickstrings[i] = ""; }
+//    // Generate values for unfilled positions:
+//    double val, span = HiVal - LoVal;   string unit;
+//    double nearly_zero = span * 1e-4; // If the scale marking 'val', calculated below, is closer to zero than this, it is reset to zero.
+//      // This (hopefully) prevents scale markings like "1.234E-23" where a zero is expected: an occasional problem I have struck.
+//      // Rationale for 1e-4: Graph widths would rarely be more than 1000 pixels; rounding to 1/10 of this should not affect the display.
+//    for (int i = mino; i <= Segs; i++)
+//    { unit = "";
+//      if (tsVisible[i])
+//      { if (i == Segs) val = HiVal;   else val = LoVal + span * i / Segs;
+//        if (Math.Abs(val) < nearly_zero) val = 0.0; // see comment at definition of 'nearly_zero'.
+//        val *= FudgeFactor;
+//        unit = val.ToString(ValueFormat);
+//        if (SuppressValueIfOne) // a rare event, hence the above setting, which is reset on rare occasions below.
+//        { if (val == 1.0) unit = ""; else if (val == -1.0) unit = "-"; }
+//        if (!SuppressSuffixIfZero || val != 0.0) unit += Suffix;
+//      }
+//      tickstrings[i] = unit;
+//    }
+//  }
+
+//############^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
   public static void Magnify(int BoardID, int GraphID, double H_Magnification, double V_Magnification)
   { Graph G = Board.GetFocussedGraph(BoardID);   if (G == null) return;
@@ -2606,6 +2816,7 @@ namespace JLib
     userX = G.LowX + (pixelX - G.boxLeft) * spanX / G.boxWidth;
     userY = G.LowY + (G.boxBottom - pixelY) * spanY / G.boxHeight;
   }
+
 /// <summary>
 /// <para>Returns a complete copy of graph with identifier GraphID. If UseStartUpSizing TRUE, uses the original board's start-up
 ///  size, and also in the case of 3D graphs, the original graph's start-up ascension and declination.</para>
@@ -2728,12 +2939,19 @@ public static Graph CopyOf(int GraphID, bool UseStartUpSizing)
           { ptTintArray = Tint.TintArray(value);  PlotRevisionTime = DateTime.Now.Ticks; }
         }
       }
-
-    public string[] texts; // Any length or NULL; if to be used (as indicated by PtShape = '$'), Texts[i mod Texts.Length] will be accessed.
-      public string[] Texts
-      { get { return (string[]) texts.Clone(); } // Yes, Clone() does copy strings, not just pointers to them; 'texts' and 'Texts' are independent.
-        set { if (value == null) texts = null; else texts = (string[]) value.Clone();  PlotRevisionTime = DateTime.Now.Ticks; }
+    public Strub[] texts; // Texts to go on the face of the graph. Any length or NULL; if is to be used (as indicated by PtShape = '$'),
+                          // texts[i mod Texts.Length] will be accessed. Fields: .S is the text, .X is the angle of the text (radians),
+                          // horizontal being angle 0, vertical being -PI/2 [#### I think the sign is right #####]
+      public Strub[] Texts
+      { get { return (Strub[]) texts.Clone(); }
+        set { if (value == null) texts = null; else texts = (Strub[]) value.Clone();  PlotRevisionTime = DateTime.Now.Ticks; }
       }
+//######    public string[] texts; // Texts to go on the face of the graph. Any length or NULL; if is to be used (as indicated by PtShape = '$'),
+//                           // Texts[i mod Texts.Length] will be accessed.
+//      public string[] Texts
+//      { get { return (string[]) texts.Clone(); } // Yes, Clone() does copy strings, not just pointers to them; 'texts' and 'Texts' are independent.
+//        set { if (value == null) texts = null; else texts = (string[]) value.Clone();  PlotRevisionTime = DateTime.Now.Ticks; }
+//      }
 
    // LINE-related parameters:
     // The key to what shape, width and colour is drawn is LnWeight (length >= 1). LnWeight[i] holds the index in LnShape, LnWidth and LnColour
@@ -3021,13 +3239,17 @@ public static Graph CopyOf(int GraphID, bool UseStartUpSizing)
               pangoIncX = JTV.ToPointsDouble(goodone.Width / 2.0); // No offset --> letter's top left corner goes at (x,y).
               pangoIncY = JTV.ToPointsDouble(goodone.Height / 2.0);
             }
-            int l, m = pt % lenTexts;
-            if (texts[m] != null)
-            { l = texts[m].Length;
+            int l, m = pt % lenTexts; 
+            if (texts[m].S != null)
+            { string ss = texts[m].S;
+              l = ss.Length;
               if (l > 0)
               { gr.NewSubPath();
+                double ang = texts[m].X;
                 gr.MoveTo(x - pangoIncX, y - pangoIncY );
-                layout.SetText(texts[m]);
+                if (ang != 0.0)
+                { gr.Rotate(ang); }
+                layout.SetText(ss);
                 Pango.CairoHelper.ShowLayout(gr, layout);
               }
             }

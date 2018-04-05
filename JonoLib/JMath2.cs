@@ -791,6 +791,158 @@ public class M2
     Outcome.B = true;  return result;
   }
 
+/// <summary>
+/// <para>Provides the LU factors (as matrices LL - lower triangle mx - and UU - upper triangle mx) of an input SQUARE matrix AA.
+/// The RETURN is an error code: 0 = no error; #######.</para>
+/// <para>LL and UU must enter as (any) array, but will be recreated as square matrices of the same dimensions as AA.
+/// <para>Note that input and output matrices are in the form of ONE-DIMENSIONAL arrays. All three will have length N*N, where
+///   N is an integer ≥ 2. They will be laid down as consecutive rows.
+/// </summary>
+  public static int LUFactorization(ref double[] AA, out double[] LL,  out double[] UU)
+  {   LL = null;  UU = null; // As these are OUT parameters, they have to be assigned before any error returns.
+    int datalen = AA.Length;  if (datalen < 4) return 10; // Not enough data for even a 2X2 matrix
+    int norows = Convert.ToInt32(Math.Sqrt((double) datalen)); 
+    if (datalen != norows * norows) return 20; // Data does not represent a square matrix.
+    LL = new double[datalen];   UU = new double[datalen];  
+    Array.Copy(AA, 0, UU, 0, norows); // The first row of UU will always be equal to the first row of AA.
+    for (int i=0; i < norows; i++)
+    { LL[i*norows + i] =1.0; } // Set up LL as an identity matrix.
+    // Loop through rows of AA:
+    for (int rw = 1; rw < norows; rw++) // The zeroth. row of both UU and LL is already set, from the above.
+    { // Work through the columns of this row:
+      for (int cl = 0; cl < norows; cl++)
+      { // Develop the sum of products, which will be used in both branches of the IF below:
+        double sumOfProds = 0.0;
+        for (int i = 0; i < cl; i++)
+        { sumOfProds += LL[rw*norows + i] * UU[i*norows + cl]; }
+        double numr = AA[rw*norows + cl] - sumOfProds;
+        // Develop the unknown elements of LL in this row; i.e.  LL[0] to LL[rw-1]:
+        if (cl < rw) 
+        { LL[rw*norows + cl] = numr / UU[cl*norows + cl]; }
+        else  // Next develop the unknown elements of UU in this row:  UU[rw] to the end of the row
+        { UU[rw*norows + cl] = numr; } // We avoid a slow element-by-element inner loop again, as above.
+      }
+    }
+    return 0;
+  }
+
+/// <summary>
+/// <para>The input is a one-dim'l array, the data strip of a matrix. NoRows is supplied, and so enables internal calculation of
+///  no. of columns. Rows will be swapped within the method, unless there was an error in args.</para>
+/// <para>RETURN: 0 = no error;  1 = impossible number of rows for this data length;   2 = one or both row indices is out of range.
+///  If the row indices are equal, no operation occurs but also no error is raised (return is 0).
+/// </summary>
+  public static int SwapRows(ref double[] Mx, int NoRows,  int RowIndex1,  int RowIndex2)
+  { int datalen = Mx.Length;
+    int NoCols = datalen / NoRows;
+    if (NoCols * NoRows != datalen) return 1;
+    if (RowIndex1 < 0 || RowIndex1 >= NoRows || RowIndex2 < 0 || RowIndex2 >= NoRows) return 2;
+    if (RowIndex1 == RowIndex2) return 0; // No action, but also not an error state. (This would also pick up a 1x1 matrix.)
+    // All correct, so swap rows:
+    var heldrow = new double[NoCols];
+    Array.Copy(Mx, NoCols * RowIndex1, heldrow, 0, NoCols);
+    Array.Copy(Mx, NoCols * RowIndex2, Mx, NoCols * RowIndex1, NoCols);
+    heldrow.CopyTo(Mx, NoCols * RowIndex2);
+    return 0;
+  }
+
+/// <summary>
+/// <para>The input is a one-dim'l array, the data strip of a matrix. NoRows is supplied, and so enables internal calculation of
+///  no. of columns. Columns will be swapped within the method, unless there was an error in args.</para>
+/// <para>RETURN: 0 = no error;  1 = impossible number of columns for this data length;   2 = one or both column indices is out of range.
+///  If the column indices are equal, no operation occurs but also no error is raised (return is 0).
+/// </summary>
+  public static int SwapColumns(ref double[] Mx, int NoRows,  int ColIndex1,  int ColIndex2)
+  { int datalen = Mx.Length;
+    int NoCols = datalen / NoRows;
+    if (NoCols * NoRows != datalen) return 1;
+    if (ColIndex1 < 0 || ColIndex1 >= NoCols || ColIndex2 < 0 || ColIndex2 >= NoCols) return 2;
+    if (ColIndex1 == ColIndex2) return 0; // No action, but also not an error state. (This would also pick up a 1x1 matrix.)
+    // All correct, so swap columns:
+    double held;
+    int addr1, addr2;
+    for (int i = 0; i < NoRows; i++)
+    { addr1 = NoCols * i + ColIndex1;
+      addr2 = NoCols * i + ColIndex2;
+      held = Mx[addr1];
+      Mx[addr1] = Mx[addr2];
+      Mx[addr2] = held;
+    }
+    return 0;
+  }
+
+/// <summary>
+/// <para>The input is a one-dim'l array, the data strip of a square matrix. Columns and/or rows will be swapped within the method,
+///  as pivotting proceeds, unless there was an error in args.</para>
+/// <para>The new order of rows and columns will be reflected in the 'out' arguments. E.g. if, for a 4x4 matrix, rows 1 and 2 have been
+///  swapped, RowOrder will return as [0, 2, 1, 3].</para>
+/// <para>If 'VirtualZero' is supplied, pivots with this or a lower absolute value will cause failure. Default value: 0.0.</para>
+/// <para>RETURN: 0 = no error;  1 = array does not represent a square matrix (though it can be of any dimensions, including 1x1).
+///   ≥10: = unable to find a nonzero row element in row (return value - 10) of the matrix as is at the time of return (which will not
+///   usually be the same as at entry, as some swapping will have occurred already).</para>
+/// </summary>
+  public static int RookPivotting(ref double[] Mx, out int[] RowOrder, out int[] ColumnOrder, params double[] VirtualZero )
+  { RowOrder = null;  ColumnOrder = null; // or the bl. compiler complains.
+    int datalen = Mx.Length;
+    int norows = Convert.ToInt32(Math.Sqrt((double) datalen));
+    if (datalen != norows * norows) return 1; // Data does not represent a square matrix.
+    int nocols = norows; // Makes comprehension of code a bit easier below.
+    double virtZero = 0.0;
+    if (VirtualZero.Length > 0) virtZero = Math.Abs(VirtualZero[0]);
+    // Set up the trackers of row and column deployment:
+    RowOrder = new int[norows];
+    ColumnOrder = new int[nocols];
+    for (int i=0; i < norows; i++)
+    { RowOrder[i] = i;  ColumnOrder[i] = i; }
+    // PIVOTTING:
+    int rowmaxat, colwithmax,  offset;
+    double rowmax, y;
+    for (int pivot = 0; pivot < norows-1; pivot++)// "pivot" because this represents the main diagonal pivot position which we seek to fill.
+                                               // '-1' because the last submatrix will only have one element so should not be inspected.
+    { // We now search for an item which is the largest in both its subrow and its subcolumn in the submatrix of which the pivot is the top left corner.
+      // We go through subrows of the matrix; at each subrow we find the element with the maximum absolute value; then we check if it is the
+      // biggest element within its subcolumn. If it is, the search is over, and row / column swaps can occur. If not, we try the next row down.
+      int chosenrow = pivot, chosencol = pivot; // the existing pivot, as a last resort, if not altered by the loop below.
+      for (int rw = pivot; rw < norows; rw++)
+      { offset = rw * nocols; // offset of the beginning of the full row of Mx
+        rowmaxat = pivot; // As we are only sifting through the lower right submatrix, we set the default 'rowmaxat' to the first entry in the subrow.
+        rowmax = Math.Abs(Mx[offset + pivot]); // the default maximum, the first element in the subrow.
+        for (int cl = pivot+1;  cl < nocols; cl++)
+        { y = Math.Abs(Mx[offset+cl]);
+          if (y > rowmax) { rowmax = y;  rowmaxat = cl;  }
+        }
+        if (rowmax <= virtZero) return 10 + rw;
+        // Now see if this is the highest value in its column:
+        bool itsthebiggest = true;
+        for (int rw1 = pivot; rw1 < norows; rw1++)
+        { if (rw1 == rw) continue; // we don't compare 'rowmax' with itself.
+          if (Math.Abs(Mx[rw1 * norows + rowmaxat]) > rowmax)
+          { itsthebiggest = false;
+            break;
+          }
+        }
+        if (itsthebiggest)
+        { chosenrow = rw;
+          chosencol = rowmaxat;
+          break;
+        }
+      }
+      // Now get the element at Mx[chosenrow, chosencol] into the pivot position, as the new Mx[pivot, pivot].
+      int n;
+      if (chosenrow != pivot)
+      { SwapRows(ref Mx, norows, pivot, chosenrow); // #### return value needed?
+        n = RowOrder[pivot];  RowOrder[pivot] = RowOrder[chosenrow];  RowOrder[chosenrow] = n;
+      }
+      if (chosencol != pivot)
+      { SwapColumns(ref Mx, norows, pivot, chosencol); // #### return value needed?
+        n = ColumnOrder[pivot];  ColumnOrder[pivot] = ColumnOrder[chosencol];  ColumnOrder[chosencol] = n;
+      }    
+    }
+    return 0;
+  }
+
+
+
 // Invert matrix. Returns inverted matrix (no error) or null matrix (error).
 // Error: Outcome .B, .S as usual; .I = 1 for nonsquare matrix, 2 for noninvertible (singular) matrix.
   public static double[,] InverseOf(double[,] MxIn, out Quad Outcome,  double Negligible)

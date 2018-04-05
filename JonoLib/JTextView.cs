@@ -205,13 +205,22 @@ public class JTV // TEXTVIEW STATIC METHODS (and related)
 /// <summary>
 /// Replaces selected buffer text with NewText. To delete selected text only, set NewText to the empty string.
 /// If there is no selection, NewText simply goes in at the cursor.
+/// If there is a selection, then the third arg. is referenced and applied.
 /// </summary>
-  public static void OverwriteSelectedText(TextBuffer Buff, string NewText)
+  public static void OverwriteSelectedText(TextBuffer Buff, string NewText, bool SelectReplacemtText)
   { TextIter startIt, endIt;
     if (Buff.GetSelectionBounds(out startIt, out endIt)) // then text is selected, so delete it:
     { Buff.Delete(ref startIt, ref endIt); }
     // Either way, startIt is now set to where the new text is to go.
-    if (NewText != "") Buff.Insert(ref startIt, NewText);
+    if (NewText != "")
+    { int n = startIt.Offset,  p = n + NewText.Length;
+      Buff.Insert(ref startIt, NewText);
+      if (SelectReplacemtText)
+      { TextIter oldStartIt = Buff.StartIter, newEndIt = Buff.StartIter;
+        oldStartIt.ForwardChars(n);   newEndIt.ForwardChars(p);
+        Buff.SelectRange(oldStartIt, newEndIt);
+      }
+    }
   }
 
 // ===================================================
@@ -977,6 +986,40 @@ if (find == -1) break;
     tab_array.Dispose();
   }
 
+  /// <summary>
+  /// <para>Given a string meant for a label (or other widget using Pango markup), allow display of chars. normally not displayed by Pango.</para>
+  /// <para>To do this, you bracket any character or substring that might not be interpreted literally by Pango. The brackets you use are
+  ///  these: «yak yak». (Typically '«' is AltGr Z on the kbd, and '»' is AltGr X. In MonoMaths you can also get them by entering
+  ///  '{' or '}' and then pressing cntrl-shift-J).</para>
+  /// <para>Note that you cannot include either bracket itself in a bracketted segment. This means you can never display these chars. - sorry
+  ///   about that.</para>
+  /// </summary>
+  public static string PrepareEscapedTextForPango(string InStr)
+  { if (InStr._IndexOf('«') == -1) return InStr; // nothing to do, as there are no bracketted segments. The commonest case by far.
+    var output = new StringBuilder();
+    var cumul = new StringBuilder(); // Accumulates characters within a single bracketted section.
+    char[] inchars = InStr.ToCharArray();
+    bool inBrackets = false;
+    for (int i = 0; i < inchars.Length; i++)
+    { char ch = inchars[i];
+      if (inBrackets)
+      { if (ch == '»' || i == inchars.Length-1)
+        { if (i == inchars.Length-1 && ch != '»') cumul.Append(ch);
+          output.Append(GLib.Markup.EscapeText(cumul.ToString()));
+          inBrackets = false;
+        }
+        else cumul.Append(ch);
+      }
+      else // not in a bracketted segment:
+      { if (ch == '«')
+        { cumul.Clear();
+          inBrackets = true;
+        }
+        else output.Append(ch);
+      }
+    }
+    return output.ToString();
+  }
 
 
 
@@ -1659,6 +1702,8 @@ if (find == -1) break;
     }
     return result;
   }
+
+
 
 //=============================================
 //    MISCELLANEOUS

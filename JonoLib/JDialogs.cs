@@ -36,9 +36,8 @@ public class JD
   public static Gdk.Color DefBackColour = new Gdk.Color(242, 255, 244); // The user's code can alter this.
   // Used to record cursor posn and selected text in method Display(.) (*** and maybe in other methods too, at a later date).
   public static string SelectedText = ""; // returns empty, of course, if no text selected.
-  public static int SelectionPoint; // start of the selection, if any; otherwise the cursor position
-            // (*** which, at the time of writing, defaults to the end of text in method Display()).
-
+  public static int SelectionPoint; // start of the selection, if any; otherwise the cursor position (which defaults to the end of text).
+  public static int SelectionLine; // line of the selection, if any; otherwise -1.
 
   // STRUCTURE FOR HOLDING LINKS
   public struct Linkage
@@ -258,6 +257,7 @@ public class JD
     lulu.UseMarkup = ParseMarkupTags;
     if (ParseMarkupTags)
     { BodyText = ConformTagsToPangoTags(BodyText);
+      BodyText = JTV.PrepareEscapedTextForPango(BodyText); // Substrings between '«' and '»' will be escaped using GLib.MarkUp.EscapeText(.).
       lulu.Markup = "\n" + BodyText + '\n';
     }
     else lulu.Text = "\n" + BodyText + '\n';
@@ -298,7 +298,7 @@ public class JD
 /// <para>RETURNED for ERRORS: a negative value. Codes: -1000 = no printable chars. in 'Layout'; -1001 = unrecognized char. in 'Layout';
 ///   -1002 = no buttons; -1003 = array Texts has length not equal to no. of widgets.</para>
 /// </summary>
-  public static int MultiBox(string Title, ref string LayOut, ref string[] Texts, string Buttons)
+    public static int MultiBox(string Title, ref string LayOut, ref string[] Texts, string Buttons, params Gtk.Window[] SendingWindow)
   {
     // Some preliminary settings:
     char[] DelimArray = { '|' }; // used as arg. to method Split.
@@ -314,7 +314,8 @@ public class JD
       oo[2 * i + 1] = i + 1;
     }
     // Call the dialog box constructor, and optionally give it a set size:
-    Dialog dialog = new Dialog(Title, null, DialogFlags.Modal, oo);
+    Dialog dialog = new Dialog(Title, null, DialogFlags.Modal, oo); // *** Acts modally whatever you put as dialog flag; not sure why it is there.
+                        // (I even tried using the sending window instead of 'null', and setting DialofFlags to DestroyWithParent; no effect.)
     int winLeft, winTop, winWidth, winHeight;
     // You can alter size without affecting central placement; but you can alter placement unless size is also set.
     if (BoxSize.X != -1) // If not, leave Gtk to work out its sizing and centering.
@@ -361,7 +362,7 @@ public class JD
     int wdgtCntr = 0, textCntr = 0; 
     for (int HLvl = 0; HLvl < noHLevels; HLvl++)
     { 
-      HBoxes[HLvl] = new HBox();
+      HBoxes[HLvl] = new HBox(false, 4);//################# was just ()
       HBoxes[HLvl].Name = "HLevel" + HLvl.ToString();
       HBoxes[HLvl].Spacing = 5;
       V1.Add(HBoxes[HLvl]);
@@ -387,6 +388,7 @@ public class JD
           var lbl = new Label();
           lbl.Visible = true;
           string ss = ConformTagsToPangoTags(Texts[wdgtCntr]);
+          ss = JTV.PrepareEscapedTextForPango(ss); // Substrings between '«' and '»' will be escaped using GLib.MarkUp.EscapeText(.).
           lbl.Markup = ss;
           lbl.Wrap = (ch == 'L');
           HBoxes[HLvl].Add(lbl);
@@ -415,6 +417,7 @@ public class JD
           TV.Editable = (ch == 'V' || ch == 'W');
           TV.WrapMode = Gtk.WrapMode.Word;
           TV.ModifyBase(StateType.Normal, DefBackColour);
+          TV.AcceptsTab = false;
           TV.Visible = true;
           if (CH == 'W')
           { string sss = Texts[wdgtCntr];
@@ -456,8 +459,8 @@ public class JD
       if (RadioBox != null)  { HBoxes[HLvl].Add(RadioBox);   RadioBox = null; }
     } // end of looping through all horizontal levels
     // ----- SHOW THE BOX --------------
+    // *** No need for  "dialog.Modal = true;", as the constructor used has set the Modal flag already (see above).
     dialog.VBox.ShowAll(); // Omit this and you don't see nuthin but a blank VBox.
-    dialog.Modal = true;
     int response = dialog.Run ();
     // ----- DEAL WITH THE RESPONSE ---------
     int wdgtNo = 0;
@@ -669,7 +672,8 @@ public class JD
     int response = dialog.Run ();
     // Before destroying the box, record its final position and size (e.g. after moved/resized by user) for posterity.
     SelectedText = JTV.ReadSelectedText(Buff, out SelectionPoint);
-//#####    SelectionPoint = Buff.CursorPosition;
+    SelectionPoint = Buff.CursorPosition;
+    SelectionLine = (SelectedText == "") ? -1  : (JTV.CursorLine(Buff, 0)).I;
     dialog.GetPosition(out winLeft,out winTop);
     dialog.GetSize(out winWidth, out winHeight);
     LastBoxSize.X = winWidth;  LastBoxSize.Y = winHeight;
@@ -741,6 +745,7 @@ public class JD
     dialog.VBox.Add(Vtop);
     Gtk.Label lblPreamble = new Gtk.Label();   lblPreamble.Visible = true;   lblPreamble.Wrap = true;
     Preamble = ConformTagsToPangoTags(Preamble);
+    Preamble = JTV.PrepareEscapedTextForPango(Preamble); // Substrings between '«' and '»' will be escaped using GLib.MarkUp.EscapeText(.).
     lblPreamble.Markup = Preamble; // Sets the label text, after Pango parses it for markup tags.
     lblPreamble.WidthRequest = winWidth - 50;
     Vtop.Add(lblPreamble);
@@ -760,6 +765,7 @@ public class JD
       // The prompt label, on the left:
       lab = new Gtk.Label();   lab.Visible = true;   lab.Wrap = false;
       ss = ConformTagsToPangoTags(Prompts[line]);
+      ss = JTV.PrepareEscapedTextForPango(ss); // Substrings between '«' and '»' will be escaped using GLib.MarkUp.EscapeText(.).
       lab.Markup = ss; // Sets the label text, after Pango parses it for markup tags.
       hox.Add(lab);
       // The text box, on the right:

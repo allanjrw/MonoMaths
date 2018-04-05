@@ -54,6 +54,11 @@ namespace JLib
   { public double X;   public string S;
     public Strub(double Dub, string Str) { X = Dub;  S = Str; }
     public override string ToString(){return X.ToString() + ", '" + S +"'";}
+    public static Strub Copy(Strub Model)
+    { Strub result = new Strub();
+      result.X = Model.X;  result.S = Model.S;
+      return result;
+    }
   }
 /// <summary>
 /// Fields:  double X, Y;  string SX, SY. Constructor args: (dummy integer) --> (X = Y = 0.0, SX = SY = ""); or (X, Y, SX, SY).
@@ -1135,17 +1140,26 @@ public class JS
   public static int CloserAt(string InStr, char Opener, char Closer, params int[] FromTo)
   { int lastch = InStr.Length-1;
     if (lastch < 1) return -1;
-    int lvl = 1;  int startptr = 0, endptr = lastch;  int result = -1;
+    int lvl = 1;  int startptr = 0, endptr = lastch;
     if (FromTo.Length > 0)startptr = FromTo[0];
     if (FromTo.Length > 1)endptr = FromTo[1];
     if (endptr > lastch) endptr = lastch;
-    if (startptr<0 || endptr<0 || startptr>endptr) return result;
+    if (startptr<0 || endptr<0 || startptr>endptr) return -1;
     // valid start and end pointers:
+    int result = -1;
     char[] instr = InStr.ToCharArray(startptr, endptr-startptr+1);
     for (int i = 0; i < instr.Length; i++)
-    { if (instr[i] == Opener){ if (i != 0) lvl++; }
+    { if (instr[i] == Opener)
+      { if (i != 0)
+        { lvl++;
+        }
+      }
       else if (instr[i] == Closer)
-      { lvl--; if (lvl==0){result = startptr+i; break;} }
+      { lvl--;
+        if (lvl==0)
+        {result = startptr+i; break;
+        }
+      }
     }
     return result;
   }

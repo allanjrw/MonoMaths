@@ -236,7 +236,7 @@ namespace JLib
    /// <summary>
     /// Str._IndexesOf(target [, P [, Q ] ]) -- returns an integer array of pointers to all instances of character 'target'; or NULL, if none. 
     /// If P and Q are present, they define inclusive limits of the search. Improper P and Q corrected as best possible.
-    /// Null or empty 'Str'or crossed pointers cause a return of NULL.
+    /// Null or empty 'Str'or crossed pointers cause a return of NULL. No finds also returns NULL.
     /// </summary>
     public static int[] _IndexesOf(this string inStr, char target, params int[] FromTo)
     { return inStr._IndexesOf(target.ToString(), FromTo);
@@ -244,7 +244,7 @@ namespace JLib
     /// <summary>
     /// Str._IndexesOf(Str1 [, P [, Q ] ]) -- returns an integer array of pointers to all instances of string 'Str1'; or NULL, if none. 
     /// If P and Q are present, they define inclusive limits of the search. Improper P and Q corrected as best possible.
-    /// Null or empty 'Str' or 'Str1' or crossed pointers cause a return of NULL.
+    /// Null or empty 'Str' or 'Str1' or crossed pointers cause a return of NULL. No finds also returns NULL.
     /// </summary>
     public static int[] _IndexesOf(this string inStr, string target, params int[] FromTo)
     { if (string.IsNullOrEmpty(inStr) || string.IsNullOrEmpty(target)) return null;
@@ -348,6 +348,7 @@ namespace JLib
     /// in 'targets'; or NULL, if none. 
     /// If P and Q are present, they define inclusive limits of the search. Improper P and Q corrected as best possible.
     /// RETURNED array 'result', if a find: result[i].X = first char. of ith. find; result[i].Y = index in 'targets' of found string.
+    ///  If no find, NULL is returned.
     /// Duplicate or overlapping strings in targets: only the first met with is found. E.g. for Str = "ABCD" and search array = 
     /// {"ABC", "BC"}), only targets[0] - "ABC" - will be found by this method.
     /// Null or empty 'targets' or crossed pointers cause a return of NULL. Null or empty 'targets[i]' are ignored.
@@ -1011,12 +1012,6 @@ namespace JLib
       if (toPtr < inStr.Length-1) retained.Append(inStr._Extent(toPtr+1)); // the part after the 'purge' section
       return retained.ToString(); // OK if retained is empty.
     }
-
-
-
-
-
-
     /// <summary>
     /// <para>Str._PurgeExtent(fromPtr, toPtr, only_0to32, theseMustStay ) - Two distinct forms:</para>
     /// <para>(1) Boolean 'only_0to32' is 'true': returns a copy of Str with ONLY characters #0 to #32 removed, EXCEPTING such of these 
@@ -1046,11 +1041,14 @@ namespace JLib
       return sbldr.ToString(); // OK if sbldr is empty.
     }
     /// <summary>
-    /// <para>Remove all characters of inStr which have values between LoChar and HiChar inclusive.</para>
-    /// <para>Pointers are corrected as possible; in particular, toPtr of -1 (or less) or oversized --> toPtr set to last char. of InStr.</para>
+    /// <para>Returns Str with all instances removed of character(s) within the given substring range
+    ///  which have unicodes between, or at, those of LoChar and HiChar. Case-sensitive.</para>
+    /// <para>Returns the empty string if (a) the input string is empty or null, or (b) all characters were in the unwanted range,
+    ///  or (c) if the unicode of LoChar is greater than that of HiChar.</para>
+    /// <para>If toPtr is negative or oversized, it is reset to point to the end of the string.</para>
     /// </summary>
     public static string _PurgeRange(this string inStr, int fromPtr, int toPtr, char LoChar, char HiChar)
-    { if (string.IsNullOrEmpty(inStr)) return String.Empty;
+    { if (string.IsNullOrEmpty(inStr) || LoChar > HiChar) return String.Empty;
       if (fromPtr < 0) fromPtr = 0;  
       if (toPtr < 0 || toPtr >= inStr.Length) toPtr = inStr.Length-1;
       if (fromPtr > toPtr) return String.Empty;
@@ -2499,8 +2497,27 @@ namespace JLib
     return result;
   }
 
-    /// <summary>
-    /// <para>In the byte array, find all instances of Value between and including the supplied limits; or within the whole array, if no limits
+  /// <summary>
+  /// <para>For the integer array, find the first instance of Value between and including the supplied limits; or within the whole array, if no limits
+  /// supplied; or from the start point to the end of the array, if just one limit supplied. Errors and No Finds both return -1;
+  /// otherwise the return is the index of the find.</para>
+  /// <para>Out of range arguments are adjusted. If (after any adjustment) they cross, -1 is returned.</para>
+  /// </summary>
+  public static int _Find(this int[] IntArray, int Value, params int[] FromTo)
+  { if (IntArray == null) return -1;
+    Trio trio = JS.SegmentData(IntArray.Length, false, FromTo); // sort out the pointers
+    int fromPtr = trio.X, toPtr = trio.Y;
+    if (fromPtr < 0) return  -1; // -1 is an error code from fn. JS.SegmentData(.), covering all impossible FromTo values.
+    int findindex = -1;
+    for (int i = fromPtr; i <= toPtr; i++)
+    { if (IntArray[i] == Value)
+      { findindex = i;  break; }
+    }
+    return findindex;
+  }
+
+   /// <summary>
+    /// <para>In the integer array, find all instances of Value between and including the supplied limits; or within the whole array, if no limits
     /// supplied; or from the start point to the end of the array, if just one limit supplied. Errors and No Finds both return a non-null
     /// array of zero length; otherwise an int[] array with as many elements as there are finds is returned, giving their indices in the input array.</para>
     /// <para>Out of range arguments are adjusted. If (after any adjustment) they cross, the empty array is returned.</para>
@@ -2969,6 +2986,28 @@ namespace JLib
       int[] result = new int[extent];
       for (int i=0; i < extent; i++) result[i] = Convert.ToInt32(CharArr[i+fromptr]);
       return result;      
+    }
+/// <summary>
+/// <para>Returns index of SoughtChar, if found, otherwise -1. (Null or empty input array returns -1 also.)</para>
+/// <para>If "FromTo provided, FromTo[0] less than 0 is corrected to 0, FromTo[1] beyond end of array is corrected to end.</para>
+/// <para>No errors crash the code. Simply GIGO applies.</para>
+/// </summary>
+    public static int _Find(this char[] CharArr, char SoughtChar, params int[] FromTo)
+    { if (CharArr == null) return -1;
+      int startat = 0, endat = CharArr.Length-1; 
+      if (FromTo.Length > 0)
+      { startat = FromTo[0];
+        if (startat < 0) startat = 0;
+        if (FromTo.Length > 1)
+        { endat = Math.Min(endat, FromTo[1]);
+        }
+      }
+      int result = -1;
+      for (int i = startat; i <= endat; i++)
+      { if (CharArr[i] == SoughtChar)
+        { result = i;  break; }
+      }
+      return result;
     }
 /// <summary>
 /// Returns a copy of CharArr; the copy does not have to be pre-dimensioned, as it does with the void method ".CopyTo(.)".
