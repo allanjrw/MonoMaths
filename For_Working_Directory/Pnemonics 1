@@ -7,9 +7,12 @@ lk=lists_kill(<^>);
 pa=pause(); /<#>/ **** PAUSE ****
 rv=/<#>/##### REVISED TO HERE ONLY #####
 du=dummy = 1;<^> /<#>/#########
+duif=if ()<^><CR>{<CR><T>dummy = 1; /<#>/#######<CR>}<CR>
+temp=/<#>/#####vvvvvvvvvvv<CR><CR><^>/<#>/#####^^^^^^^^
 bu=<bullet>
 bu0=<bullet 35,> // No bullet mark; for paragraph intended as part of prev. bullet. Extra indent of 5 needed to align.
 bu2=<bullet 50,➯>
+bu3=<bullet 70,*>
 no=<bullet 30,1<^>.><_> // Numbered bullets. The cursor will allow the default 1 to be easily replaced.
 block = /<#>*\<CR><^><CR>\*<#>/  // A remark-out block which does not colour the block green (apart from the end markers).
 ,=<<^>> // No other punctuation mark can ie part of a pnemonic.
@@ -64,10 +67,13 @@ jc=<just c>
 jcl=<just c><^><CR><just l>
 jcb=<just c><b><^></b><CR><just l>
 fn=<b><^></b>(<# blue><# black>) -- 
-//VALA MACROS
-g=GEN.
-ms=BOX.Msg(<^>);
-to=to_string()
-ne=GEN.NE(<^>)
+gr = graph(plot(<^>));
 // TEMPORARY MACROS -- intended for just a few sessions, then to be removed.
-b6=<# blue><b><^></b><# black>
+
+
+
+
+
+
+
+

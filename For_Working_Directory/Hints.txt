@@ -143,7 +143,6 @@ The graph is of y = x*x + C, where the constant C is initially 0, but is reset a
 	}
 }
 
-
 <# black><B>2. Simulation of Brownian Motion. All points start at the origin, then gradually move away by random walk.</B>
 <# magenta>// Set up a population of points, all at the origin:
 <# blue>NoBlobs = 200;
@@ -152,7 +151,6 @@ The graph is of y = x*x + C, where the constant C is initially 0, but is reset a
 <# blue>delrr = xx;  delang = yy; <# magenta>// radius and angle increments will be in these.
 <# blue>delxx = xx;  delyy = yy; <# magenta>// XY coordinate increments will be in these
 <# blue>Step = 0.01; // <# magenta>maximum step size for a blob
-<# blue>grid(-1.5, 1.5, 6, -1.5, 1.5, 6);
 <# magenta>//----------------------------------------------------------------------
 <# magenta>// OUTER LOOP: Iterates every time the plotting arrays are updated.
 <# blue>firstloop = true;   
@@ -163,6 +161,7 @@ p = 0; <# magenta>//  dummy declaration, so 'killplot(p)' won't raise a parsing 
 	<# blue>if (firstloop) 
 		{ g = graph(p);   graphresize(g, 500, 500);  firstloop = false; } <# magenta>// Make the graph square, so the circle looks like a circle.
 	else { addplot(g, p); }
+	<# blue>grid(g, -1.5, 1.5, 6, -1.5, 1.5, 6);
 	FrameReady = FALSE;
 	TimeStep = 20; <# magenta>// millisecs between frames. (Once you go above a few hundred points, the time
 			<# magenta>// taken for graphing will be longer than this, but this will not cause any problem.)
@@ -183,42 +182,67 @@ p = 0; <# magenta>//  dummy declaration, so 'killplot(p)' won't raise a parsing 
 <# black>You could add a scale adjustment to the above. For example, once the outermost particle has an |X| or |Y| value exceeding the current axis limit of 1.5, you could use 'grid(.)' to zoom out.
 
 <# black><B>3. Simulation of Brownian Motion in 3D. All points start at the origin, then gradually move away by random walk.</B>
-
-<# magenta>// Random walk in 3D. Points are in a cube which has one corner at the origin, and side 1.
+<# magenta>// Particles undergoing random walk in 3D, visually resembling Brownian motion. 
+// Points are in a cube which has one corner at the origin, and side 1.
 // Set up a population of points, all in the centre of a cube - i.e. at (0.5, 0.5, 0.5):
 <# blue>NoBlobs = 20;
 xx = fill(NoBlobs, 0.5);  yy = xx;  zz = xx;
-dim(delxx, delyy, delzz, NoBlobs);  // increments will be in these.
+dim(delxx, delyy, delzz, NoBlobs);  <# magenta>// increments will be in these.
 <# blue>Step = 0.01; <# magenta>// maximum step size for each blob per loop.
-<# blue>grid(0, 1, 5, 0, 1, 5, 0, 1, 5);
 <# magenta>//----------------------------------------------------------------------
 // OUTER LOOP: Iterates every time the plotting arrays are updated.
 <# blue>TimeStep = 10; <# magenta>// millisecs between frames. (Actually once you go below around 50, the time taken
      // by graphing takes longer than this - on my computer, at any rate - but no problem arises.
-<# blue>firstloop = TRUE;   
-p = 0; <# magenta>// dummy declaration, so 'killplot(p)' won't raise a parsing error.
-<# blue>while (true)
-{	if ( not(firstloop) ) { killplot(p); } 
-	p = plot3d(zz, yy, xx,   '.', 5, 'red', ' '); <# magenta>// Big red points, no connecting lines.
-	<# blue>if (firstloop) { g = graph3d(p);  firstloop = false; } 
-	else { addplot(g, p); }
-	FrameReady = FALSE;
+<# blue>firstloop = true;   
+p_old = 0;  g = 0;
+while (true)
+{	p = plot3d(zz, yy, xx,  '.', 5, 'red',  ' ');
+	if (g == 0) g = graph3d(p);
+	else 
+	{	addplot(g, p);
+		killplot(p_old);
+		p_old = p;
+	} 
+<# blue>grid(g, 0, 1, 5,   0, 1, 5,   0, 1, 5);
 	<# magenta>// INNER TIMER LOOP: waits for the timer to count up from zero to TimeStep.
-	<# blue>FrameReady = FALSE;
-	<# blue>starttimer(1); <# magenta>// Sets timer '1' to 0 milliseconds. (timer no. can be 0 to 9.)
-	<# blue>while (timer(1) < TimeStep) <# magenta>// (If something goes wrong, so this loop
-	<# blue>{	if (not(FrameReady))
+<# blue>	FrameReady = false;
+<# blue>	starttimer(1); <# magenta>// Sets timer '1' to 0 milliseconds. (timer no. can be 0 to 9.)
+<# blue>	while (timer(1) \< TimeStep) <# magenta>// (If something goes wrong, so this loop
+<# blue>	{	if (not(FrameReady))
 		{	rand(delxx, 0);   rand(delyy, 0);   rand(delzz, 0);   	
 			delxx = Step*(2*delxx - 1);  delyy = Step*(2*delyy - 1);  delzz = Step*(2*delzz - 1);  
 			xx += delxx;       yy += delyy;   zz += delzz;
-			FrameReady = TRUE; <# magenta>// You only need to recalculate the arrays once during the waiting loop. 
-		<# blue>}		
+			FrameReady = true; // You only need to recalculate the arrays once during the waiting loop. 
+<# blue>		}		
 	}
-	if (lastclosed() == g) { break; } <# magenta>// Outer loop exit occurs when the user closes the graph.
+	if (lastclosed() == g) break; <# magenta>// Outer loop exit occurs when the user closes the graph.
 <# blue>}
 
 <# black>In animation scenarios, note that you can <B>manually change the value of a main program scalar parameter during looping</B>. Stop the animation loop by clicking on the 'GO!' button, and then on the 'HOLD' button that appears. Animation is frozen. Then on the MiniMaths menu (not the graph menu), click on "Other | Change Value of a Scalar", and change the required value. Then reclick on the 'GO!' button; the animation loop resumes, now using the new value of the parameter for calculations.
 
+===============================================================
+//ADDTOROWS//
+//ADDTOCOLS//
+<just c><b>ADDING VECTORS TO MATRIX ROWS OR COLUMNS</b>
+<just l>
+The function for adding to <b>rows</b> is
+
+	<B>addtorows</B>(<# blue>matrix Mx,  array Addend [,  scalar/array NominatedRows]<# black>)  -- nonvoid; returns the altered copy of Mx.
+
+<bullet><b>Addend</b> must have exactly as much data as fits in a row of Mx. (Its structure is completely ignored.)
+<bullet>If <b>NominatedRows</b> is <i>absent</i>, the data in Addend will be added to <i>every</i> row of Mx.
+<bullet>If <b>NominatedRows</b> is <i>present</i>, the data is added to only those rows listed in NominatedRows.
+<bullet 50,➯>If an index in NominatedRows is out of range it is simply ignored; no error is raised.
+
+
+The function for adding to <b>columns</b> is
+
+	<B>addtocols</B>(<# blue>matrix Mx,  array Addend [,  scalar/array NominatedColumns]<# black>)  -- nonvoid; returns the altered copy of Mx.
+
+<bullet><b>Addend</b> must have exactly as much data as fits in a column of Mx. (Its structure is completely ignored.)
+<bullet>If <b>NominatedColumns</b> is <i>absent</i>, the data in Addend will be added to <i>every</i> column of Mx.
+<bullet>If <b>NominatedColumns</b> is <i>present</i>, the data is added to only those columns listed in NominatedColumns.
+<bullet 50,➯>If an index in NominatedColumns is out of range it is simply ignored; no error is raised.
 ===============================================================
 //ALIAS//
 //SETALIAS//
@@ -236,7 +260,9 @@ Why use aliassing? The answer is - don't, unless you really need to, as indirect
 
 
 <u>SETTING THE ALIAS</u>
-<B>setalias</B>(<# blue>{any number of  variable names}<# black>) -- VOID. The variables must have been assigned before this function call. (In the case of arrays, no address component like "[1]" is allowed.) The variables must exist in the current function level. Constants and system variables cannot be aliassed.
+<B>setalias</B>(<# blue>{any number of  variable names}<# black>) -- The variables must have been assigned before this function call. (In the case of arrays, no address component like "[1]" is allowed.) The variables must exist in the current function level. Constants and system variables cannot be aliassed.
+
+The function RETURNS the number of variables aliassed, which is simply the number of arguments given to the function.
 
 The aliasses assigned to the variables are integers, always starting from 0 (for the first variable).
 
@@ -252,8 +278,9 @@ To get just a segment of the array, use <# blue>getval(N, <address>)<# black>, w
 Where you want the whole of a column, and would use empty square brackets "[]" to indicate this, you instead use -1 (but no other negative number) - or MINREAL. These are equivalent:
 <bullet><# blue>xx = getval(N, -1, 1)<# black>	  and  <# blue>xx = Mx[][1]<# black>. ('xx' will be an array, one column of Mx.)
 <bullet><# blue>xx = getval(N, -1, -1)<# black>  and  <# blue>xx = Mx[][]<# black>. ('xx' will be assigned the whole of Mx.)
-You can use 'getval(N)' as an argument of a function, as long as that function does not require a named variable (e.g. 'redim(.)' ).  An example of use would be
-	<# blue>mx1 = appendrows( getval(0), data(16, 17, 18) )<# black>, where 0 is the alias of a matrix with row length 3.
+You can use 'getval(N)' as an argument of a function, as long as that function does not require a named variable (as does, for instance, 'redim(.)' ).  Examples of use:
+	<# blue>len = size( getval(3)); <# black>where 3 is the alias of an array; the total length of that array is returned.
+	<# blue>mx1 = appendrows( getval(0), data(16, 17, 18) )<# black>, where 0 is the alias of a source matrix with row length 3.
 
 <u>USING THE ALIAS TO SET VALUES</u>
 <# blue>setval(N, ...)<# black> is a <b>void</b> function.
@@ -267,6 +294,13 @@ Where you want the whole of a column, and would use empty square brackets "[]" t
 
 An example of use, extending the example given under 'getval': Suppose some matrix Mx has row length 3; the following appends an extra row to this original matrix Mx:
 	<# blue>setval(0,  appendrows( getval(0), data(16, 17, 18) ) )<# black>.
+
+<# grey><u>SPEED TEST</u>
+For the case of list arrays, I tested the getting and setting of array elements by the standard method and by using an alias. The code comparison was between
+	<b>p = arr[n];  arr[n] = i;</b>  ('i' being a loop counter, and 'n' being a literal constant, either 0 or the index of the last array element.)
+and
+	<b>p = getval(0, n);  setval(0, n, i);</b> 
+I tested for list arrays of size 40 and size 1000, and for accessing the first element or the last element. There was no significant time difference relating to array size or index position; in all cases, the assignment set using square brackets took 2.8 microsecs, and the set using 'get/setval' took 5.7 microsecs. In other words, for list arrays the use of aliassing takes twice as long.<# black>
 
 ===============================================================
 //ALLOW//
@@ -438,6 +472,8 @@ More details on these can be found by keying F1 with the cursor at the particula
 <B>push(.),  pop(.)</B> -- cause the array to act like a stack, rows being pushed onto / popped off the stack. (Not confined to matrices, but would usually be used with a matrix.)
 <B>rowop / colop (..)</B> -- replaces a row / column with a multiple of any compatible row / column (unary version) or with an operation between two rows / columns, or even a row and a column (if a square matrix).
 
+This list is not exhaustive. Check the Help menu item "Functions by Category" for a full list - scroll down to the heading "Matrix-specific operations".
+
 
 <U>I/O</U>  (see help menu, 'Data Input and Display', or key F1 after entering the function name in the Assignments window. No details of functions are given here.)
 <B>show(..)</B> -- displays data in a message box. (Works with scalars also.)
@@ -573,43 +609,6 @@ TrueFalse begins with '/':
 <bullet>"/string A/string B" --> 'string A', 'string B'   (Note - no stripping of blanks.)
 <bullet>"/ string 1 " --> ' string 1 ', 'false' (default 'false', as no 2nd. string supplied.) 
 ===============================================================
-//BRACKETLEVEL//
-<b>FINDING BRACKETTING DETAILS AT SOME POINT IN A CHARACTER ARRAY</B>
-
-The scenario:  You have some text with parenthetic passages in it; your pointer might be inside such a paranthesis - you would like to know. If so, you might also like to know where the opening and closing brackets are for this parenthesis. The function is:
-
-<b>bracketlevel</b>(<# blue>array String, array Opener, array Closer, scalar Pointer<# black>) -- gives you the bracketting information for element Pointer in array String.
-
-<u>ARGUMENTS</u>
-<i>String</i> -- the array should contain unicode values; I don't know what would happen if you try using other values.
-<i>Opener, Closer</i> -- only the first character is accessed. (A scalar would also do, if it were the corresponding unicode.) For regular brackets, these would be '(' and ')'; but they can be any characters you like (though obviously not both the same character).
-<i>Pointer</i> -- this function is unforgiving; if Pointer does not point to an element of the array (i.e. is negative, or too large), the function crashes.
-
-<u>RETURNED ARRAY</u>
-This always has length 3. The elements are deployed thus:
-[0]  -- IF NO ERROR:  the bracketting nesting level. 0 = Outside of all brackets; 1 = inside single brackets, unnested; 2+, successively more nested bracket levels.
-		E.g. in the string "00(11(22(33(44))))", each digit by a happy coincidence happens to be what [0] would contain if Pointer pointed to it.
-[0] -- IF ERROR IN BRACKETTING: Always -1. Examples of arrays that would produce this (whatever the value of Pointer): "AA(BB" or "AA)BB" or "AA)BB(CC". In other words, bracketting must be logically correct throughout the whole string; this is important if you are testing just a substring of text, where your substring cuts across the correct bracketting of the original text.
-
-When Pointer points to a bracket, the value of [0] will be the nesting level of the characters between it and its matching bracket. For example, in "(A)", Pointer of 0, 1 or 2 would return the same value 1. (the brackets can be empty; "()" would return [0] as 1 for Pointer of 0 or 1.)
-
-Whether there is error or not, the next two are always filled. You cannot rely on their values, however, in the presence of errors.
-
-[1] -- The position in String of the bracket AT or TO THE LEFT OF Pointer. Note that this finds the bracket at the current nesting level, hopping over any nested brackets along the way. For example, in this string - "(AA(BB(CC)DD)EE)", if Pointer points to either of the 'E's, then [1] will be 0, the position of the first bracket in the string.
-
-[2] -- The position in String of the bracket AT or TO THE RIGHT OF Pointer. Again, this hops over any nested brackets along the way. In the string above, if Pointer pointed to one of the 'A's, the returned value would point to the final bracket in the string.
-
-If there IS NO BRACKET to the left, [1] returns -1; likewise if none to the right, [2] returns -1.
-
-Here are some examples:
-	<# blue>writeln( bracketlevel( "AAA",  '(',  ')',  1)  );  <# magenta>// -->  [0,  -1,  -1]
-	<# blue>writeln( bracketlevel( "A(B)C",  '(',  ')',  1)  );  <# magenta>// -->  [1,  1,  3], as would Pointer values of 2 and 3.
-	<# blue>writeln( bracketlevel( "A(B)C",  '(',  ')',  0)  );  <# magenta>// -->  [0,  -1,  -1], as would Pointer value 4.
-	<# blue>writeln( bracketlevel( "A(BC",  '(',  ')',  0)  );  <# magenta>// -->  [-1, -4, -1]; [0] indicates an error state, so [1] and [2] are consequently not much use.
-
-<# black>Note that you can use this function just to test whether bracketting is legal and complete in some text; in that case you would only be interested in returned element [0].
-
-===============================================================
 //BTNRELEASE//
 <b>MOUSE EVENTS IN THE ASSIGNMENTS WINDOW</b>
 
@@ -635,15 +634,19 @@ Note that
 (b) This function resets [0] in the internal buffer, but no other fields. So if [0] is nonzero, there has been a new click; if it is zero, the rest of the data is retained from the last click.
 ===============================================================
 //CAP//
-You have some set of values which you want to cap; that is, none of the values is allowed to rise <b>much</b> above some value that I will call CriticalValue. (If they must not at all rise above that value, simply use function <# blue>clip(.)<# black> ). There is also an absolute ceiling for values, which I call Asymptote; no value may ever exceed this limit. The function described below will downscale all values above CriticalValue to some value between CriticalValue and Asymptote; the higher the input value, the closer is the output value to Asymptote.
+//CAPPED//
+You have some set of values which you want to cap; that is, none of the values is allowed to rise <b>much</b> above some value that I will call CriticalValue. (If they must not at all rise above that value, simply use function <# blue>clip(.)<# black> ). There is also an absolute ceiling for values, which I call Asymptote; no value may ever exceed this limit. The function described below will downscale all values above CriticalValue to some value between CriticalValue and Asymptote; the higher the input value, the closer is the output value to Asymptote. (The function also works where you want values to approach a lower asymptotic limit rather than an upper one.)
 
-<B>cap</B>(<# blue>scalar / array InputValues, scalar CriticalValue, scalar Asymptote<# black>) -- returns a structure of the same type as InputValues in which every input value above CriticalValue is replaced with a smaller value which is less than Asymptote.
+<B>cap</B>(<# blue>scalar / array InputValues, scalar CriticalValue, scalar Asymptote [, ... pointers ]<# black>) -- returns a structure of the same type as InputValues in which: (a) if Asymptote ≥ CriticalValue, every input value above CriticalValue is replaced with a smaller value which is always less than Asymptote; OR (b) if Asymptote < CriticalValue, every input value below CriticalValue is replaced with a greater value which is always more than Asymptote.
+The optional pointer arguments are scalars, and if present, must be exactly two for a list array (the index of the first and the last elements to cap), or four for a matrix (defining a submatrix: FirstRow, FirstColumn, LastRow, LastColumn). All arguments must be valid, or the function crashes. The single exception is that for the case of list arays, the pointer to the last element may be too large, or may be negative; in either case it is set to the last element of the array.
 
-You can test the function by running this code, using varying values for the 2nd. and 3rd. arguments. The code draws a graph of output values v. input values. Three extra straight lines are added to the graph: a grey line, representing a slope of 1 (below the critical value, all values will lie on this line, as output value = input value); a red line, for the critical value; and a blue line, for the asymptote.
-As you mess with the arguments, note that if CriticalValue = Asymptote, the output is the same as you would get using function <# blue>clip(.)<# black>. Also, the function doesn't fall over if you make Asymptote less than CriticalValue; you just don't get what you might expect.
+There is a VOID version which changes the array directly:
+<B>capped</B>(<# blue>scalar / array InputValues, scalar CriticalValue, scalar Asymptote [, ... pointers ]<# black>) -- the arguments are exactly as above.
 
-	<# blue>CriticalValue = 1.7; <# magenta>// *** Vary at will.  Below this value, the function 'ApplyCap' will simply return the input value.<# blue>
-	Asymptote = 2.4; <# magenta>// *** Vary at will.  Returned values will never exceed (or even reach) this value.
+You can function 'cap' by running this code, using varying values for the 2nd. and 3rd. arguments. The code draws a graph of output values v. input values. Three extra straight lines are added to the graph: a grey line, representing a slope of 1 (below the critical value, all values will lie on this line, as output value = input value); a red line, for the critical value; and a blue line, for the asymptote.
+
+	<# blue>CriticalValue = 1.7;
+	Asymptote = 2.4;
 	// Settings just for the illustrative graph:
 	<# blue>NoPoints = 101;
 	Xmax = 5;
@@ -720,7 +723,7 @@ Both functions can take any number of arguments. (Scalar arguments, if included,
 //CURRENTDIRECTORY//
 //HOMEDIRECTORY//
 //FILESIZE//
-<b>filesize</b>(<# blue>PathAndName<# black>) -- Returns the file size, or -1 if unsuccessful (the file does not exist). As <i>not</i> with the above functions, there are allowed standard abbreviations. These are: (a) "~/" --> user's personalized home folder, e.g. "/home/fred/";  (b) "./" refers to the current directory; (c) "../" refers to the parent of the current directory.
+<b>filesize</b>(<# blue>PathAndName<# black>) -- Returns the file size, or -1 if unsuccessful (the file does not exist). As <i>not</i> with the above functions, there are allowed standard abbreviations. These are: (a) "~/" --> user's personalized home folder, e.g. "/home/fred/";  (b) "./" refers to the current directory; (c) "../" refers to the parent of the current directory. If the file name is totally inclosed in quote marks of the three accepted types, they are ignored for the check.
 
 <B>homedirectory</B>(<# blue>dummy<# black>) -- Returns the current user's personalized home directory, e.g. "/home/fred/". Argument, if any, is not referenced.
 
@@ -834,57 +837,96 @@ See also function <b>mxcentre(.)</b>.
 //COMMAND//
 <just c><b>COMMAND LINE ARGUMENTS</b>
 <just l>
-The following are command elements which may be used. When a value is being assigned to a command element, the syntax is very similar to that used within MonoMaths itself. Where a command element is just a switch, it stands alone. Here are the available command elements. Note that they are <b>case-sensitive</b>.
+<# grey>[Hacker information:  The code that handles command line arguments occurs early in C# code file "MainWindow.cs". Search for the phrase "command line" to find it.]<# black>
+
+There are <b>two formats</b>:
+<bullet>a <b>quick format</b>, where simply a text file name follows the program name. In this case the new instance will be large, with a minimally sized Results Window, and will contain the text of that file (if found).
+<bullet 50,➯>This form is designed for easy use in various applications that allow you to open a document by clicking on its name in some display. Generally the application requires you to somewhere set up that all files ending in 'txt' are opened by some instruction, usually of the form "<text-displaying program> %f".
+<bullet>a <b>full format</b>, by which you have much more control over what will happen.
+
+Everything below deals only with this full format.
+
+The <b>syntax of command line directives</b> conforms to the usual rules for MonoMaths assignments, as if they were instructions within a MonoMaths program. With one exception, each directive takes the form
+	<# blue><Name> = <Value>;<# black>
+Note that '=' is necessary, as is the terminating colon ';' (though it can be left out after the last directive).  Also, as in programs, spaces are ignored unless inside quote marks.
+
+Parsing is fairly primitive, so arithmetic or algebraic combinations (like "left = 100 + 200;" or "right = left + 400;") are not allowed.
+
+
+There are <b>two groups</b> of directives.
+<bullet>The <b>first group</b> involve <b>display parameters</b> for this instance of MonoMaths, all of which are <b>scalar</b> (or standalone instructions). 
+<bullet>The <b>second group</b> dictate <b>what this instance of MonoMaths will load, and possibly also run</b> (if a program).
+
+The directives in the first group <b>must precede the second group directives</b>, as the second group of directives simply passes on the rest of the command line to the newly loaded MonoMaths instance to deal with as it may. (Of course this may be what you want to happen; see examples below.)
+
 
 <u>GROUP 1 -- SCALAR ASSIGNMENTS</u>
-<bullet><# blue>left<# black>  OR  <# blue>L<# black>  --  sets the distance of the left edge of the MonoMaths instance from the left edge of the screen.
+<bullet><# blue>left<# black>  OR  <# blue>L<# black>  --  sets the distance of the left edge of the MonoMaths instance from the left edge of the screen.  E.g. <# blue>L = 20;<# black> or <# blue>left = 20;<# black> .
 <bullet><# blue>top<# black>  OR  <# blue>T<# black>  --  sets the distance of the top edge of the instance from the top of the screen.
 <bullet><# blue>width<# black>  OR  <# blue>W<# black>  --  sets the width of the instance.
 <bullet><# blue>height<# black>  OR  <# blue>H<# black>  --  sets the height of the instance.
 <bullet><# blue>topwindowheight<# black>  OR  <# blue>TWH<# black>  --  sets the height of the Assignments Window.
+<bullet><# blue>formatted;<# black> -- If text is to be loaded by a group 2 directive, that text will be displayed with cognisance of any tags that it contains (like "\<b> ... \</b>" for a bold print segment).
 
-Note that for all of the above you may provide EITHER a pixel value (in which case the value will be an integer \>\> 1)  OR  a proportion of the appropriate screen dimension (in which case it will lie in the range 0 \< N ≤ 1).
+Points to note:
+<bullet>Do not use quote marks for any of these directives (e.g. don't use " left = '20'; ").
+<bullet>For the first four, <b>a value ≤ 1</b> is taken as a <b>proportion of the full screen dimension</b>; values > 1 are taken as pixel sizes. (For "topwindowheight", values are always taken as pixels.)
 
-Also be aware that the underlying Mono Gtk system only takes your figures as a recommendation; if you supply impractical figures, it just does what it thinks best instead
 
 <u>GROUP 2 -- ARRAY ASSIGNMENTS</u>
-<bullet><# blue>load<# black>  --  loads a file which will appear in the MonoMaths instance when it opens.
+<bullet><# blue>load<# black>  --  loads a file which will appear in the MonoMaths instance when it opens. (See examples below for typical usage.)
 <bullet><# blue>run<# black>  --  as above, but also runs the file (assuming it is a MonoMaths program file).
 
-<u>GROUP 3 -- SWITCHES</u>
-Currently only one -
-<bullet><# blue>formatted<# black> -- if text is being loaded, that text will be displayed in the formatted mode (the same as if it had been loaded normally, and then one had keyed F2).
+Points to note:
+<bullet>As mentioned above, any group 1 assignments after such an instruction will simply be passed on to the new instance of MonoMaths that is to load or run the given text or program.
+<bullet>You MUST use <b>quote marks</b>. The <b>safest by far</b> to use is the backwards-pointing single quote mark "`" which is usually on the top left of the English keyboard (typically sharing the same key as "¬"). In simple cases the regular single and double quote marks will work fine; but failures will occur, because the underlying C# system which handles command line parsing will ignore  quote marks ["] or ['] around the RHS of 'load' or 'run', so the quote mark will have disappeared by the time the new instance of MonoMaths parses the command line; as a result the new instance will do nothing with the argument.
 
-The order of command elements is not important, EXCEPT that <b>no command element should follow 'load' or 'run'</b>. (Any that do will be ignored.)
+<u>Errors</u>
+Any directive not conforming to one of the above will be ignored without raising an error and without interrupting the parsing the rest of the command line. (This feature is useful where you want to pass on information to the new MonoMaths instance that is not a directive; see example 6 below.
 
-<b>Syntax for these command elements</b>
-For groups 1 and 2, the format is precisely as for MonoMaths assignments. There must be an '=' sign; and there must be a ';' at the end of the assignment (optional for the last assignment, as in MonoMaths code). For group 1, a pure number must be on the RHS; for group 2, a string in quotes. Leading and trailing spaces, and spaces around the '=', are ignored as in MonoMaths.
-<bullet>Group 1 - scalar assignments - examples:
-<bullet 50,➯><# blue>left = 150;<# black>     [The inset will be 150 pixels.]
-<bullet 50,➯><# blue>T = 0.1;<# black>     [The top inset will be 1/10th of the height of the screen.]
-<bullet>Group 2 - array assignments - examples:
-<bullet 50,➯>load = <# blue>`/home/fred/Foo/bar.txt`;<# black>  [Note the particular quote mark used: [`]. See below for the reason.
-<bullet 50,➯>run = <# blue>`/home/fred/Foo/my_program.txt`;<# black>
-<bullet 50,➯>run = <# blue>`/home/fred/Foo/my_program.txt` `once upon a time`;<# black> -- runs the program, AND stores what is between the second set of quotes in the internal storage location that is accessed by the system function <# blue>persistent_array()<# black> - which see. If "my_program.txt" is running and wants to access whatever was put there, it just includes the line
+File name errors raise the usual messages in the new instance of MonoMaths, but do not crash that new instance.
+
+
+
+ runs the program, AND stores what is between the second set of quotes in the internal storage location that is accessed by the system function <# blue>persistent_array()<# black> - which see. If "my_program.txt" is running and wants to access whatever was put there, it just includes the line
 				<# blue>PassedStuff = persistent_array();<# black>
-<bullet 50,➯>run = <# blue>text(`/home/fred/Foo/my_progarm.txt`, `once upon a time`);<# black> Exactly the same effect. In fact you can put anything you like around the two quoted passages on the RHS, as it will all be ignored.
-<bullet>Group 3 - switches
-<bullet 50,➯><# blue>formatted;<# black>
 
-Often such command lines will be used in launchers. Here are examples which at the time of writing I am using.
-<bullet>Written in the 'command' text box of the GUI for setting a launcher from a panel item:
-<bullet 50,➯><# blue>mono /home/jon/MonoMaths/MonoMaths.exe L=0.115; T=0; W=0.75; H=0.94;<# black>
-<bullet>Written in the Thunar file which is accessed when right-clicking on a text file and choosing "Open with monomaths":
-<bullet 50,➯><# blue>Exec=mono /home/jon/MonoMaths/MonoMaths.exe L=0.115; T=0; W=0.75; H=0.94; load=`%f`<# black>
-<bullet>You can achieve the same thing programmatically from within MonoMaths, using the system function <# blue>exec()<# black>. Note that the file name is in one set of standard quotes [".."], and the rest of the command line within a second set of standard quotes:
-<bullet 50,➯><# blue>exec("/home/jon/MonoMaths/MonoMaths.exe", "left = 0.05; top = 0.05; width = 0.9;  height = 0.9; topwindowheight = 600; formatted; load = `/home/jon/MonoMaths/Hints.txt`");<# black>  [ *** Warning - takes around 10 seconds because of the 'formatted'.]
 
-<b>Why choose the back-stroke [`] as the quotation mark?</b>
-Actually the code of MonoMaths allows you to use any of the three quotation mark types allowed for MonoMaths programs. The problem is not in MonoMaths but in the underlying system which handles all three of the above examples. If you use ["] or ['] around the RHS of 'load' or 'run', the quote mark will have disappeared by the time MonoMaths parses the command line, so that it will see no quotes at all and therefore will do nothing with the command element.
+<u>TESTED EXAMPLES</u>
 
-<b>Errors</b>
-File errors raise the usual messages but do not crash the new MonoMaths instance.
-Other parameter errors are simply ignored; this would include unrecognized commands ("right = 150;") or illegal RHS values ("left = -20;" or "left = `150`;" or omitting quotes - "load = /home/....foo.txt;").
+1. <b>USE 'EXEC' from within a MonoMaths program, to start a new empty instance:</b>
+This invokes a new empty instance of MonoMaths which nearly fills the screen. The original instance of MonoMaths will continue to run.
+	<# blue>exec("/home/jon/MonoMaths/MonoMaths.exe", "left = 0.05; top = 0.05; width = 0.9;  height = 0.9; topwindowheight = 600;");<# black>
+
+2. <b>USE 'EXEC' from within a MonoMaths program, and to load a text file into a new instance.</b>
+The text in question is the rather large "Hints" file for MonoMaths. We want its formatting tags to be used, so include the 'formatted' option. (Warning: With the given file, this takes around 10 seconds to appear to display text in the new instance, because formatting is occurring.)
+	<# blue>exec("/home/jon/MonoMaths/MonoMaths.exe", "left = 0.05; top = 0.05; width = 0.9;  height = 0.9; topwindowheight = 600; formatted; load = `/home/jon/MonoMaths/Hints.txt`");<# black>
+
+3. <b>INVOKE MonoMaths from the TERMINAL, specifying its dimensions.</b>
+NB! Sadly, this time you can't use the quote mark "`", as Bash will not know what to do with it.
+	<# blue>mono /home/jon/MonoMaths/MonoMaths.exe "L=0.085; T=0; W=0.8; H=0.94; TWH=650;"<# black>
+
+3A. <b>USE THE XFCE LAUNCHER to do the same thing:</b>
+The only difference is that you omit the quote marks, not needed by XFCE. This example is now installed in XFCE Panel 2 (the right-hand icon for MonoMaths).
+	<# blue>mono /home/jon/MonoMaths/MonoMaths.exe L=0.085; T=0; W=0.8; H=0.94; TWH=650;<# black>
+
+4.  <b>Use the XFCE LAUNCHER to run my program "Text Processor".</b>
+Sorry, my attempts to run this through the terminal failed, and I don't know enough about Bash to work out how to fix that. But as is, it is now installed in Panel 2, and works fine:
+	<# blue>mono /home/jon/MonoMaths/MonoMaths.exe L=0.085; T=0; W=0.8; H=0.94; TWH=400; run = `/home/jon/MonoMaths/Text Macros/Text Processor.txt`<# black>
+
+5. <b>THUNAR RIGHT-CLICK MENU ITEM</b>
+The following allows you to load a text into MonoMaths using the right-click menu. It is a line in a file "/home/jon/.local/share/applications/userapp-mono-UESCQX.desktop" (with different capital letters in the true name).
+The following works fine, as a line in that file: 
+	<# blue>Exec=mono /home/jon/MonoMaths/MonoMaths.exe L=0.115; T=0; W=0.75; H=0.94; load=`%f`<# black>
+
+6.  <b>USE 'EXEC' from within MonoMaths to run a new instance, AND supply some data to that new instance</b>
+Anything following 'run = <file name>' is dumped by the present instance into a system array which persists between runs of MonoMaths. It is therefore accessible to the new program via the system function "persistent_array()" (with no argument; if an argument were present, it would overwrite the persistent system array with the argument value). 
+First, make a new program "Foo.txt", and store it in ".../MonoMaths/Scripts/":
+	<# blue>ss = persistent_array();
+	chars(ss);
+	writeln(ss);<# black>
+Then run this code, to invoke a new instance that will load and run program Foo.txt, and print the supplied text in its Results Window:
+	<# blue>exec("/home/jon/MonoMaths/MonoMaths.exe", "run = `/home/jon/MonoMaths/Scripts/Foo.txt`  `The secret password is 'Foo'.`");<# black>
 
 
 <b>DISPLAY THE COMMAND LINE WHICH INVOKED THIS INSTANCE</b>
@@ -1221,16 +1263,15 @@ where 'X' takes every value from Xmin to Xmax. As a consequence, the returned co
 //COMPARE//
 //COMPARETO//
 //EQUAL//
-<B>COMPARING ARRAYS</B>
+<B>COMPARING VARIABLES</B>
 
-Three functions are available for this; all three allow you to compare a variable extent of two arrays. Function <# blue>equal(..)<# black> gives a simple 'true' or 'false' answer - the extents are equal or are not; functions <# blue>compare(..)<# black> and <# blue>compareto(..)<# black> give much more information about the outcome of comparison.
+<B>equal</B>(<# blue>Variable1, Variable2 [,  scalar VirtZero ]<# black>) -- returns TRUE only if the following conditions are met:
+<bullet>If <i>both variables are scalar</i>, then they must be equal within the tolerance of VirtZero (which defaults to 0, if not supplied or if negative).
+<bullet>If Variable1 is an <i>array</i> and Variable2 is a <i>scalar</i>, then EVERY value in Variable1 must equal Variable2, within the given tolerance (as described above).
+<bullet>If <i>both variables are arrays</i>, then FOR EVERY i, Variable1[i] must equal Variable2[i] within the given tolerance.
+Note that the combination of scalar Variable1 and array Variable2 is not allowed.
 
-
-<B>equal</B>(<# blue>Array1, Array2,  scalar / array HowFar<# black>) -- If the two arrays are exactly equal for the indicated extent, then TRUE is returned; otherwise FALSE. No other information is given.
-
-The extent for comparison is indicated as follows.
-<bullet>If HowFar is scalar, it is the extent of comparison, taken from the starts of the arrays. For example, the two arrays "abcd" and "abcx" would return TRUE for HowFar = 3 but False for HowFar = 4. If HowFar is negative or zero, or if it exceeds the length of Array1, then it is set to the length of Array1.
-<bullet>If HowFar is an array, then it is sought in Array1 (only). If found, the extent will be the length of data in Array1 to before the find. For example, if HowFar is "?", and Array1 is "abc?d", then TRUE would be returned for Array2 = "abcx". If the array HowFar is not found in Array1, then the extent for searching defaults to the length of Array1.
+The other two functions only compare arrays.
 
 
 <B>compare</B>(<# blue>Array1, Array2 [, Scalar CutOff [, Scalar FirstPtr [, Scalar Extent] ] ]<# black>) -- compares two arrays, and returns an array of length 9, holding statistics re the differences. No notice is taken of array structure; only the data is compared. If CutOff is supplied, any difference below that level will be ignored in the calculation of all parameters.
@@ -1425,15 +1466,15 @@ If XOffset is scalar, a scalar value is returned; if XOffset is an array, an arr
 <# magenta>// Plot the functions:
 <# blue>plot1 = plot(Fn1, xx, '.', 3, 'blue', '_', 2, 'blue');
 <# blue>plot2 = plot(Fn2, xx, '.', 3, 'magenta', '_', 2, 'magenta');
-<# blue>grid(lowX, highX, rangeX/0.2,   -0.5, 6, 13);
 
 <# magenta>// DEVELOP THE CORRELATION
 <# magenta>// We will choose correlation offsets = xx above, so that the fns. and their correlations will all fit nicely on one graph:
-<# blue>offset = xx;
-<# blue>Corrn = correlation(Fn1, Fn2, deltaX,  offset);
+<# blue>Offset = xx;
+<# blue>Corrn = correlation(Fn1, Fn2, deltaX,  Offset);
 <# magenta>// Plot the correlation:
-<# blue>plot3 = plot(Corrn, offset, '.', 3, 'red', '_', 2, 'red');
+<# blue>plot3 = plot(Corrn, Offset, '.', 3, 'red', '_', 2, 'red');
 <# blue>g = graph(plot1, plot2, plot3);
+<# blue>grid(g, lowX, highX, rangeX/0.2,   -0.5, 6, 13);
 <# blue>placeboard(g, 0, 0, 1, 1); <# magenta>// Maximize the graph, as it otherwise looks a bit crowded.
 <# blue>header(g, "CORRELATION OF TWO IMPULSES (Fn1 and Fn2)");
 <# blue>ss = text("Curves represent \<# blue\>Fn1, \<# magenta\> Fn2 \<# black\>and the \<# red\>correlation integral\<# black\> \<& 8747\>\<v\>-2\<^\>+2\</^\>  Fn1(x)\<B\>.\</B\>Fn2(x + XOffset) dx\\n");
@@ -1681,6 +1722,7 @@ For 2 or 3 dimensions, the distance between point i and j (j > i) is placed into
 For 1 dimension, simple subtraction is used, element [i,j]  (j > i)  being Xvalues[j] - Xvalues[i]. If 'FillWholeMatrix' is true, the lower triangle values will be of opposite sign: result[i,j] = ‒result[j,i].
 
 <b>distpoints</b>(<# blue>X1Values [, Y1Values [, Z1Values ] ],  X2Values [, Y2Values [, Z2Values ] ]  [,  bool DontTakeSquareRoot] <# black>) -- (All arguments are arrays, even if they only represent a single point.)  X1... represent coordinates of one set of points in 1-, 2- or 3-dimensional space; X2... represent coordinates of another set of points in the same space. The returned matrix will have dimensions (no. points in first set  <b>X</b>  no. points in second set). For 1 dimension, values will be signed, as result[i,j] = X2Values[j] - X1Values[i]; and DontTakeSquareRoot, if present, is ignored. For 2 or 3 dimensions the Euclidean distance applies; the square root is taken unless there is a final scalar arg and it is TRUE.
+NB - the return is <b>always a matrix</b>, even if just a single row (as occurs in one dimension, with a single value for X1).
 ============================================================
 //DIV  --  see MOD
 //DIVMOD  --  see MOD
@@ -1695,6 +1737,15 @@ The function <b>empty(scalar / array Subject)</b> returns TRUE if every value in
 A truly empty array is not allowed in MonoMaths; the minimum length is always one. Some functions should logically return an empty array; for example, a 'delete' function that is asked to delete all of the elements in some given array. In place of the empty array, such functions return a list array of length 1 and value NaN. This function was primarily written as a test for such pseudo-empty arrays.
 
 Sometimes it is useful for an array, though 'empty', to retain its structure. For example, with the functions 'push' and 'pop', a matrix may be used as a stack, rows being pushed onto and popped off that stack. If at some point all the rows have been popped off, the stack becomes empty; but it is necessary for this empty stack to remember its row size, ready for future 'push' operations. For that reason, the empty stack is represented by the 1xR matrix [NaN, NaN, ....], where R is the row length. Such an 'empty' matrix will return TRUE as the argument for function 'empty(.)'.
+
+============================================================
+//ENROL//
+<b>FUNCTION "ENROL"</b>
+
+#####  TO BE WRITTEN #######  and put in 'Help' file
+
+
+See also functions <b>sequence(.)</b> and <b>unpack(.)</b>. These assign multiple variables all in one line (though not from a string input), and also are able to handle arrays, not just scalars.
 
 ============================================================
 //EQUAL -- see COMPARE
@@ -1727,6 +1778,7 @@ Sometimes it is useful for an array, though 'empty', to retain its structure. Fo
 	Error 1: 'sqrt': negative argument not allowed
 	Error 2: receiving array has an oversized dimension
 ============================================================
+//EXPECT_SD -- see STATISTICS
 //EUCLID -- see DISTANCE
 //EUCLIDEAN -- see DISTANCE
 ==================================================================
@@ -1770,6 +1822,7 @@ For the particular case where you want to <b>start another MonoMaths instance</b
 (b) The 'exec' version, developed from this:
 	<# blue>exec("mono /home/jon/MonoMaths/MonoMaths.exe  L=0.115;T=0;W=0.75;H=0.94; run = `~/MonoMaths/Scripts/zzz.txt`");<# black>
 
+To see what <b>command line arguments</b> you can use with MonoMaths.exe, key F1 on "command" in the Assignments Window.
 
 Other useful functions: where you want to end an instance, <i>kill_on_exit()</i> (followed by 'exit') and (more drastic but more certain) <i>smash()</i>.
 
@@ -1830,14 +1883,45 @@ If there was a dialog box, but the user cancelled out of it, then the existing t
 //EXP//
 <B>exp</B>(<# blue>Variable<# black>) -- the exponential constant 2.71828... raised to the given power (or powers, if the argument is an array).
 ============================================================
+//EXPECT_SD -- see STATISTICS
+============================================================
+//EXPRESS//
+<just c><b>MODIFY THE AUTOMATIC RESULTS WINDOW DISPLAY</b>
+
+<just l>After a program run, MonoMaths automatically displays the results of scalars set during the run (except for internal variables). This cannot be suppressed from the menu, but you can suppress it for one particular program run, by including the following line somewhere in the program (it doesn't matter where, as long as focus is guaranteed to reach the function call before the end of the program):
+
+	<# blue>express("R", "-scalars");  <# magenta>// This SUPPRESSES the final display of scalars.<# black>
+
+To force display, do as follows. (E.g. the program may be able to end at different points; you might want one end point to allow display of scalars, but most not to do so. So you would have the above at the start of the program, and this just before the desired end point.)
+
+	<# blue>express("R", "+scalars");  <# magenta>// This ALLOWS the final display of scalars (which is the default).<# black>
+
+These are the only two uses of fn. <# blue>express<# black> so far; more planned in the future, e.g. to display or not display arrays, to what length, and whether in structured format or not. And maybe a third arg. for scalars, a format string.
+
+The function is VOID.
+
+Note that arguments are case-sensitive; use the exact forms given above.
+
+ERRORS are not raised; if the arguments are wrong, simply nothing happens.
+
+============================================================
 //EXPUNGE//
+//EXPUNGE_RANGE//
+You can remove all instances of some particular target (which can be a scalar or an array) using <b>expunge</b>(.). If instead you want to remove all elements that are within a given range, use <b>expunge_range</b>(.).  
+
+
 <B>expunge</B>(<# blue>InArray,  scalar or array Target [, scalar FromPtr [, scalar Extent]]<# black>) -- returns a copy of InArray in which all instances of Target have been removed which lie wholly within the limits set by FromPtr and Extent (or within the whole string, if they are absent). If only FromPtr is supplied, the rest of InArray is included.
 
  Always returns a list array. If the function call would logically remove all of InArray, the return is the 'empty' array - that is, an array of size 1, content NaN; subsequent call to "empty(returnedArray)" then returns TRUE.
 
 Error results from negative FromPtr or Extent; otherwise combinations of FromPtr and Extent which don't define extents of InArray will not raise an error, but will simply return InArray (as a list array).
 
-See also <# blue>substitute(.)<# black>.
+
+<B>expunge_range</B>(<# blue>InArray,  scalar LowLimit,  scalar HighLimit<# black>) -- returns a copy of InArray in which all elements ≥ LowLimit and ≤ HighLimit are removed. If that means that all elements of InArray are to be removed, the return will be the array { NaN }.
+
+
+
+See also <# blue>substitute(.)<# black> and <# blue>evict(.)<# black>.
 ============================================================
 //FACT//
 //LOGFACT//
@@ -1914,7 +1998,7 @@ There are four functions:
 
 <B>find</B>(<# blue>ArrayToSearch, scalar StartPtr, ...<# black>) -- Search the array for a given value or sequence, and return the index of the first find at or after StartPtr; or return -1, if no find. 
 The structure of ArrayToSearch is ignored; the index is an absolute address in ArrayToSearch's data strip. (You can use function "indexed(..)" to translate this address into array coordinates.)
-StartPtr must not be negative - if it is, the function crashes (as do the rest of the functions below).
+StartPtr must not be negative; if it is, the function crashes (as do the rest of the functions below). However StartPtr may point to beyond the end of the array, in which case ther return will be as for any failed search.
 
 There are three possible forms: 
 <bullet><# blue>find(ArrayToSearch, StartPtr, scalar Value)<# black> searches for the exact value; 
@@ -1960,6 +2044,7 @@ The last two arguments define the extent of 'Subject' which is scanned; if omitt
 
 RETURNED: Always an array of size 3:
 	{  Index of the found element,   Index of the element which it matched,   Value of the matched element }.
+If no duplicates found, the return is { -1, -1, 0 }.
 
 EXAMPLES:
 	<# blue>aa = data(10, 20, 30, 20, 10);
@@ -2179,6 +2264,9 @@ The returned scalar / array is of the same form and structure as 'Value'.
 
 Re arg. SD: Note that this is the <i>half</i>-width of the bell at about 0.6 of the maximum amplitude (0.60653, more exactly). 
 
+Some useful values of SD to achieve a particular gauss value Y₁ at x = 1, given a bell of height 1 and mean at x = 0:  (SD to nearest two decimal places)
+	Y₁:		0.05	0.02	0.01	0.005	0.001
+	SD:		0.41	0.36	0.33	0.31	0.27
 ============================================================
 //GETSEGMT//
 //SETSEGMT//
@@ -2220,10 +2308,12 @@ If the find is the first segment, then the second value will be -1 (as if there 
 If the find is the last segment, then the third value will be the length of InArray (as if there were a virtual right delimiter just beyond the end of InArray).
 So if InArray is "||", Target is NaN, and MaxNoFinds is -1, the returned array will be: [0, -1, 0,    1, 0, 1,    2, 1, 2].
 
-<b>getsegmt</b>( <# blue>array <b>InArray</b>,  array / scalar <b>Delimiter</b>,  scalar <b>WhichSegment</b><# black> ) -- Returns the indicated segment. If it is an empty segment, the return will be the array [NaN].
+<b>getsegmt</b>( <# blue>array <b>InArray</b>,  array / scalar <b>Delimiter</b>,  scalar <b>WhichSegment</b>  [,  scalar / array <b>ValueToTrim</b> [, scalar / array <b>EmptyIndicator</b> ] ]<# black> ) -- Returns the indicated segment. If it is an empty segment, the return will be the array [NaN] (unless a fifth argument indicates otherwise - see below).
 <bullet><b>InArray</b> can be any array; if structured, its structure will be ignored.
 <bullet><b>Delimiter</b> is a single value. If supplied as an array, only the first element of the array will be used as the delimiter.
 <bullet><b>WhichSegment</b>: The first segment is numbered segment 0. <b>The function crashes</b> if WhichSegment does not refer to a valid segment; in other words, if WhichSegment is negative, or is \> 1 + number of delimiters present in InArray.
+<bullet><b>ValueToTrim</b>:  If present, then this value will be trimmed from both ends of the segment; if it only consisted of that value, then the 'empty' array [NaN] will be returned (or the value of the argument below). If ValueToTrim is an array, its first element will be taken as the trim value. 
+<bullet><b>EmptyIndicator</b>:  If this argument is absent, empty segments return as the array [NaN]. If present, the given value is returned instead. This argument can be scalar or arrray; if an array, only its first element is accessed and used.
 
 <b>setsegmt</b>( <# blue>NAMED array <b>InArray</b>,  array / scalar <b>Delimiter</b>,  scalar <b>WhichSegment</b>, scalar / array <b>NewData</b><# black> ) -- VOID; changes InArray directly.
 <bullet><b>InArray</b> must be a predefined named array; if structured, its structure will be ignored.
@@ -2256,6 +2346,86 @@ If all you wanted to do was to read the existing colours without altering them, 
 ============================================================
 //GRAPHCOPY//	
 <B>graphcopy</B>(<# blue>scalar OriginalGraphID, bool UseStartupDimensions<# black> ) -- Draws a copy of the original graph, but without any plots. The graph ID is returned (or 0, if the original graph was not identified). If <i>UseStartupDimensions</i> is TRUE, the new graph will be sized according to the dimensions of the old graph <i>when it was created</i>. (In the case of 3D graphs, it will also revert to the original graph's startup cage orientation.) If you want to reproduce any changes to that size (as produced by dragging the old graph's margins, or by funtion 'graphresize(.)'), set this argument to FALSE. (In this case, be warned that if there is less than around 0.1 seconds between a call to 'graphresize(.)' on the original graph and a call to this function, the new graph will not reflect that graph-resize operation. I have tried various tricks to overcome this quirk of the underlying Gtk drawing system, but have so far failed.)
+============================================================
+//GRAPHFONT//
+<just c><b>CHANGE THE FONT AND/OR FONT SIZE OF GRAPH LABELLING</b>
+<just l>
+<B>graphfont</B>(<# blue>scalar GraphID, char. array FontName, scalar WordingSize, scalar NumberSize<# black> ) -- a void function.
+
+<bullet><i>FontName:</i>  If the correct name of a font on the system, changes the graph's font for axis labels and scale numbers. If incorrect or if any scalar, defaults to the system default font for these. Only one font name is allowed (i.e. not a comma-separated list of fonts in order of preference, which is allowed in the case of font settings for the 'plot(.)' function).
+<bullet><i>WordingSize:</i>  Applies to the wording along the axis (e.g. "Speed (km/s)"). If ≤ 0 or > 32, defaults to the system default size.
+<bullet><i>NumberSize:</i>  Applies to the numbers at hairlines on the axes. If ≤ 0 or > 32, defaults to the system default size.
+
+You cannot use this to have different fonts and font sizes on separate axes. If you call this function it will alter the font settings of all axes at once.
+
+No error crashes the program; inappropriate arguments result in nothing changing.
+
+The function has no effect on the header or the footer of the graph, or any text written on the graph using the 'plot(.)' function.
+
+============================================================
+//GRAPHIMAGE//
+<just c><b>PLACING AN IMAGE ON A GRAPH</b>
+<just l>
+A single function is used to place or remove images from a graph, and to supply information about images within a graph. Because the function serves several different operations, each operation has a different argument structure, and some uses return a scalar, others an array; so they are discussed separately.
+
+The function is <b>graphimage</b><# blue>(scalar GraphID,  array Action  [, ... ] )<# black> -- all usages require these first two arguments.
+
+Note that  ONLY JPG AND PNG IMAGES can be used (these are the only types handled by Cairo, the graphics application that processes graphs).
+<bullet><i>Action</i> is a chars. array, of which only the first character is read; it must be upper case. Allowed values are:
+<bullet 50,➯>'A' - to ADD an image to the graph.
+<bullet 50,➯>'R' - to REMOVE an image from the graph.
+<bullet 50,➯>'L' - to LIST the ID's of the images currently present in the graph.
+<bullet 50,➯>'I' - to get INFORMATION about an image currently in the graph, given its ID.
+<bullet 50,➯>'M' - to MOVE an image to a different position on the graph.
+
+Note that an image cannot be resized, once inserted, except by removing it and reinserting it with a different size. If you resize a graph with an image by dragging its border, the position of the top left corner will stay at the same scaled coordinate position, but the image will not change its size.
+ 
+<u>ADDING AN IMAGE TO A GRAPH</u>
+
+VOID (which means that it always returns the <i>scalar</i> value 0.)
+Any number of images can be placed on the one graph, one at a time. Eight of the nine arguments are required; only the last is optional.
+	<b>graphimage</b><# blue>(scalar GraphID, "A",  array Name, array Location, scalars Left, Top, Width, Height [, Layer] )<# black>
+<bullet><i>Name</i> -- A short string to uniquely identify the image. Any printable characters allowed; internal spaces are allowed (outer spaces will be stripped off). You will have to use this name for most of the operations below. The name must be unique within this graph; but it can be reused with other graphs in existence, as the internal storage of the image details is separate for each graph. A Name of consisting only of spaces will raise an error.
+<bullet><i>Location</i> -- The full path and name of the image file (which must be either a .jpg / .jpeg file or a .png file). The only concession is that you can use the symbol "~" for the home directory: "~/Pictures/Foo.jpg".
+<bullet><i>Left, Top</i> -- The SCALED coordinates of the top left corner of the image. As you resize the graph, the image will remain with its top left corner at the same scaled point on the graph.
+<bullet><i>Width, Height</i> -- The PIXEL width and height of the rectangle to contain the image. The image is resized by Cairo to be as large as possible within that rectangle, but Cairo will not change the proportions of the image. As you resize the graph, the image will retain the size that you set here.
+<bullet><i>Layer</i> -- There are three layers:
+<bullet 50,➯>0 -- places the image in the background, so that hairlines and curves will be drawn over it.
+<bullet 50,➯>1 -- places the image so as to obscure the hairlines, but curves will be drawn over it.
+<bullet 50,➯>2 -- places the image on top, over hairlines and curves. This is the DEFAULT if you omit this argument.
+
+If you want the image to be a <b>background for the whole graph</b>, then you have to do a little work. First load the image into an image viewer application, which, if it is any good, will tell you the image dimensions in pixels. Then decide how big to make the graph, noting that its dimensions must have the same ratio as the image dimensions (but can be much larger). Then set up (or resize) the graph, and install the image as above, using your chosen new graph dimensions as the "Width" and "Height" arguments in the function. <b>NB: Don't set 'Left' and 'Top' automatically to 0</b>, as you would if you were using pixel values! Refer them to the <b>scaled coordinates</b> of the top left corner of the graph.
+
+<b>Hot tip:</b>  If you want to plant an <b>image with a transparent background</b> onto your graph, first get the image into GIMP, then change its background to 'transparent', then export it from GIMP as a  PNG file - NOT as a JPG file.
+	
+
+<u>REMOVING AN IMAGE FROM A GRAPH</u>
+
+	<b>graphimage</b><# blue>(scalar GraphID, "R",  array Name)<# black>
+RETURNS a boolean: TRUE if the image was identified within the graph, and so was removed; FALSE otherwise.
+Special case: If you set Name to "#" , all images present in the graph will be removed.
+
+<u>LIST NAMES OF IMAGES CURRENTLY INSTALLED IN A GRAPH</u>
+
+	<b>graphimage</b><# blue>(scalar GraphID,  "L")<# black>
+RETURNS an array made up of image Names delimited by the character '|'; e.g. "pretty_flower|funny_dog|me". If there are no images currently in the graph, the return is the single space " ".
+
+<u>PROVIDE INFORMATION ABOUT A PARTICULAR IMAGE</u>
+
+	<b>graphimage</b><# blue>(scalar GraphID,  "I",  array Name)<# black>
+RETURNS a human-readable string with all stored information about the image; or a single space, if image not identified. Here is an example, to show the format:
+	"Name = Foo2; Location = /home/jon/ZZZ/bar.jpg; Image is valid; Width = 200 pixels; Height = 200 pixels; ScaledLeft = 0.5; ScaledTop = 0.5; Layer = 2"
+These are the details you supplied when installing the image, except that the image is described as "Valid" or "NULL" (the latter if, for example, the image you supplied was of a type not recognized by Cairo).
+
+<u>MOVE THE IMAGE ACROSS THE GRAPH</u>
+
+VOID (which means that it always returns the <i>scalar</i> value 0.)
+The image moves very quickly, using this action; it is very suitable for animation.
+
+	<b>graphimage</b><# blue>(scalar GraphID, "M",  array Name, scalars Left, Top)<# black>
+Recall that Left and Top are scaled coordinates (of the top left corner of the image), not pixel coordinates.
+
+Some errors crash (with a displayed message); those detected only by Cairo produce no detectable effect except that no image is displayed.
 ============================================================
 //GRAPHREDRAW_IRQ  -- see ANIMATE
 //GRAPHPARAMS  -- see ANIMATE
@@ -2325,25 +2495,41 @@ If no graph <# blue>GraphID<# black> exists, the function returns 'false' (with 
 <u>SETTING THE SCALE FOR JUST ONE AXIS</u>
 For the X, Y and (for 3D graphs) Z axes, the corresponding functions are: <B>gridx(.), gridy(.), gridz(.)</B>. 
 
-The four arguments for each are:   <# blue>Graph ID (scalar),  Inner End Value,  Outer End Value,  No. Segments<# black>. 
-E.g. for the X axis of a 2D graph, 'Inner End Value' would be the value at the left end of the axis, and 'Outer End Value' at the right end. (Note that I do not use 'minimum value' and 'maximum value'; that is because it is perfectly legal to reverse the direction of increase, so that values of X decrease as one moves from left to right.)
-The number of segments is the number of spaces between hair lines (including those at inner and outer ends). For example, if the graph was to stretch from x = 0 to x = 2, and was to have one internal hairline at x = 1, then there would be two segments.
+Taking the example for the X axis:
 
-The arguments after the graph ID can occur as three scalars or as a single array (or as some array - scalar combination), as long as there are always exactly three values represented.
+	<b>gridx</b>(<# blue><b>GraphID</b> (scalar);  three to four values <b>Values</b>, packed in one to four args.)<# black> 
 
-The functions RETURN an array. 
-If the graph was successfully identified, and arguments were valid (i.e. Inner End and Outer End Values different, and  segments - after rounding - is at least 1), then the array is made up of the same three values passed to it: { Inner End Value, Outer End Value, No. Segments}.
-If such an error occurred, the return is an array of size 1, value NaN; and a call to 'empty(.)' would return TRUE.
+There must always be at least three values after the graph ID, with an optional fourth. (Further values would simply be ignored.)
+The first three values are:   <# blue>X at left end of X axis,  X at right end of X axis,  No. Segments between them<# black>. 
+(Note that I do not use 'minimum value' and 'maximum value'; it is perfectly legal forX values to decrease from left to right.)
+The number of segments is the number of spaces between hair lines (including those at inner and outer ends). For example, if the graph was to stretch from x = 10 to x = 30, and was to have one internal hairline at x = 20, then there would be two segments. This could be achieved with: <# blue>gridx(G, 10, 30, 2)<# black>. 
+
+The optional fourth value is boolean: <# blue><b>RememberPriorScaling</b><# black>. If this is present and TRUE, and you make scale changes to the graph via its menu, then the graph's menu item "Scaling | Original Scaling" will return scaling to as it was BEFORE the call to gridx(.). If you omit this value, or if it is FALSE, the "Original Scaling" menu item will return you just to the setting defined in the 'gridx(.)' call.
+
+The RETURN from "gridx(.)" etc. is an array of size 3, holding the input scaling values.
+
 
 <u>SETTING THE SCALE FOR ALL AXES AT ONCE</u>
 Use the function <b>grid(.)</b>, for both 2D and 3D graphs.
-The format for a 2D graph (using "inner" for "inner end value", and "segs" for no. segments):
-	grid( GraphID,   Xinner, Xouter, Xsegs,   Yinner, Youter, Ysegs )
-The format for a 3D graph:
-	grid( GraphID,   Xinner, Xouter, Xsegs,   Yinner, Youter, Ysegs,   Zinner, Zouter, Zsegs )
+The format for a 2D graph:
+
+	<b>grid</b>(<# blue><b>GraphID</b> (scalar);  exactly SIX values <b>Values</b>, packed in one to four args.)<# black> 
+
+and for a 3D graph:
+
+	<b>grid</b>(<# blue><b>GraphID</b> (scalar);  exactly NINE values <b>Values</b>, packed in one to four args.)<# black> 
+
+for each set of three successive values, the order is:
+
+	<# blue>value at the start of the axis,   value at the end of the axis,    Number of segments between them<# black>.
+
 Again, the arguments after the graph ID can occur as separate scalars, as a single array, or as any array - scalar combination, as long as there are always exactly six values (for 2D graphs) or nine values (for 3D graphs) represented.
 
-The return from "grid(.)" is an array (holding the input argument parameters), if no errors, or an array of size 1, value NaN if error (and a call to 'empty(.)' would return TRUE).
+The RETURN from "grid(.)" is an array, holding the input scaling values (and therefore of length 6 or 9).
+
+The graph's memory of its original scaling is always reset by this function call. As a result, later use of the graph's menu item "Scaling | Original Scaling" will return to the scaling set by this call, not to how it was BEFORE the call to grid(.).
+You don't want this? The remedy is to break up the "grid(.)" call into successive calls "gridx(..., true);  gridy(..., true);", as described above.
+
 ==================================================================
 //HEADER: see 'LABELX'
 ============================================================
@@ -2363,7 +2549,7 @@ If the boolean is present and TRUE, the function will convert only up to 8 digit
 'GroupSize', if present and >= 1, (a) causes left-padding of the string with '0' till its length is a multiple of GroupSize; and (b) if  Delimiter is supplied, divides the string up into packets of length GroupSize, separated by Delimiter.
 Inverse function: 'unbin(.)'.
 
-<B>unbin(array Values [, scalar TreatAsCharsArray]) </B> -- Returns the number represented by the binary digits implied by Values. If Values is to be treated as a chars. array, all chars. other than '0' (unicode 48) and '1' (49) will be ignored; and the first '0' or '1' of the array is treated as the most significant bit. Hence, "unbin('0000-1000')" will produce 8. If Values is to be treated as a non-chars. array, zero is taken to represent binary digit 0 and any nonzero value as digit 1. This time, the first value in the array is taken as the <I>least</I> significant bit. "unbin(data(0, 0, -123))" would also return 8. If pseudoboolean argument 'TreatAsCharsArray' is present, its value overrides the internally stored 'IsChars' rating of array Values.
+<B>unbin(array Values [, scalar TreatAsCharsArray]) </B> -- Returns the number represented by the binary digits implied by Values. If Values is to be treated as a chars. array, all chars. other than '0' (unicode 48) and '1' (49) will be ignored; and the first '0' or '1' of the array is treated as the most significant bit. Hence, "unbin('0000-1000')" will produce 8. If Values is to be treated as a non-chars. array, zero is taken to represent binary digit 0 and any nonzero value as digit 1. This time, the first value in the array is taken as the <I>least</I> significant bit. "unbin(data(0, 0, 0, -123))" would also return 8. If pseudoboolean argument 'TreatAsCharsArray' is present, its value overrides the internally stored 'IsChars' rating of array Values.
 ============================================================
 //HOMEDIRECTORY  --  see CHECKDIRECTORY
 ============================================================
@@ -2443,15 +2629,17 @@ The program first computes the statistics, then sets parameters such that there 
 
 There are two versions of function <b>plotbins</b>, one for ad hoc usage, and one to directly accommodate the output of function <b>setbins</b>. The format is:
 
-<B>plotbins</B>(<# magenta>matrix Mx <# blue>[, scalar BarWidth [,  scalar/array LineShape [, scalar LineWidth [, scalar/array LineColour [, scalar/array FillColour ]]]]]<# black>)
+<B>plotbins</B>(<# magenta>matrix Mx <# blue>[, scalar BarWidth [,  scalar/array LineShape [, scalar LineWidth [, scalar/array LineColour [, scalar/array FillColour [, BaseLevel ]]]]]]<# black>)
 OR
-<B>plotbins</B>(<# magenta>array LeftEdges, array RightEdges, array Heights <# blue>[, scalar BarWidth [,  scalar/array LineShape [, scalar LineWidth [, scalar/array LineColour [, scalar/array FillColour ]]]]]<# black>)
+<B>plotbins</B>(<# magenta>array LeftEdges, array RightEdges, array Heights <# blue>[, scalar BarWidth [,  scalar/array LineShape [, scalar LineWidth [, scalar/array LineColour [, scalar/array FillColour [, BaseLevel ]]]]]]<# black>)
 
 Note that the arguments in blue are the same in both cases. The three magenta arrays in the second form are formatted exactly as for the first three rows of the matrix supplied by function <b>setbins</b>.
 
 'BarWidth' sets the width on the graph of the bar, as a fraction of the X axis extent that it represents. If set to 1, bars will be touching; if very small, bars will be needles. (Values ≤ 0 or \> 1 are reset internally to the default 1).
 
-All the blue arguments from 'LineShape' on are as for other plotting functions - may I refer you to the help notes for function <b>plot</b>? (Small difference - there is no equivalent to the 'plot' function argument 'LineFamily', so you can't e.g. have different lines or colours for different bars within the one graph.)
+All the blue arguments from 'LineShape' on (except for the last one) are as for other plotting functions - may I refer you to the help notes for function <b>plot</b>? (Small difference - there is no equivalent to the 'plot' function argument 'LineFamily', so you can't e.g. have different lines or colours for different bars within the one graph.)
+
+The last argument, 'BaseLevel', is the Y coordinate for the bases of the bars. The default is 0.
 
 The outcome is not a single plot, but an <i>array of plot IDs</i>, one plot for each bar.
 	_____________________________________
@@ -2487,6 +2675,50 @@ header(g3, "FINAL PRODUCT");
 ===============================================================
 //HYPOT -- see DISTANCE
 //HYPOTENUSE -- see DISTANCE
+============================================================
+//ICON//
+<just c><b>ICON FOR THE WINDOW</b>
+<just l>
+To get an icon into the top left corner of the main window, and simultaneously in the panel button, use function
+	<b>icon</b>(<# blue>char. array FileName<# black>)
+Supports JPG, PNG, TIFF and ICO images, and others I have not heard of.
+
+"FileName" -- If no file path precedes the name, the current data path will be used. Shortcut "~/" is allowed for the user's personal home directory. If 'FileName' is empty (spaces only) or begins with '?', a dialog box will open for user choice of file. Also if 'FileName' is a directory (and so ends in '/'), a dialog box will open at that directory. If no argument is supplied, or the argument is a scalar, the dialog box will open in the directory of the MonoMaths program.
+
+If the function fails, a dialog box displays a message, but no crash occurs.
+============================================================
+//IMAGE//
+//IMAGES//
+<just c><b>IMAGES</b>
+<just l>
+
+To place images in the <b>Assignments Window</b>, use function <# blue><b>insert_image</b><# black>.
+
+To place images on a <b>graph</b>, use function <# blue><b>graphimage</b><# black>.
+============================================================
+//IMPORT//
+<just c><b>IMPORTING A MAIN PROGRAM VARIABLE'S DATA INTO A FUNCTION</b>
+<just l>
+This can be done in two ways:
+
+(1) By using the keyword "import", as described in the menu item "Help | User Functions", under the heading "SCOPE" - which see for details. Examples:
+	<# blue>import scalar Speed, Distance;
+	import array Names, Ages;<# black>
+Note that the local variable will have the same name as the main program variable.
+
+(2) By using the function <b>lookup</b>(<# blue>char. array VariableName<# black>), which provides a complete copy of the main program variable. Key F1 with the cursor on "lookup" for details. Examples of use:
+	<# blue>v = lookup("Speed"); <# magenta>// simply crashes, if no assigned variable 'Speed' in the main program.
+	<# blue>nm = lookup("Names", "#No such variable", "#Variable not yet assigned");<# magenta> // No crash this time, but you have to
+				decide whether the return is valid or an error message; in this example, you would test (nm[0] == '#').
+<# black>Notice that this function requires a chars. array; e.g. <# blue>v = lookup(Speed)<# black> would fail.
+With this function you are free to assign any name to the imported data.
+
+For both methods you have to be sure that the variable actually exists in the main program, AND that there it has been assigned a value BEFORE focus reaches this funtion call; otherwise the program crashes, displaying a sad message.
+
+The second method can be used in the main program itself. Normally this would be a silly thing to do; but it has one occasionally useful application: with this function you can track the value of a main program system variable, as not by any other method. (Menu item "Technical | Internal data" will show you the name of the system variable for the code passage in question).
+	<# blue>for (i, 3)  {  write( lookup("__e1"), " ");  }<# black>
+In this one-line program the internal loop counter is "__e1" (as "__e0" was assigned to be the dummy scalar LHS for the 'writeln' function). Hence you should see an output of "0  1  2").
+
 ============================================================
 //INC//
 //DEC//
@@ -2554,67 +2786,6 @@ E.g. the following returns the name of the font used by the Assignments window, 
 	fontSize = arr[0];
 	writeln("Font name:  ", fontName, ";  font size (pts.): ", str(fontSize) );
 
-
-============================================================
-//INJECT//
-<b>FUNCTION "INJECT"</b>
-
-<b>What does it do?</b>
-Very much a niche function. I use it in the following context. In my Hippocampal Modelling program I have to give particular neuron receptors and firing units rather complex names like "GuN_CA1Pyr_1" (glutamatergic receptor of type NMDA in a pyramidal cell of the CA1 area of the hippocampus, this being the first such - no. 1). There can be a large number of these. To save time I do as follows:
-	<# blue>NeuronNames = text("GuN_CA3Pyr_1|GuN_CA3Pyr_2|GuA_CA1Pyr_1|GuA_CA1Pyr_2|Ga_CA1CCK_1| .... ");
-	inject(NeuronNames);<# black>
-I can now use the string NeuronNames as a source of names for graphs and other displays of neuronal activity; and function "inject" has created variables with the delimited names:  GuN_CA3Pyr_1,  GuN_CA3Pyr_1, ..., and assigned to them the values 0, 1, 2, ... (so that now they can be used as indices; e.g. as row numbers in a matrix of neuron properties).  
-
-So, more formally...
-	<b>inject </b>(<# blue>[ scalar / array <b>DataToInsert</b> ],   char. array  <b>VarNames</b> [,  bool <b>returnStatsArray</b> ]<# black>) -- Does the following:
-<bullet>Devises a set of values from the first argument (or according to an internal rule, if no first argument);
-<bullet>Looks for a delimiter in VarNames, and on finding it, divides the char. array into subarrays;
-<bullet>Takes these as scalar variable names, and assigns from the set of values to each of these scalars.
-
-RETURN: The function can safely be used as if VOID, as errors all cause a crash. If there is no final optional argument, a SCALAR value is returned: the number of substrings in VarNames (and so the number of values used up from DataToInsert).
-But if you really want some statistics, add the final argument and make it TRUE. Then the returned list array is: [0] = the number of substrings in VarNames (and so the number of values used up from DataToInsert); [1] = the number of strings which would be valid as variable names but which do not occur anywhere in the rest of code (at the same function level); [2] = the number of strings which were empty (or consisted only of spaces).
-
-The function CRASHES if a substring of VarNames is NOT one of these: (a) a scalar variable referenced somewhere else in code at the same function level (either before or after the 'inject' statement);  or (b) legal for a variable name, though unused in code at this fn. level; or (b) is an empty string (or a string consisting only of spaces). Hence it crashes if the substring contains illegal characters, or if it is the name of a system function or user function, a keyword, or if the name is already in use for an array or constant.
-
-The arguments...
-<bullet><i>VarNames</i>:  The first non-identifier character in the array is taken as the delimiter: e.g. '|' in "var1|var2". If no such character found, the whole array is treated as a single name. Using this delimiter, a set of potential variable names is built. Spaces at the start and end of the array, and around delimiters, are ignored; but internal spaces are not (and so would produce invalid variable names).
-<bullet 35,>The variable names dissected out of VarNames obey the following rules:
-<bullet 50,➯>If such a variable name refers to a pre-assigned scalar (e.g. "var1 = 10" preceded the call to 'inject' with the above VarNames), that variable simply receives the new value.
-<bullet 50,➯>If the name exists in the program only <i>beyond</i> the call to 'inject' - so that it is unassigned at the time of the call - then it is here assigned, and given its value.
-<bullet 50,➯>If there is no reference to this variable anywhere in the same code scope (e.g. "var1" is never referred to), it is not created, but the value which would have been assigned to it is used up. So, for example, with "inject(x|y|z)", z will receive the same value (i.e. 2) whether or not x and y exist elsewhere in the code scope.
-<bullet 50,➯>If the name is invalid as an identifier (e.g. "var 1" - internal space; or is a keyword or function name - e.g. "sin"), a crash occurs.
-<bullet><i>DataToInsert</i>:
-<bullet 50,➯>If absent, values are assigned from the arithmetic series "0, 1, 2, 3, ....".
-<bullet 50,➯>If scalar, all variables receive this same value.
-<bullet 50,➯>If an array, variables receive successive values in the array. (If the array is too short, wrap-around occurs; if too long, ony the required values are used.)
-<bullet><i>returnStatsArray</i>:  As mentioned above under 'return'. The returned value will be scalar if this argument is missing or FALSE.
-
-The delimiter can be any character not currently used as an identifier character. Commonly this might be a comma, a semicolon or '|'. You can use spaces, but if you do, understand that (a) leading and trailing spaces for the whole array VarNames will still be removed before delimiters are sought; and (b) every internal space will be taken as a delimiter; e.g. "a  b" - two spaces between 'a' and 'b' - will be seen as made up of three strings, the middle one (notionally between the two spaces) being empty.
-
-
-<u>EXAMPLES</u>
-1. No reference to the variable names elsewhere in code at the same function level. E.g. the whole program is just:
-	<# blue>inject("x|y");   <# magenta>// No error raised, but variables x and y will not exist.<# black>
-
-2. Not all variable names are used elsewhere in code. E.g. the whole program is just:
-	<# blue>x = 10;   inject("x|y");  <# black>OR <# blue>inject("x|y");  x = 10;	<# magenta>// No error raised, but variable y will not exist.<# black>
-
-3. Array v. scalar return:
-	<# blue>n = inject("x|y|z");  <# magenta>// This will provide x = 0, y = 1 and z = 2;  'n' will be scalar value 3.<# blue>
-	aa = inject("x|y|z", true);  <# magenta>// assignments as above;  'aa' will be the array [3, 0, 0], if x, y, z used elsewhere; if none are, 'aa' will be [3, 3, 0].<# black>
-
-4. Use of extra delimiters to alter the data assignation. Here we assume that x, y and z are all referred to elsewhere in code. (The next line in each case might be, for example, "p = x + y + z;").
-	<# blue>inject("|x|y|z");  <# magenta>// The first name is an empty string, so no assignation is made, but '0; is used up.
-				//  Therefore the assignments will be:  x = 1, y = 2 and z = 3.
-	<# blue>aa = inject("||x||y||z", true);  <# magenta>// There are four empty strings, so after allowing for these,
-				//  assignments will be:  x = 2, y = 4 and z = 6; and 'aa' will be [7, 0, 4].<# black>
-
-5. Use of the argument <b>DataToInsert</b>:
-Again, we assume that x, y and z are referenced somewhere within the same function scope.
-	<# blue>inject(100, "x|y|z");  <# magenta>// This will provide x = y = z = 100.
-	<# blue>inject(data(10, 100, 1000), "x|y|z");  <# magenta>// This will provide x = 10,  y = 100,  z = 1000.
-	<# blue>inject(data(1, 2), "x|y|z");  <# magenta>// Too little data, so it is recycled: -->  x = 1,  y = 2,  z = 1.
-	<# blue>inject(data(1, 2, 3, 4, 5, 6), "x|y|z");  <# magenta>// Too much data, so some ignored: -->  x = 1,  y = 2,  z = 3.
 
 ============================================================
 //INSERT  --  see COPY
@@ -2743,9 +2914,7 @@ Try this simple graphing program to see it at work. On the graph, refArray value
 	<# blue>g = graph(p1, p2);
 	footer(g, "Reference array values are red circles, interpolated values are blue dots.");<# black>
 
-The inverse function is <b>placement(.)</b>. The two work well together where you are consulting a table of X-values v. Y-values. Given an X value which may lie between X values provided in the table, find the corresponding interpolated Y value. To see an example, go to the bottom of the hint for 'placement'.
-
-See also function 'readtable'.
+The inverse function is <b>placement(.)</b>.  See also function 'readtable'.
 ============================================================
 //INTERSECTION//
 <B>intersection</B>(<# blue>at least two arrays<# black>) -- Returns a list array containing all values common to all arrays (structure and chars. rating ignored).
@@ -2835,19 +3004,13 @@ Sometimes the job might be better done by using a list array which contains all 
 <bullet>Use a 'train' structure. This has a header section and a data section. The data section for the above would simply  be the concatenation "AABBBCCCCC". The header section holds the information which determines which piece of data is where. There is a rich set of operations for this structure; all use the function <b>train(.)</b>, its first argument being the name of the operation required.
 _____________________________
 
-Deprecated function, temporarily allowed to exist for the sake of old programs:
-
-<B>jag(.)</B>  <# red>*** Deprecated function, will soon be removed; don't use in new programs<# black>  --  returns an existing matrix, updated. It will insert or append a new row, or overwrite an existing row, with the supplied array. You have the same choices as above; the length of existing rows will be adjusted with padding or amputation as necessary (your supplied parameters being the basis for this).
-
-            ---------------------------------------------------
-
 <B>jagger</B>(<# blue>array Subject, array Operation, scalar / array NewRow, [, scalar RowNo [, scalar Length [, scalar Padder ] ] ] )<# black>) -- Requires that 'Subject' be predefined, as it will be directly altered by this function. If it is a list array it will be recreated as a matrix with one row, using the supplied data NewRow. If it is already a matrix it will remain so, and the only data that will be altered is what you have decreed to be altered. 
 What happens is determined by argument <I>Operation</I>, of which only the first character is examined. 'I' or 'i' causes insertion; 'O' or 'o' (the letter, not the numeral zero) causes overwriting; 'A' or 'a' causes appending. With the new row in situ, the <I>whole matrix</I>, row by row, will if necessary be padded or amputated as described below.
 
 The RETURN of the function is an array of size 3, reflecting the final state of Subject: { No. of rows,  Row length,  Padder }.
 
 Running through the modes:
-<bullet><i>Operation 'A':</i>  Appends a row. <i>RowNo</i> need not be supplied; if it is it is completely ignored. If 'Subject' is a list array, its contents are lost and it is converted to a one-row matrix, <i>NewRow</i> being that row.
+<bullet><i>Operation 'A':</i>  Appends a row. <i>RowNo</i> need not be supplied; if it is it is completely ignored. If 'Subject' is a list array, its contents are lost and it is converted to a one-row matrix, <i>NewRow</i> being that row. (If you want to build a jagged matrix starting with the contents of a list array, start by redimensioning that list array to a matrix of one row; that way the contents of the original array will be preserved.) 
 <bullet><i>Operation 'I':</i>  Inserts a row, pushing rows upwards to make way for it.  <i>RowNo</i> must be supplied, and must be the number of an existing row. If 'Subject' is a list array, its contents are lost and it is converted to a one-row matrix, <i>NewRow</i> being that row. (RowNo is ignored in this case, even though a value must be supplied.)
 <bullet><i>Operation 'O':</i>  Overwrites a row completely (all of the original row is lost, no matter how short NewRow is). <i>RowNo</i> must be supplied, but <i>for this mode only</i> it may be beyond the end of the existing matrix. If so, the new last row will be row RowNo; if necessary, empty rows (i.e. consisting of the pad value only) are interposed between the end of the existing matrix and this new row.
 
@@ -2871,7 +3034,7 @@ Here is how this function can be used with a loop to build a jagged matrix:
 
 
 <B>split</B>(<# blue>array Original, array or scalar Delimiter [, array or scalar Padder [, bool AcceptEmptySubarrays [, FixedLength [, array / scalar Prefix [, array / scalar Suffix ] ] ] ] ] )<# black>) -- 
-The original array is divided into 'subarrays', being extents between delimiters (and before the first delimiter, and after the last). A jagged matrix is built from these subarrays, rows being padded as necesssary by Padder.
+The RETURN is a jagged matrix, one row per subarray; if there is more than one row, terminal padding with 'Padder' will be used as necessary in order to produce a regular matrix. If the only characters in "Original" are delimiters, then (a) if AcceptEmptySubarrays is TRUE, the return will be a matrix with each row just containing Padder; (b) if AcceptEmptySubarrays is FALSE, the return will be the EMPTY ARRAY.
 
 Delimiter may be an array, in which case the whole of the array constitutes an instance in Origin of the delimiter.
 
@@ -2886,21 +3049,17 @@ If AcceptEmptySubarrays is present and TRUE, empty subarrays (occurring where tw
 If FixedLength is present and rounds to at least 1, then rows will be forced to this exact length, either by padding or by truncation. Otherwise row length is set by the longest subarray (any prefix or suffix inclusive).
 
 
-<B>join</B>(<# blue>matrix Matrix, array or scalar Delimiter, array or scalar Padder [,  array or scalar EmptyRowCue ] )<# black>) -- Paste the rows of Matrix together, delimited by 'Delimiter'. (The first and last elements of the returned array are never Delimiter.)
+<B>join</B>(<# blue>matrix Matrix, array or scalar Delimiter [, array or scalar Padder [,  array or scalar EmptyRowCue ] ] )<# black>) -- Paste the rows of Matrix together, with 'Delimiter' between rows.
 <bullet><i>Matrix:</i>  If is a list array, will be regarded internally as a 1xN matrix.
 <bullet><i>Delimiter:</i>  If an array, the entire contents of the array becomes the delimiter.
-<bullet><i>Padder:</i>  Never optional (as it is in the above functions). If an array, only its first element is used.
-<bullet><i>EmptyRowCue:</i>  If this argument is omitted, rows consisting only of Padder will be ignored; if the whole of Matrix is the Padder, then the 'empty' array [ NaN ] will be returned. If this argument is present, rows consisting only of Padder will be replaced in the output by this argument (which may, if an array, have any length).
+<bullet><i>Padder:</i>  (If an array, only its first element is used.) If absent, all of the contents of all rows are included in the join. If present, terminal padders will be stripped from each row first. If the whole row consists of the padder, then (a) if the next argument is missing, the row is completely ignored; or (b) if that argument is present, an instance of it replaces that row.  
+<bullet><i>EmptyRowCue:</i>  As explained above. If an array, its whole length is taken as the cue.
+If <i>Padder</i> is supplied, and the whole matrix consists only of that value, then the array [NaN] is returned.
 
 
 <B>unjag</B>(<# blue>Matrix, scalar RowNo [, scalar Filler]<# black>) -- Intended for matrices created with e.g. 'jagger(.)', but can be used with any matrix. Returns the row of Matrix indicated by RowNo, after trimming pad values from the end (though not from the start). If Filler is not supplied, it removes any final value from 32.0 down to 0 (no rounding). If Filler is supplied, only that exact value is removed. If trimming would logically return an empty array, an array of size 1, value NaN is returned, and a call to 'empty(.)' will return TRUE. Note that Filler must be a scalar (e.g. '32' or 'asc(" ")', for the space character).
 
 You can safely use a list array in place of Matrix, in which case it will simply return the array trimmed at the end, as for rows of a jagged matrix. This concession is here to allow for functions (such as 'request(.)') which in different circumstances may return either a list array or a jagged matrix.
-
-
-<B>jag</B>(<# blue>Matrix, array Operation, array NewRow [, scalar RowNo [, scalar Length [, scalar Padder ] ] ]<# black>) -- <# red>Deprecated!<# black> --Operates exactly as for the above function <b>jagger(.)</b>, with just these differences:
-<bullet>'Matrix' is NOT altered; instead, an adjusted copy of it is returned.
-<bullet>If 'Matrix' is not a matrix but a list array, its data is used, being taken as the first row of a new jagged matrix.
 
 ============================================================
 //JOIN -- see JAGGER
@@ -3050,7 +3209,7 @@ Some further points to note:
 <bullet>If you call <# blue>lastclosed()<# black> after killing graphs, it will always return 0. The purpose of 'lastclosed()' is to communicate to the program that the user has closed a graph, usually by clicking the corner icon, so that it can take appropriate action (e.g. close down the program); if the program itself has just closed certain graphs using 'killgraphs', it does not need help from a function like 'lastclosed' to tell it what it has just closed! Moreover, if you have just killed one set of graphs and plan to then draw another set, you would want 'lastclosed' to return 0 during the existence of the new set, till one of them is closed.
 
 ============================================================
-//KURTOSIS -- see MOMENTS
+//KURTOSIS -- see STATISTICS
 ============================================================
 //LABEL//
 <B>label</B>(<# blue>One or more variables or literals<# black>) -- Nonvoid. Read or alter the text of any of:
@@ -3066,6 +3225,11 @@ Otherwise the remaining text replaces current label contents, <i>with provisos</
 <bullet>If the remaining text is exactly "_DEFAULT_" followed by any text (e.g. "yak"), the label receives the default text followed by 'yak'.
 
 Note that when the program ends, the top two labels are always reset, though the Comments label retains its set data. When a new program starts, all three labels are reset to their defaults. File I/O operations always overwrite any setting of the main window title.
+
+<b>Formatting of text in the display</b>
+You can do all the usual things - underline, bold, coloured text, font and font size, etc. - but the system is different to that used for formatting in MonoMaths' windows; this is because labels use a different external display engine called Pango. For extensive instructions, see menu item "Help | Formatting with Text Tags", towards the end, where you will find the heading "PANGO FORMATTING TAGS".
+
+
 ============================================================
 //LABELX//
 //LABELY//
@@ -3146,8 +3310,8 @@ ClrRange = ladderclr(NoColours, RGB1, RGB2);
 <# blue>xx = fill(NoColours, 1, 1);
 yy = fill(NoColours, 1);
 p = plot(yy, xx, '.', 30, ClrRange, ' ',0,0,  xx-1);
-grid(0, NoColours+1, 1,   0, 2, 1);
 g = graph(p);
+grid(g, 0, NoColours+1, 1,   0, 2, 1);
 
 <# black><i>Ex. 2:  Supply a set of 15 colours, grading from 'red' to 'white'.</i>
 In this case you should use the 4th. argument as 'H' (or 'h'), so that the hue remains the same. Similarly when grading from some colour to 'black'. This is necessary because both white and black have ambiguous forms in the HSL representation.
@@ -3159,21 +3323,35 @@ ClrRange = ladderclr(NoColours, RGB1, RGB2, 'h'); <# magenta>// If you omit the 
 <# blue>xx = fill(NoColours, 1, 1);
 yy = fill(NoColours, 1);
 p = plot(yy, xx, '.', 30, ClrRange, ' ',0,0,  xx-1);
-grid(0, NoColours+1, 1,   0, 2, 1);
 g = graph(p);
-
-
-
-
-
-
-
+grid(g, 0, NoColours+1, 1,   0, 2, 1);
 
 ==================================================================
 //LAST//
+There are <b>two quite different usages</b> for the word "last" in MonoMaths:
+
+<u>1.  As a System Function</u>
+
 <B>last</B>(<# blue>Array [, scalar Which] <# black>) -- returns one of the last values in the array, whatever its structure. If Which is absent or 0, returns the last value; if either +1 or -1, the last-but-one value; and so on for higher absolute values of Which. If  | Which |  >= array length, raises an error.
 
 Don't confuse it with the <I>index</I> of the last entry, which is size(arr)-1. I think some computer languages do use the keyword 'last' in that sense.
+
+
+<u>2.  As a Keyword</u>
+
+There is a <b>useful shorthand</b> which applies to list arrays only:
+
+\t<# blue>Arr[last] = 99; <# magenta>// This sets the last element of Arr to 99.
+\t<# blue>Arr[last-2] = 99; <# magenta>// This sets the third last element of Arr to 99.
+<# black>
+The constraints on this are:
+<bullet>It only works with list arrays;
+<bullet>The word "last" must come straight after the bracket "[";
+<bullet>The only sign allowed after it is the minus sign.
+
+
+
+
 ==================================================================
 //LASTCLOSED  -- see ANIMATE
 ==================================================================
@@ -3208,8 +3386,6 @@ Effects of different Model values on TheString:  "tHe cAt sAt on the mAt? dRat t
 //LIST_SIZE//
 //LIST_IN//
 //LIST_CLEAR//
-//LIST_CLEAR_TO//
-//LISTS_CLEAR//
 //LIST_DELETE//
 //LIST_DELETE_TO//
 //LIST_FIND//
@@ -3259,9 +3435,7 @@ Effects of different Model values on TheString:  "tHe cAt sAt on the mAt? dRat t
 <B>list_cull(list Index, any number of scalars or arrays)</B> -- removes all values represented from the list (which may end up empty as a result). Returns final size of list.
 <B>list_cull_range(list Index, value1, value2)</B> -- removes all values within the range (inclusive). The order of value1 and value2 is irrelevant. Returns final list size.
 
-<B>list_clear(list no.)</B> -- empties the given list, <I>but</I> does not destroy it. (You can put new data into it in the usual way, with 'list_add(.)'. ) NB - crashes if the list has not yet been created. Void function.
-<B>lists_clear(first list, extent)</B> -- empties all lists in the stated range. NB - crashes if any list in the extent has not yet been created. Void function.
-<B>lists_clear_to(first list, last list)</B> -- empties all lists in the stated range. NB - crashes if any list in the extent has not yet been created. Void function.
+<B>list_clear(list no.)</B> -- empties the given list, <I>but</I> does not destroy it. (You can put new data into it in the usual way, with 'list_add(.)'. ) NB - crashes if the list has not yet been created. Void function. You can have any number of list indexes as arguments, either as scalars or as arrays.
 
 <B>lists_kill(from list no.)</B> -- destroys <I>all</I> lists from the given list upward. (It is not possible to have destroyed lists with existing lists beyond them.) It is safe to use this function even if there are no lists in existence. If you use it without an argument it will destroy all lists (since an empty argument translates internally as the argument 0). Negative 'from' list destroys all (as if it were 0); and if the 'from' list does not exist (too high), nothing happens.  Void function.
 
@@ -3295,7 +3469,9 @@ The first argument would usually be a chars. array, of which only the first char
 
 <b>load</b>(<# blue><b>'A'</b>, array FileName [,  bool ExpectPrefix ] <# black>) -- Used where an <b>A</b>rray has been encoded using Mono's underlying encodement scheme for 'double' values; this code uses 8 bytes per value, that is, per element of the array. This file would usually have gotten onto your disk by your earlier use of <i>save('A', ...)</i>. If 'ExpectPrefix' is present and true, the function will expect to find a prefix listing the array's name, dimensions and chars. rating, together with a time stamp (no. seconds since start of 1AD) preceding the data. This prefix will have been put there by your setting an equivalent boolean when you saved the file using 'save('A', ...)'. You have access to it via function 'iomessage()', as explained below (in section "Successful Outcomes...").
 
-<b>load</b>(<# blue><b>'F'</b>, array FileName,  array VarNameInFile<# black>) -- Returns data that was saved in a specially formatted but human-readable form by function 'save('F', ...)'. Such a file may contain more than one variable; but <i>load('F', ...)</i> will only return data for the variable in the file which corresponds to argument VarNameInFile. To get there, this file would have been saved using <i>save('F', ...)</i>. This file format is verbose, and so not practical for large arrays; but it has the advantage that it alone allows for scalars to be saved. (This is the one situation in which function 'load' will return a scalar.) (For the curious, the formatting system is detailed at the end of the Help section 'Data I/O and Display'; but such knowledge is not required to use 'load('F', ...)' and 'save('F', ...).)
+<b>load</b>(<# blue><b>'F'</b>, array FileName,  array VarNameInFile [, IfErrorReturnScalar ]<# black>) -- Returns data that was saved in a specially formatted but human-readable form by function 'save('F', ...)'. Such a file may contain more than one variable; but <i>load('F', ...)</i> will only return data for the variable in the file which corresponds to argument VarNameInFile. To get there, this file would have been saved using <i>save('F', ...)</i>. This file format is verbose, and so not practical for large arrays; but it has the advantage that it alone allows for scalars to be saved. (This is the one situation in which function 'load' will return a scalar.) (For the curious, the formatting system is detailed at the end of the Help section 'Data I/O and Display'; but such knowledge is not required to use 'load('F', ...)' and 'save('F', ...).)
+
+<i><u>Caveat:</u></i>  You have "a = load('F', ...)" where 'a' is predefined as a scalar. Fine, if you are expecting a scalar, and it is found and loaded; but if not, the array [NaN] will be returned, and the program crashes with the error message that you can't set a scalar (the LHS) to an array (the RHS). To avoid this, include a fourth argument "true"; then the error return will be the scalar NaN, and the program will continue on to provide the error message available by calling "iomessage()".
 
 <b>load</b>(<# blue><b>'D'</b>, array FilePath<# black>) -- Use this where you want to browse for the name of a directory, starting from the given one, but don't want to actually load a file. (<i>FilePath</i> may also be a full file name, or one of some abbreviations - see below under 'FileName'.)
 
@@ -3367,12 +3543,14 @@ Suppose you are writing a function which allows the user to read the value of an
 
 The returned value (in the case of success) is of exactly the same structure as the variable referenced, be it scalar or array.
 
-<I>Error responses</I> depend on how many arguments you supply. (You should supply either one or three; if you supply two, the second will be ignored.)
+<I>Error responses</I> depend on how many arguments you supply. (You should supply either one or three; a crash occurs if you supply two.)
 <bullet>One argument - the program crashes, with the appropriate error message.
 <bullet>Three arguments - No crash; instead the function returns either the second argument (if the name can't be identified) or the third argument (if it can be identified but has not yet been assigned a value). Note that the 2nd. and 3rd. arguments can be either scalars or arrays, independently of the type of the named variable.
 
-Example of use (three argument version):
+For the three-argument case you would have to choose error returns such that the user can easily distinguish between a valid return and an error indicator. E.g. if a scalar is expected as the valid result, you could use array error returns, and test the LHS with function "isarray(.)". If an array is expected, you could either return a scalar error indicator (same test procedure), or use an array error indicator which starts with a value that would never occur in the valid return.
 
+<u>EXAMPLE OF USE</u>
+The example uses the three argument version, to avoid a crash.
 \t<# blue>x = 10;
 \t<# blue>Foo();
 \t<# blue>z = 20;  <# magenta>// Note that 'z' is not assigned a value till after Foo is called.
@@ -3384,7 +3562,12 @@ Example of use (three argument version):
 \t<# blue>\tc3 = lookup("boo", "Can't find it", "It's unassigned");  <# magenta>// program does not crash, but c3 becomes "Can't find it!"
 \t<# blue>\twriteln(c1, ".  ", c2, ".  ", c3);
 \t<# blue>}
-==================================================================
+<# black>_________________________
+
+
+
+See also <b>import</b>, which section also adds a bit more to the use of "lookup".
+.==================================================================
 //LOGBINOM -- see FACT
 //LOGFACT -- see FACT
 //LOP -- see PAD
@@ -3492,24 +3675,51 @@ writeln(neat(maxima));  <# magenta>// Will display, in neat form, the matrix: [1
 //MAXABSAT//
 //MINABS//
 //MINABSAT//
-<B>max</B>(<# blue>One or more variables<# black>) -- Finds the maximum value within the list of scalars and arrays. For example, if scalar x = 25 and Arr = [5,10,20,30], then 'max(15, x, Arr)' will return 30.
- 
-<B>maxat</B>(<# blue>One or more variables<# black>) -- Returns an array of size 3. If we call that array 'Result', it is made up as follows:
-Result[0] = the maximum value within all arguments.
-Result[1] = the first <I>argument</I>  to contain this maximum value. (Later occurrences of the same maximum are ignored.) (Re numbering of arguments: the first argument of function 'maxat(.)' is numbered 0, not 1.)
-Result[2] = the absolute index of the first occurrence of the maximum <I>within</I> that argument. (In the case of a scalar argument, it will be 0.)
+<just c><b>FINDING MAXIMUM AND MINIMUM VALUES</b>
+<just l>
+All of these functions take <b>any number of arguments</b>, which may be <b>any mix of scalars and arrays</b>.
 
-<# blue>Arr1 = data(10, 20, 30, 30, 30);
-<# blue>result1 = maxat(Arr1, 15, 30);  <# magenta>// 'result1' returns as [30, 0, 2].
-<# blue>result2 = maxat(Arr1, 15, 40);  <# magenta>// 'result2' returns as [40, 2, 0].
+<b>1.  Finding actual (signed) values</b>
+<bullet>(a)  <i><u>Just return the value</u></i>
+<bullet 30,><# blue><B>max</B>(One or more variables<# black>) -- Finds the maximum value within the list of scalars and arrays. RETURNS a scalar value.
+<bullet 40,>For example, if scalar x = 25 and Arr = [-5, 10, -20, 30], then <# blue>max(15, x, Arr)<# black> will return 30.
+<bullet 30,><# blue><B>min</B>(One or more variables<# black>) -- Finds the minimum value within the list of scalars and arrays. RETURNS a scalar value.
+<bullet 40,>For example, with the above arguments <# blue>min(15, x, Arr)<# black> will return -20.
+
+<bullet>(b)  <i><u>Also return where you found it</u></i>
+<bullet 30,><# blue><B>maxat</B>(One or more variables<# black>) -- Returns an array of size 3. If we call that array 'Result', it is made up as follows:
+<bullet 40,>Result[0] = the maximum value within all arguments.
+<bullet 40,>Result[1] = the first <I>argument</I>  to contain this maximum value. <b>NB:</b> Arguments are numbered starting from 0, not from 1.
+<bullet 40,>Result[2] = the index in that argument of the first occurrence of the maximum. (In the case of a scalar argument, it will be 0.)  <b>NB:</b> this is an <i>absolute</i> index. This is important in the case of matrices; e.g. for a 2x2 matrix with values  [ 10, 20; 30, 40 ], the final element has absolute address 3. 
+<bullet 40,><i>Examples:</i>
+<bullet 60,><# blue>Arr1 = data(10, 20, 30, 20, 30);
+<bullet 60,><# blue>result1 = maxat(Arr1, 15, 30);  <# magenta>// 'result1' returns as [30, 0, 2].
+<bullet 60,><# blue>result2 = maxat(Arr1, 15, 40);  <# magenta>// 'result2' returns as [40, 2, 0].
 <# black>
+<bullet 30,><# blue><B>minat</B>(One or more variables<# black>) - Exaclty analogous to <# blue>maxat(..)<# black>.
 
-<B>maxabs(.)</B> and <B>maxabsat(.)</B> behave exactly as above, except that they detect the maximum <I>absolute</I> value. <b>NB!</b> For both functions the returned value retains its original sign. E.g. <# blue>maxabs( data(1, 2, -3) ) <# black>returns "-3", not "3"!
+<b>2.  Finding the element with the maximum / minimum ABSOLUTE value</b>
+<bullet>(a)  <i><u>Just return the value</u></i>
+<bullet 30,><# blue><B>maxabs</B>(One or more variables<# black>) -- Finds the maximum absolute value within the list of scalars and arrays. RETURNS a scalar value. <b>NB:</b> This value is always unsigned (and therefore positive).
+<bullet 40,>For example, <# blue>maxabs(5, -10, 20, -30)<# black> returns 30. (NB: Not ‒30!)
+<bullet 30,><# blue><B>minabs</B>(One or more variables<# black>) - Exaclty analogous to <# blue>maxabs(..)<# black>.
+<bullet 40,>For example, <# blue>minabs(5, -10, -0.1, 20, -30)<# black> returns 0.1.
 
+<bullet>(b)  <i><u>Also return where you found it</u></i>
+<bullet 30,><# blue><B>maxabsat</B>(One or more variables<# black>) -- Returns an array of size 4. If we call that array 'Result', it is made up as follows:
+<bullet 40,>Result[0] = the UNSIGNED (and therefore positive) value of the element with the smallest absolute value.
+<bullet 40,>Result[1] = the first <I>argument</I>  to contain this smallest value. <b>NB:</b> Arguments are numbered starting from 0, not from 1.
+<bullet 40,>Result[2] = the index in that argument of the first occurrence of this smallest value. (In the case of a scalar argument, it will be 0.)  <b>NB:</b> this is an <i>absolute</i> index. This is important in the case of matrices; e.g. for a 2x2 matrix with values  [ 10, 20; 30, 40 ], the final element has absolute address 3. 
+<bullet 40,>Result[4] = the SIGNED version of the element with the smallest absolute value.
+<bullet 40,><i>Examples:</i>
+<bullet 60,><# blue>Arr1 = data(10, 20, -30, 20, 30);
+<bullet 60,><# blue>result1 = maxabsat(Arr1, -15, 5);  <# magenta>// 'result1' returns as [30, 0, 2, -30].
+<bullet 60,><# blue>result2 = maxabsat(Arr1, 15, -40);  <# magenta>// 'result2' returns as [40, 2, 0, -40].
+<# black>
+<bullet 30,><# blue><B>minabsat</B>(One or more variables<# black>) - Exaclty analogous to <# blue>maxabsat(..)<# black>.
 
-<B>min(.)</B>, <B>minat(.)</B>, <B>minabs(.)</B> and <B>minabsat(.)</B> all behave exactly as above, except that they detect the <I>minimum</I> value (or absolute value).  Again note that both of the last two functions return the value with its original sign.
-==================================================================/*1*/
-//MEAN  -- see MOMENTS
+==================================================================
+//MEAN  -- see STATISTICS
 ============================================================
 //MENU//
 //MENUS//
@@ -3564,21 +3774,55 @@ If you want just one output array - say Arr1, but not Arr2 and Arr3 - then you a
 ============================================================
 //MESH//
 <stops 50, 80>
-<B>COORDINATES OF A LATTICE</B>
 
-Consider a graph in 2D or 3D, with cuts along the axes as usual. Suppose it is a 2D graph, and the X axis has cuts at 0, 1 and 2 (with 0 corresponding to the left edge of the graph and 2 to the right edge), and the Y axis has cuts at 10, 20, 30, 40 (with 10 referred to the bottom of the graph and 40 to the top). Hairlines are drawn across the graph, at the X and Y cuts. Next, suppose you want access to the coordinates of every single hairline intersection; then you use the function <b>mesh</b>:
-	<# blue>Mx = mesh( array XCuts,  array YCuts);<# black>
-This will produce a matrix in which row[0] holds all the X coordinates and row[1] holds all the Y coordinates.
-For the example given above, this will produce the matrix
-	0	1	2	0	1	2	0	1	2	0	1	2
+<b>INTERLACING COORDINATES</b>
+
+Suppose you have two arrays of data, not necessarily equal in length. As examples,
+
+	Array1 = data(1, 2, 3);
+	Array2 = data(10, 20, 30, 40);
+
+Then  <# blue>Mx = <b>mesh</b>( Array1,  Array2);<# black>  will return this matrix:
+	1	2	3	1	2	3	1	2	3	1	2	3
 	10	10	10	20	20	20	30	30	30	40	40	40
+	
+So what use is that?
 
-Next, suppose we have a 3D graph with the same X and Y cuts, and Z cuts at 100, 200. Then we would use
-	<# blue>Mx = mesh( array XCuts,  array YCuts, array ZCuts);<# black>
-This will produce the matrix
-	0	1	2	0	1	2	0	1	2	0	1	2	0	1	2	0	1	2	0	1	2	0	1	2
-	10	10	10	20	20	20	30	30	30	40	40	40	10	10	10	20	20	20	30	30	30	40	40	40
-	100	100	100	100	100	100	100	100	100	100	100	100	200	200	200	200	200	200	200	200	200	200	200	200
+<u>Situation 1</u> -- You want to draw a <b>series of horizontal lines</b> across the graph, perhaps to mark off graph sections for separate curves.
+The X axis stretches from X = 0 to X = 10. You want lines at Y levels 2, 5, 9. Here is how to plot them:
+	
+	<# blue>Xlimits = data(0, 10); <# magenta>// Every line stretches across this horizontal extent.
+	<# blue>Ylocns = data(2, 5, 9); <# magenta>// Lines are drawn at these Y levels.
+	<# blue>Mx = mesh(Xlimits, Ylocns ); <# magenta>// Note the order.
+	<# blue>p = plot( Mx[1], Mx[0],   0,0,0,   "_ ", 2, "red");
+	g = graph(p);
+	grid (g, 0, 10, 10, 0, 10, 10); <# magenta>// Scale the graph so we can see these lines.<# black>
+
+<u>Situation 2</u> -- You want to draw a <b>series of vertical lines</b> across the graph instead.
+This time the Y axis stretches from Y = 0 to Y = 10, and vertical lines are required at X = 2, 5, 9. The code is very similar:
+	
+	<# blue>Ylimits = data(0, 10); <# magenta>// Every line stretches across this vertical extent.
+	<# blue>Xlocns = data(2, 5, 9); <# magenta>// Lines are drawn at these X values.
+	<# blue>Mx = mesh(Ylimits, Xlocns ); <# magenta>// Note the order.
+	<# blue>p = plot( Mx[0], Mx[1],   0,0,0,   "_ ", 2, "red"); <# magenta>// Different order of rows to the above example.
+	g = graph(p);
+	grid (g, 0, 10, 10, 0, 10, 10); <# magenta>// Scale the graph so we can see these lines.<# black>
+
+<u>Situation 3</u> -- you want to be able to address every intersection of a grid with a single index (I'm not sure why you would want to do that, but anyway...)
+No coded example needed; the numerical example at the top of this file shows how to do it. The "single index" is the column index of the matrix.
+
+The function also works for <b>3D grids</b>:
+
+We will call the X coordinates for the grid "XCuts", and similarly "YCuts" and "ZCuts" for the other two dimensions.
+	<# blue>XCuts = data(1, 2, 3);
+	YCuts = data(10, 20, 30, 40);
+	ZCuts = data(0, 100);
+	Mx = mesh( array XCuts,  array YCuts);<# black>
+
+This produces the matrix:
+	1	2	3	1	2	3	1	2	3	1	2	3	1	2	3	1	2	3;
+	10	10	10	20	20	20	30	30	30	10	10	10	20	20	20	30	30	30;
+	0	0	0	0	0	0	0	0	0	100	100	100	100	100	100	100	100	100;
 
 ============================================================
 //MOD//
@@ -3633,39 +3877,39 @@ NB:  Internal numerical handling errors can cause unexpected results; e.g. if x,
 
 See also <b>sign(X, ...)</b>, dealt with separately.
 ============================================================
-//MOMENTS//
-//MEAN//
-//VARIANCE//
-//KURTOSIS//
-//STATISTICS//
-<B>moments</B>(<# blue>DataArray [, WithKurtosis]<# black>) -- Returns an array of size 5 (no kurtosis) or 6 (with kurtosis); element [0] is the mean of the data in DataArray; element [1] is the standard deviation and element [2] is the variance, calculated in the statistician's way by dividing the sum of the squares by (size of DataArray)-1; elements [3] and [4] are the same, but using a divisor of just DataArray size. If WithKurtosis is present and 'true' (i.e. anything but 0), [5] is the kurtosis, using the divisor DataArray size.
+//MOMENTS -- see STATISTICS
 
-The structure, if any, of the array is ignored.
-
-DataArray must have at least 2 elements, or an error is raised.
 ============================================================
 //MONOTONICITY//
 <just c><b>IN SOME GIVEN ARRAY, ARE VALUES MONOTONIC (ALL ASCENDING OR ALL DESCENDING)?</b>
 <just l>
 The following function checks for this, and also detects contiguous duplicates.
 
-<B>monotonicity</B>(<# blue>array <b>InArray</b>,  bool  <b>ExpectAscending</b> [, scalar <b>StartIndex</b> [, scalar <b>VirtualZero</b> ] ]<# black>)
+<B>monotonicity</B>(<# blue>array <b>InArray</b>,  bool  <b>ExpectAscending</b> [, scalar <b>StartIndex</b> [, scalar <b>VirtualZero</b> [, bool <b>ReturnAllExceptionIndexes</b> ] ] ]<# black>)
 
-ARGUMENTS
+<u>ARGUMENTS</u>
 <bullet><i>InArray</i> -- Must have size of at least 2. Its structure will be ignored, so that returned values will be <i>absolute addresses</i> within the array.
 <bullet><i>ExpectAscending</i> -- If TRUE, then any successive values which are descending will be regarded as anomalous; if FALSE, any successive values which are ascending will be regarded as anomalous.
 <bullet><i>StartIndex</i> -- The array will be regarded as if it started here, all earlier values being ignored. Therefore the earliest anomalous value or duplicated value that could be detected would be at InArray[StartIndex+1]. It is therefore an error for StartIndex to point to the last element of InArray.
 <bullet><i>VirtualZero</i> -- If two successive values differ by this amount or less, they will be regarded as equal. It can be zero, but negative values will be ignored (taken as zero).
+<bullet><i>ReturnAllExceptionIndexes</i> -- Determines what is returned, as below: 
 
-RETURNED
+
+<u>RETURNED</u>
+(1)  <b>ReturnAllExceptionIndexes</b> ABSENT or FALSE:
 An array of size 4:
-	<# blue>[	No. of anomalous values,   Index of first anomaly,       No. of contiguous duplicates,    First such duplicate  ]<# black>
+	<# blue>[ No. of anomalous values,   Index of first anomaly,       No. of contiguous duplicates,    First such duplicate ]<# black>
+
+(2)  <b>ReturnAllExceptionIndexes</b> PRESENT and TRUE:
+An array of indexes of all exceptions, or the array [-1] if none. (Duplication information is not returned.)
+
 
 Re duplications: 
 <bullet>A duplication is not considered to be an 'anomaly', so does not register in the first two elements of the returned array.
 <bullet>A sequence "n, n, n" would register as two duplicates, "n, n, n, n" as three.
 
 If no anomalies and no duplicates were detected, the result would be [0, 0, 0, 0]. (Note that where no first anomaly or first duplicate exists, the relevant element is set to 0. It could never take this value if there were a first anomaly / duplicate.)
+
 
 EXAMPLE
 	<# blue>InArray = data(10, 30, 50, 20, 30, 10, 10);
@@ -3743,8 +3987,8 @@ while (true)
 //  where you clicked. When you double-click, the nearest point (if any) is removed from the graph.
 <# blue>doubleClickIntvl = 300; <# magenta>// clicks closer together than this no. of msecs. are taken as constituting a double-click.
 // Set up the empty graph:
-<# blue>grid(0, 1, 1,   0, 1, 1); <# magenta>// The graph will have no hairlines.
 <# blue>g = graph();
+<# blue>grid(g, 0, 1, 1,   0, 1, 1); <# magenta>// The graph will have no hairlines.
 <# magenta>// Set up the repositories of X and Y coordinates of clicked points, and of the IDs of their plots, as lists:
 <# blue>listX = list_new()-1;     listY = list_new()-1;
 listPlots = list_new()-1;
@@ -3807,7 +4051,7 @@ function HandleDoubleClick(GraphID, ClickData)
 	return; <# magenta>// We have to put this return in, even though the function is void, because we inserted a conditional return higher up.
 <# blue>}
 
-===============================================================/*1*/
+===============================================================
 //MOVESHAPE  --  see PLOTSHAPE
 ==================================================================
 //MULTIBOX//
@@ -3835,7 +4079,7 @@ To pack widgets from left to right into a single horizontal layer, simply put th
 
 To start a new horizontal level, insert a '|'. For example, this will give three label-text box pairs, one under the other: "LT|LT|LT".
 
-Radio buttons are automatically grouped if they are listed side by side in the one horizontal level. (On the other hand, "RrrLrrR" would give you two independent groups of radio buttons on the one horizontal level, with a label between them, which may remain empty if you just want it to act as a divider.) As is usual for radio buttons, only one in any one group can be checked at once. (If you enter "rrr", with no capital R, the first button will start off checked. If you enter "RRr", the last button with a capital will start off checked, in this case the 2nd.)
+Radio buttons are automatically grouped <i>vertically</i> if they are listed side by side in the one horizontal level. (On the other hand, "RrrLrrR" would give you two independent groups of radio buttons on the one horizontal level, with a label between them, which may remain empty if you just want it to act as a divider.) As is usual for radio buttons, only one in any one group can be checked at once. (If you enter "rrr", with no capital R, the first button will start off checked. If you enter "RRr", the last button with a capital will start off checked, in this case the 2nd.)
 
 Check buttons are also visually grouped in the same way, but can be checked independently of one another.
 
@@ -4111,7 +4355,16 @@ Then,
 //OR -- see AND
 ============================================================
 //OVERLAY//
+//OVERLAID//
+<just c><b>OVERLAYING DATA FROM ONE ARRAY ONTO ANOTHER</b>
+<just l>
+
+You have a base array (called "Underdog" below) and a second array which is to be superimposed in some way onto the base array (called "Overlay" below).
+
+There are two versions: a NON-VOID version, which returns an altered copy of Underdog (but leaves the original Underdog unaltered), and a VOID version which directly alters Underdog. They are -
+
 <B>overlay</B>(<# blue>array Underdog,  array Overlay, array Operation [, scalar Pointer1 [, scalar Pointer2 ]]<# black>) -- Returns an array which is the overlap of Overlay onto part or all of a copy of Underdog, the outcome for overlapping elements of the two arrays being decided by argument 'Operation'.
+<B>overlaid</B>(<# blue>NAMED array Underdog,  array Overlay, array Operation [, scalar Pointer1 [, scalar Pointer2 ]]<# black>) -- VOID; Underdog is directly altered by overlapping Overlay onto part or all of it, the outcome for overlapping elements of the two arrays being decided by argument 'Operation'.
 
 Operation codes are always just a single character. They are as follows. (The next section will indicate which elements in Overlay and Underdog are 'OverlayElement' and 'UnderdogElement' in the following.)
 <bullet>The four mathematical signs '+', '-', '*', and '/', the order being "Underdog OPN Overlay". (E.g. '-'  results in the subtraction (UnderdogElement - OverlayElement) ).
@@ -4134,9 +4387,9 @@ If either (or both) Underdog or Overlay is not a list array, then the only signi
 
 <i>Overlaying of one matrix on another:</i>  Exactly two pointers must be supplied; the first is the row pointer, the second the column pointer. If these have values 'r' and 'c', then Overlay[i, j] will overlay Underdog[r + i, c + j]. The values of 'r' and 'c' may be negative or beyond the extent of Underdog rows / columns; for any index [r + i, c + j] out of range, no interaction will happen. 
 
-<i>Overlaying of a row vector or a column vector across a matrix: </i>  This time there are <i>no pointer arguments</i>; the overlaying always starts at Underdog[0, 0]. If Overlay is a row vector, then the operation will occur between it and each row of the matrix; and analogously for column vectors. There must be an exact match between the length of Overlay and the row / column length of Underdog.
-(NB: If you want to overlay a row vector on just one row of a matrix, use the method above this one; a row vector is also a matrix. The program distinguishes between the two cases by the number of arguments you supply.)
+<i>Overlaying of a one-dimensional array on a matrix:</i> Use the above, with the array expressed as a row vector or a column vector. (From the point of view of MonoMaths, such vectors are matrices with one row / column.) Note that a list array cannot be used directly; it must be first converted to such a vector.
 
+<i>Overlaying of a row vector or a column vector across a matrix: </i>  This time there are <i>no pointer arguments</i>; the overlaying always starts at Underdog[0, 0]. If Overlay is a row vector, then the operation will occur between it and each row of the matrix; and analogously for column vectors. There must be an exact match between the length of Overlay and the row / column length of Underdog.
 
 Example with two list arrays:
 <# blue>\tunderArr = data(100, 200, 300, 400, 500);
@@ -4222,7 +4475,9 @@ Don't forget that you can also halt a program during operation simply by clickin
 <b>PERTURB VALUES IN AN ARRAY IN A GAUSSIAN MANNER</b>
 
 Suppose you have an array InArray of values, and you want to perturb these, using a Gaussian random number generator, in accordance with some standard deviation SD. Moreover, suppose you don't want these values to deviate more from the mean than a given amount (which, for example, may be 3 x SD). The perturbed version, OutArray, would be developed as follows:
+
 	<# blue>OutArray = perturb(InArray,  SD,  MaxDeviation);<# black>
+
 Note that the first argument must be an array, and the remaining arguments must be scalar and \> 0.
 Caution: Gaussian values are first generated and then tested for lying within ± MaxDeviation of the InArray value. This testing is done in a loop, which bravely soldiers on until a value within limits is generated. Consequently if you make MaxDeviation much less than SD, you will need to go for a coffee break while waiting for the result.
 
@@ -4252,12 +4507,12 @@ If 'WaitTillSoundFinished' is present and nonzero, program operation stops till 
 //PLACEMENT//
 The scenario: You have a <i>reference array</i> containing values sorted in ascending order. You also have some new value, and you would like to know where it might fit into the sorted array, if it were to be inserted there. The function to use is:
 
-<b>placement</b>(<# blue>scalar / array Value,  array RefArray [, scalar StartIndex ]<# black>) -- returns a set of placements for each of the values in Value; the returned structure has exactly the same dimensionality as Value.
+<b>placement</b>(<# blue>scalar / array Value,  array RefArray<# black>) -- returns a set of placements for each of the values in Value; the returned structure has exactly the same dimensionality as Value.
 
 It is <b>vitally important that RefArray be sorted</b>, in ascending order. There is no test for this; you will simply get meaningless results if you don't observe the rule. Duplications are tolerated, but for all i \> 0 it must be true that RefArray[i-1] ≤ RefArray[i].
-There is no such restriction on Value; however if Value is even approximately in ascending sorted order, operation is many times faster. (This is because internally the placement of Value[i] starts from the placement of Value[i-1] if it is found that Value[i] \> Value[i-1].)
+There is no such restriction on Value; however if Value is even approximately in ascending sorted order, operation is many times faster. (This is because internally the placement of Value[i] starts from the placement of Value[i-1] if it is found that Value[i] \> Value[i-1].) <font same, 8>A test was done using RefArray and Values each of 10000 elements. Values was first submitted as unsorted, than as sorted. The ratio of times was of the order of 300. <font same, 10>
 
-These placements take the form of virtual indexes, for which fractional indexes are possible. Suppose Value[i] is V. Then if V = RefArray[N], the return will be N; but if V is halfway between RefArray[N] and RefArray[N+1], the return will be (N + ½).
+These placements take the form of virtual indexes, for which fractional indexes are possible. Suppose Value[i] is V. Then if V = RefArray[N], the return will be N; but if V is one third of the way between RefArray[N] and RefArray[N+1], the return will be (N +⅓).
 
 More exactly, here are the rules. Suppose we have a Value element V; we define 'result' as what will be returned for V. 
 <bullet>If V  \< RefArray[0],  then return = NEGINF.
@@ -4265,18 +4520,9 @@ More exactly, here are the rules. Suppose we have a Value element V; we define '
 <bullet>If V \> RefArray[N]  but  V \< RefArray[N+1],  then return = N +  (V - RefArray[N-1]) / (RefArray[N] - RefArray[N-1] ).
 <bullet>If V  \> the last element in RefArray,  then return = POSINF.
 
-If <i>StartIndex</i> is supplied, then the search for all elements of Value begins only at that index of RefArray. 
-This argument needs some care. If StartIndex is fractional, it is adjusted to the nearest integer below. If StartIndex is negative, it is adjusted to 0.
-If you are going to use this argument, be careful to ensure that it is definitely lower than a possible placement; otherwise it will return NEGINF. For example, if RefArray is [10, 20, 30], and Value is 25, then a StartIndex of MINREAL to +1.9999... will return a placement of 1.5; but a StartIndex of 2 or more will return NEGINF. 
-If RefArray is large, the use of StartIndex will give a huge improvement in performance.
+Duplications within RefArray are not a problem; simply the duplicated values will be hopped over. For example, if RefArray where [10, 20, 20, 20, 30], then V = 15 would return 0.5,  V = 20 would return 1, V = 25 would return 3.5.
 
-Two more points:
-<bullet>Duplications within RefArray are not a problem; simply the duplicated values will be hopped over. For example, if RefArray where [10, 20, 20, 20, 30], then V = 15 would return 0.5,  V = 20 would return 1, V = 25 would return 3.5.
-<bullet>If Value has been mathematically derived, then tiny numerical rounding errors may have pushed some value that should be, e.g. 10, to being 10 ± 1e-15. To allow for this, any value closer to RefArray[N] then <b>1e-10</b> is regarded as equalling RefArray[N]. This is particularly important if V should equal either the first or last element in RefArray, as a slight numerial error taking V from RefArray[0] to, say, RefArray[0] - 1e-15, would return NEGINF rather than the logically expected 0.
-
-The inverse function is <b>interpolate(.)</b>  (version 1). An example of the use of the two together is given at the end of this window.
-
-See also function 'readtable'.
+The inverse function is <b>interpolate(.)</b>  (version 1). See also function 'readtable'.
 
 Two other functions exist; <# red>they are now deprecated, and should not be used in future programming, as they will certainly be removed in the near future.<# black>
 
@@ -4425,12 +4671,12 @@ You can do this with colours also; only this time you separate colours by the ve
 \t<# blue>ptfamily = is(yy, 0.5); <# magenta>// ptfamily is now { 0, 0, .., 1, 1, ...}
 \t<# blue>p = plot(yy, xx,  'x', 10, "blue|red",   '_', 1, "blue",  ptfamily); <# magenta>
 \t<# blue>g = graph(p);
+<# black>
+<b>Hint:</b>  If you simply want to rotate through the point alternatives in the order given, there is no need to supply a point family array; and similarly for line alternatives. Suppose that the longest point characteristic has 3 elements (e.g. point type is the array ['+', 'o'. 'x']). Then, if you don't supply a point family array, the effect is the same as if you had supplied the point family array "data(0, 1, 2)".
 
 <# black>Here, more formally, are the rules for PointFamily:
 <bullet>If PointFamily is supplied, and has length L, then when the nth. point is being plotted MonoMaths will reference PointFamily[n modulo L]. (The effect of the modulus is to recycle values in PointFamily; that is why, in order to alternate point types, we supplied just a two-valued PointFamily.)
 <bullet>Once some value  ndx = PointFamily[..] has been extracted, MonoMaths will then look at each of the three fields PointType, PointWidth and PointColour; and it will use PointType[ndx modulo {length of PointType}],  PointWidth[ndx modulo {length of PointWidth}],  PointColour[ndx modulo {no. of colours in PointColour}]. (If PointWidth or PointColour is scalar, the effect will be the same as if it was an array of length 1; i.e. the same value will be used for every point.)
-
-Warning: don't use scalar 0 in array PointType; if PointType[0] is 0, then no plotting of any points occurs, whatever is the value of PointFamily. This problem doesn't arise if you use the space character in PointType[i] to indicate that some points should not be plotted. 
 
 The rules for LineFamily are exactly analogous. 
 If you want to set LineFamily but don't want to vary points, simply use a dummy scalar value for argument PointFamily, e.g. 0.
@@ -4448,7 +4694,8 @@ Here is an example, which prints the numbers 1 to 12 for a clock face:
 \t<# blue>g = graph(p);
 \t<# blue>graphresize(g, 500, 500); <# magenta>// just to make the clockface circular rather than elliptical.
 <# black>
-If you want a different delimiter (because you would like '|' to be printed as part of some text), then prefix the string with these three characters: "}c{" - where 'c' is replaced by any character you would like to use as the delimiter instead. E.g. "}‖{string1‖string2‖string3".
+If you want to place a literal '|' character on the graph, 'escape' it by preceding it with a backslash. E.g. "A|B" is two separate texts, "A\|B" is a single text. (The backslash in this case will not be printed.)
+You can set the <b>angle of printing</b> by adding "@" after the text. E.g. "Going up!@60" would print "Going up!" at an angle of 60⁰. (NB - the angle is in degrees, not radians.) <i>*** Temporary caveat:  This only works if you have a separate 'plot(.)' call for each sloping text. One day I hope to find a workaround for this...</i>  You can 'escape' this character with a backslash also, but the underlying Cairo routine prints some other weird character for '@'.)
 
 <# black><I>FontName:</I>
 Supply the name of a font that is on your system. You can use a comma-separated list of font names in the order of your preference (most preferred first); if the first is not present, the 2nd. will be used; etc.  E.g. you could use: "Comic Sans MS, Arial, Verdana, Sans".
@@ -4473,9 +4720,11 @@ The syntax is as follows. 'graphID' is the number returned by the 'graph(..)' fu
 \t<# blue>grid(graphID, Xlo, Xhi, Xsegmts, Ylo, Yhi, Ysegmts); <# magenta>// Set for both axes at once.
 <# black>(Note that 'lo' does not have to be less than 'hi'; reversed order is allowed on axes. However the two values must not be equal, and 'segmts' must round to 1 or more.)
 
-Obviously the graph will have to be drawn twice by using these functions: first, at creation, it will use default axis parameters, then it will be redrawn using your supplied grid values. This usually happens far too fast for you to notice.  If you want to avoid this double-dealing, in the case of 'grid(.)' alone you can omit the graphID, and place the instruction just before the graph definition.
+Obviously the graph will have to be drawn twice by using these functions: first, at creation, it will use default axis parameters, then it will be redrawn using your supplied grid values. This usually happens far too fast for you to notice.
 
-Although the grid functions are usually used in a void manner, as above, they do return an array. If there is no error, it simply holds the values of the arguments (not including the graph ID). For an error it has length 1, value NaN; and a call to 'empty(.)' would return TRUE.
+Although the grid functions are usually used in a void manner, as above, they do return an array, which simply holds the 3, 6 or 9 axis settings supplied as arguments.
+
+Further note: A fifth boolean value "<# blue><b>RememberPriorScaling</b><# black> is allowed in 'gridx(.)' etc, but NOT in 'grid(.)'. The point of this argument: Suppose you have a graph on display, and then play around with the scaling of the graph using the menu item "Scaling | New scaling". After your fun and games you want to return to the original scaling, so you click on "Scaling | Original scaling". Normally, this will return you to what you have just defined in the call to e.g. "gridx(.)", which is what you usually want. But occasionally you want to go back to the scaling BEFORE the gridx() call. If this boolean value is present and TRUE, this will happen. This does not apply to function "grid(.)", where the menu will always return you to the values set by the latest "grid(.)" call. 
 
 <U>HIDING THE HAIRLINES</u>
 You can choose to have full hairlines (the default), or hairlines reduced to just stubs on the axis, or no hairlines or stubs. The function is <b>showhairlines</b>(<# blue>GraphID, scalar HowX [, HowY [, HowZ ] ] <# black>). If e.g. HowX is zero, the graph's X axis will have no hairlines or scale markers; if 1, no hairlines but small scale markers will occur where hairlines would go; if 2 (the default) - or any other value - full hairlines are present. Note that scaling strings at hairline locations are not affected by this function.
@@ -4499,24 +4748,36 @@ If GraphID is not identifiable, this function returns the 'empty array' (size 1,
 You can add a few words beside the scale markings to explain what the scale is - e.g. 'miles per hour' - using void functions <B>labelx(.)</B> and <B>labely(.)</B> (for X and Y axes respectively). No formatting tags are valid here. If you use the function with only the one argument - the graph ID - then the function is no longer void, but returns whatever is the current axis label.
 
 <U>MODIFYING THE GRAPH BOX - SIZE, POSITION, COLOUR</U>
-By default, graphs have a size much smaller than the full screen, and can end up anywhere on the screen according to an algorithm which is part of .NET. You can of course tow a graph away with the mouse, or drag its borders around, or minimize or maximize it, or close it down, as with most other Windows windows. But you also have some programmatic control over things:
+By default, graphs have a size much smaller than the full screen, and can end up anywhere on the screen according to an algorithm which is part of .NET. You can of course tow a graph away with the mouse, or drag its borders around, or minimize or maximize it, or close it down, as with most other Windows windows. But you also have some programmatic control over things.
 
-<B>Size the plot surface</B> of the graph (i.e. excluding headers, scaling etc.) using function <B>graphresize(<# blue>GraphID, PixelsWide, PixelsHigh<# black>)</B>. This is especially useful if you want the plot surface to be exactly square, for example to correctly show angles, or to make a circle not look like an ellipse. Both arguments must be > 20, or else no resizing occurs. You may have to experiment, as Mono's Gtk sometimes disagrees with your values by a few pixels, and ignores them if they are too large. (If you are more interested in the size of the whole form holding the graph, use function <i>boardresize(.)</i> instead.)
+<b>Find the current size of the plot surface</b>
+The function <b>pixels(<# blue>Scalar GraphID<# black>)</b> returns an array of size 4. For 2D graphs, [0] = width of a pixel in terms of the X axis variable; [1] = height of a pixel in terms of the Y axis variable; [2] = number of pixels from left to right of the plottable surface; [3] = same, vertically. For 3D graphs, [0] and [1] are always simply 0, and [2] and [3] give the width and height of the blue-lined box which contains the actual 3D plot region together with the region to its right where descriptive data goes. If the graph cannot be identified, the return is { -1, -1, -1, -1 }.
+<i>Caveat:</i>  If used after 'graphresize(.)', you have to allow time before calling 'pixels(.)', or you are given the sizes that predated the 'graphresize(.)' call. Insert a step like this:  "starttimer();  while (timer() < T) { dummy = 1; }", where T  is found by experiment. (On my current computer, T = 100 (msecs) is safe;  T = 40 to 60 fails some of the time;  smaller T always fails.)
+<i>Special use:</i> <b>pixels(<# blue>"screen"<# black>)</b>  -- Returns an array of size 2; [0] = the screen width, in pixels; [1] = the screen height.
 
-<B>To change the screen position</B> and size of the whole form containing the graph, use function <B>placeboard</B>(<# blue>Scalar GraphID, Scalars Left, Top, Width, Height<# black>). Values <= 1 are taken as a fraction of screen width or height; values > 1 as pixels. To produce a full-screen graphing form, use arguments { GraphID, 0, 0, 1, 1 }. You can retrieve the current values using function 'boardplacemt(.)'.
+<B>Set a new size for the plot surface</B> of the graph (i.e. excluding headers, scaling etc.) using function <B>graphresize(<# blue>GraphID, PixelsWide, PixelsHigh<# black>)</B>. This is especially useful if you want the plot surface to be exactly square, for example to correctly show angles, or to make a circle not look like an ellipse. Both arguments must be > 20, or else no resizing occurs. You may have to experiment, as Mono's Gtk sometimes disagrees with your values by a few pixels, and ignores them if they are too large. (If you are more interested in the size of the whole form holding the graph, use function <i>boardresize(.)</i> instead.)
 
-<b>To change colours</b> of graph features, use function<b>graphcolours(<# blue>GraphID, 0 to six colour arguments  in the order given below<# black>)</B>. A colour is ignored where the corresponding argument is absent or is a scalar, as only arrays are accessed. Such arrays would usually be colour names (e.g. "light blue"), but enter 'colour' and key F1 for other possibilities. The function always returns a matrix 6x3, each row being the RGB values of the colour of the corresponding graph item (whether altered or not). The six colours in order are of the following (indexes refer to matrix rows): [0] -- the plotting surface (background to the curves);  [1] -- the hairlines;   [2]: the thin line forming the perimeter of the plotting surface;  [3]: the background outside the plotting surface, where scaling information goes;  [4]: scaling text at hairlines ("10, 15, 20, ...");  [5]: text of axis scale descriptor (e.g. "velocity (kms.)" ).
+<B>To change the screen position</B> and size of the whole form containing the graph, use function <B>placeboard</B>(<# blue>Scalar GraphID, Values Left, Top, Width, Height<# black>). Values <= 1 are taken as a fraction of screen width or height; values > 1 as pixels. To produce a full-screen graphing form, use arguments { GraphID, 0, 0, 1, 1 }. Negative value: original parameter remains unchanged. Alternative version: <B>placeboard</B>(<# blue>scalar GraphID, char. array PutItWhere<# black>), which leaves the graph dimensions unchanged but places it in one of nine positions on the screen, depending on the value of 'PutItWhere'. Nine values are valid:  "top_left", "top_mid", "top_right", "mid_left", "mid_mid",  "mid_right", "btm_left", "btm_mid", "btm_right".
+
+<b>To retrieve the current colours</b> of graph features, the function is <b>graphcolours(<# blue>GraphID<# black>)</b> - just one argument. This returns  a matrix 6x3, each row being the RGB values of the colour of the corresponding graph item. The six rows in order give the colours of the following structures: [0] -- the plotting surface (background to the curves);  [1] -- the hairlines;   [2]: the thin line forming the perimeter of the plotting surface;  [3]: the background outside the plotting surface, where scaling information goes;  [4]: scaling text at hairlines ("10, 15, 20, ...");  [5]: text of axis scale descriptor (e.g. "velocity (kms.)" ).
+
+<b>To change colours</b> of graph features, use the same function with extra arguments: <b>graphcolours(<# blue>GraphID, one to six colour arguments (arrays)  in the order given below<# black>)</B>. (The cue for "don't change the colour" is to provide a scalar rather than an array for that colour.) Such arrays would usually be colour names (e.g. "light blue"), but to see other possibilities enter 'colour' into the assignments window and key F1. The function always returns a matrix 6x3, exactly as above, representing the situation after changes have been made.
  
+
 <# black><U>MODIFYING OR OVERRULING AUTOMATIC SCALING</U>
 In all of the following functions, <B>the graph ID must be present</B>.
 Also, only the X axis versions are described; in each case, change the 'x' in the function name to 'y' or 'z' for use with other axes.
 
-<B>(a) Don't have every hairline labelled.</B>
+<b>Change the font and/or font size of label wording and scale numbering</b>
+\t<# blue>graphfont(graphID, FontName, WordingFontSize, NumberingFontSize)
+<# black>Void. Key F1 on 'graphfont' in the Assignments Window to get details of use of arguments, and other points about use.
+
+<B>Don't have every hairline labelled.</B>
 You can cause some automatic scaling tags to be dropped. Suppose we count the left extreme of the X axis as division 0, and then call the successive hairlines division 1, 2, 3, ... We require that the first hairline to be labelled will be hairline 1, and thereafter every 3rd. hairline: { 1, 4, 7, ...}. The function call is:
 \t<# blue>firstLabelled = 1;  hairlineJumps = 3;
 \t<# blue>scalejumpx(graphID, firstLabelled, hairlineJumps);
 <# black>
-<B>(b)  Multiply automatic scaling values by a scaling factor and a suffix</B>
+<B>Multiply automatic scaling values by a scaling factor and a suffix</B>
 Suppose you are graphing a trigonometric function; the X axis is to extend from 0 to 2 π. You want four segments between these two limits. If you use the function "gridx(0, 2*π, 4), the automatic scale generation will supply these scale tags: "0,  1.571,  3.142,  4.712,  6.283". You can change this to "0 π,   0.5 π,   1 π,   1.5 π,   2 π " using this function call:
 \t<# blue>scalefudgex(graphID, 1/π, " π"); <# magenta>// note the leading space before 'π'. You must supply such a space, if you want it.
 
@@ -4532,7 +4793,7 @@ Suppose you are graphing a trigonometric function; the X axis is to extend from 
 
 <# black>You can't use formatting tags in 'scalefudgex'. However you can implant special characters (as we did with 'π' above) simply by copy-and-paste from a character source.
 
-<B>(c)  Supply a characters array that overwrites the machine-generated values</B>
+<B>Supply a characters array that overwrites the machine-generated values</B>
 The function to achieve this has exactly two arguments - the graph identifier (which cannot be omitted), and the characters array of tags, using commas as separators. (Spaces are significant.)
 Suppose that the naturally generated scale numbers were "1, 2, 3, 4, 5". You could alter this as follows:
 \t<# blue>scaleoverx(graphID, "cat,dog,rat,hog,bat"); <# magenta>// The scale tags will be: "cat, dog, rat, hog, bat".
@@ -4544,6 +4805,7 @@ Suppose that the naturally generated scale numbers were "1, 2, 3, 4, 5". You cou
 \t<# blue>scaleoverx(graphID, ",,,,");
 <# black>An easier shorthand for blanking ALL scaling tags is to supply as argument a single '#' (no blanks):
 \t<# blue>scaleoverx(graphID, "#");
+<# black>If you want to overwrite only some of the machine-generated values, you can use "@" as the code for not overwriting. For example, if machine scale values were "0, 10, 20, 30, 40", and you did <# blue>scaleoverx(g, 'foo,@,@,@,bar')<# black>, the displayed values would be "foo  10  20  30  bar". But be warned - a space on either side of the "@" would negate this: <# blue>scaleoverx(g, "foo,@ ,bar)<# black> would produce "foo  @   bar".
 
 <# black>You can't use formatting tags in 'scaleoverx', however as with 'scalefudgex' you can implant special characters simply by copy-and-paste from a character source.
 
@@ -4612,7 +4874,7 @@ _______________________________
 
 The functions involved are <B>plot3d(.), plotmesh3d(.)</B> and <B>graph3d(.)</B>.
 
-They take exactly the same arguments as <B>plot(.), plotmesh(.)</B> and <B>graph(.)</B>, <I>except</I> that 'plot3d' and 'plotmesh3d' start with three array arguments, rather than two:
+They take exactly the same arguments as <B>plot(.), plotmesh(.)</B> and <B>graph(.)</B>, <I>except</I> that 'plot3d' and 'plotmesh3d' start with three  coordinate arguments, rather than two:
 
 \t<# blue>p  =  plot3d(<# red> <b><u>ZValues</u></b>,  YValues,  XValues,  <# green>PointType, PointWidth, PointColour, <# magenta>LineType, LineWidth, LineColour,
 \t\t\t\t\t\t<# orange>PointFamily, LineFamily,  <# brown>Texts, FontName);
@@ -4622,13 +4884,15 @@ They take exactly the same arguments as <B>plot(.), plotmesh(.)</B> and <B>graph
 
 <# black>Only the initial three arguments are obligatory; any number of remaining arguments can be supplied.
 
+In the case of <b>plot3d(.)</b> the first three arguments (coordinates) must have equal length. If you wish to plot just a single point it is allowable to use scalars for these arguments; but you cannot use any mix of scalars and arrays for coordinates. 
+
 In the case of <b>plotmesh3d(.)</b>, <i>ZValues</i> must always be a matrix, dimensioned as (no. of forward curves x no. of points per curve). <i>XValues</i> and <i>YValues</i> may also be matrices of the same dimensions. However if you are content for the lines of the mesh to be strictly and regularly aligned with the X and Y axes - so that a vertical view of the mesh from above the XY plane will appear like a piece of graph paper - then <i>XValues</i> can be an array with one value per forward curve (forward curves being those which start from the X axis and are in a plane parallel to the ZY plane), and the <i>ZValues</i> can be an array with one value for corresponding points on all forward curves. In other words, the length of <i>XValues</i> must be the number of <i>rows</i> in <i>ZValues</i>, and the length of <i>YValues</i> must be the number of <i>columns</i> in <i>ZValues</i>. 
 
 <# black>See above for all the details of the remaining arguments.
 
 <U>Setting the axis limits and hairlines</U> uses the function <B>grid(.)</B> exactly as for 2D graphing, but with the obligatory addition of three extra arguments:
-\t<# blue>grid([graphID,] Xlo, Xhi, Xsegmts, Ylo, Yhi, Ysegmts, Zlo, Zhi, Zsegmts);
-<# black>As with 'grid(.)', the argument values may be presented all together in one array (or in any mix of scalars and arrays, as long as the total number of values is 9 or 10). If GraphID is not present, the parameters will be applied to the next graph created (but not to subsequent graphs). On the other hand, <b>gridx(.), gridy(.)</b> and <b>gridz(.)</b> all require the GraphID, each taking arguments in the form (GraphID, LoValue, HiValue, NoSegments).
+\t<# blue>grid(graphID, Xlo, Xhi, Xsegmts, Ylo, Yhi, Ysegmts, Zlo, Zhi, Zsegmts);
+<# black>As with 'grid(.)', the argument values may be presented all together in one array (or in any mix of scalars and arrays, as long as the total number of values is 9 or 10).
 
 'graphresize(..)' works for 3D, affecting the graph margins but only indirectly affecting the size of the contained 3D axis grid.
 
@@ -4649,10 +4913,10 @@ You can also retrieve the current settings by calling with only one argument: <b
 <# blue>rowNo = ladder(xnodes, xmin, xmax); <# magenta>// a locn. for every X-axis wire intersection in the mesh.
 <# blue>colNo = ladder(ynodes, ymin, ymax); <# magenta>// same for the Y- axis.
 <# blue>populate MeshArr through rowNo, colNo using ZMesh; <# magenta>// The array MeshArr is not predefined, but is created by this statement.
-<# blue>grid(xmin, xmax, 5, ymin, ymax, 5, zmin, zmax, 5);
 <# magenta>// PLOT THE MESH:
 <# blue>p = plotmesh3d(MeshArr, colNo, rowNo, ' '); <# magenta>// Note the order of axis arrays; the dims. of MeshArr must be (size of rowNo) x (size of colNo).
-<# blue>graph3d(p);
+<# blue>g = graph3d(p);
+<# blue>grid(g, xmin, xmax, 5, ymin, ymax, 5, zmin, zmax, 5);
 
 <# black>The second example:
 
@@ -4679,9 +4943,9 @@ for (i=0; i < norows; i++)
 		mZ[i,j] = sqrt(sphereRadius*sphereRadius - radius*radius); <# magenta>// successive circles as defined above are elevated to where they would lie on the hemisphere, at 10 degree intervals.
 	<# blue>}
 }
-grid(0,1,5,  0,1,5,  0,1,5);
 p=plotmesh3d(mZ, mY, mX,    ' ', -1, -1,    '_', 1, "blue",   '.', 1, "magenta" ); <# magenta>// Points: don't show. Main lines: blue, continuous. Cross connections: magenta, dotted.
-<# blue>graph3d(p);
+<# blue>g = graph3d(p);
+grid(g, 0,1,5,  0,1,5,  0,1,5);
 
 <# black>--------------------------------------------------------------
 
@@ -4797,9 +5061,9 @@ Re the <i>reference origin</i> for the shape:  The reference origin is what woul
 
 <i>Coords1</i> and <i>Coords2</i> -- different meanings for different shapes. The two arrays must have equal length, and that length must be at least as indicated below (excess length being ignored). Remember that in defining the shape with these coordinates, you are automatically setting both the centre of rotation (which will be the point (0, 0) ) and the zero-degrees state of rotation.
 <bullet>Polygon -- Coords1 is the <b>X</b> coordinates of all the apices, Coords2 is the corresponding <b>Y</b> coordinates. Note carefully that the order is different to the order in 'plot(.)'! The minimum length of the arrays is 3.
-<bullet>Rectangle -- arrays of length 2; Coords1 holds the X extremes (any order), Y the Y extremes. (The sides of the rectangle must be parallel to the axes in this docked position.)
+<bullet>Rectangle -- arrays of length 2; Coords1 holds the X extremes (any order), Coords2 the Y extremes. (The sides of the rectangle must be parallel to the axes in this docked position.)
 <bullet>Ellipse -- Coords1[0] = horizontal <i>radius</i> (not diameter);  Coords2[0] = vertical radius;  Coords1[1] is the number of segments used to draw one quarter of the circumference; must be at least one. A lower value (e.g. 0) defaults to 10.  (Coords2[1] is not used.) This docked form of the ellipse will have its centre at (0, 0), and its maximum and minimum radii will be aligned with the axes.
-<bullet>Arc, Chord, Sector -- This is an elliptical arc, so Coords1[0] = horizontal radius;  Coords2[0] = vertical radius;  Coords1[1] is the start angle, Coords2[1] the end angle; Coords1[2] is the number of segments for the whole arc. (In the case of 'chord' it does not include the chord itself, and in the case of 'sector' it does not include the two drawn radii). It defaults to 4, if the value is below 4. Coords2[2] is not used.
+<bullet>Arc, Chord, Sector -- This is an elliptical arc, so you have to state two radii. Coords1: [0] = horizontal radius; [1] = start angle(radians); [2] = no. straight line segments used to build the arc (corrects to 4, if less than 4).  Coords2: [0] = vertical radius; [1] = end angle (radians); [2] is unused. In the case of 'chord' the drawing does not include the chord itself, and in the case of 'sector' it does not include the two drawn radii. Note that you may have to use the <i>RotationAngle</i> argument to get the arc pointing in the direction that you want.
 <i>LineType, LineWidth, LineColour</i> have their usual meaning, as for 'plot(.)'.
 Just one qualification: If you want a filled shape but with no outline, still set LineType to a valid line-drawing value (e.g. '_'), but set its width to 0. If you use a nonvalid value (or ' ') for LineType, no fill will occur, and the shape will be completely invisible. (Of course, that may be what you temporarily want.)
 <i>FillColour</i>, if an array representing a valid colour, fills the shape (exception: 'arc', which has no fill). If invalid or any scalar, the shape is not filled, i.e. is transparent. (This is different to the case of LineColour, where a valid scalar colour number will be correctly interpreted as a colour.)
@@ -5347,6 +5611,21 @@ If LowLimit and HighLimit are not both scalars, then they must both be arrays, a
 //REDIM -- see DIM
 //REDIMLIKE -- see DIM
 ==================================================================
+//REFLECT//
+<just c><b>REFLECT A CURVE VERTICALLY, HORIZONTALLY OR BOTH</b>
+<just l>
+Mx = <b>reflect</b>(<# blue>array XX, array YY, bool Horizontally, bool Vertically, scalar PivotX [, scalar PivotY [, bool Splice ] ]<# black>) -- Given a curve with points described by arrays XX and YY, reflect the curve horizontally or vertically or both, according to the chosen setting of the two boolean arguments; then offset the reflected curve in accordance with the settings of PivotX and PivotY. The returned matrix holds the coordinates of the reflection.
+Under circumstances described below you can opt to return instead a splicing of the original with the reflection to get a true mirror effect.
+
+<u>ARGUMENTS</u>
+<bullet><i>XX</i> and <i>YY</i> obviously must have the same length, as they are the coordinates of the original curve.
+<bullet><i>Horizontally</i> and <i>Vertically</i> are booleans; either or both can be true, according to what you want.
+<bullet><i>PivotX</i> and <i>PivotY</i> are points around which the reflection is to occur. If this is a horizontal reflection, only <i>PivotX</i> is accessed. If, on a graph, the resultant points are overlaid on the original points, the two sets will share the point (or points, for a curve going back on itself) with original coordinates (XX[i], YY[i]), where XX[i] = PivotX. If this is a vertical reflection, only <i>PivotY</i> is accessed; with such an overlay of sets of points, the shared point(s) will be (XX[j], YY[j]) where YY[j] = PivotY. If both booleans are TRUE, then both pivots are used; the horizontal reflection is done first.
+<bullet><i>Splice</i>: If this argument is present and TRUE, AND if and only if <i>Horizontally</i> is true, AND if PivotX is at either extreme of the range of XX values, then the returned matrix will hold the leftmost curve's coordinates followed by the rightmost curve's coordinates, without duplicating the joint point. So if the original and reflected curves are represented by N points, the returned curve will have 2N ‒ 1 points.
+
+The return is always a matrix, with row 0 representing the X coordinates and row 1 the Y coordinates.
+
+==================================================================
 //REMOVEDUPS//
 //REMOVERUNS//
 <b>REMOVING DUPLICATIONS WITHIN AN ARRAY</b>
@@ -5504,6 +5783,21 @@ There is <b>no internal parsing</b> of data by this function; whatever is typed 
 <B>reverse</B>(<# blue>Named Array<# black>) -- VOID; reverses the contents of the array, wihtout interfering with its structure or characters rating.
 <B>reversed</B>(<# blue>any no. of variables<# black>) -- NOT void; returns a list array consisting of all the data contained in the variables - whatever their type or structure - but in reverse order. (Returned array is of 'non-characters' type.)
 ==================================================================
+//REVOLVE//
+//REVOLVED//
+Used to shift values to the right or to the left within an array.
+
+<B>revolve</B>(<# blue>NamedArray<# black> [, scalar NoTimes [, scalar / array Replacer ]  ]  ) -- VOID; directly alters NamedArray.
+
+<B>revolved</B>(<# blue>InArray<# black> [, scalar NoTimes [, scalar / array Replacer ]  ]  ) -- RETURNS a revolved copy of InArray.
+
+<b>NoTimes</b> is the number of shifts; if omitted, it defaults to 1. If NoTimes is positive, shifts are to the right (when the array is written down). For example, if NoTimes = 1 (and there is no 3rd. argument), array [1, 2, 3, 4, 5] becomes [5, 1, 2, 3, 4]. If NoTimes = -2, the array would instead shift left two elements, to become [3, 4, 5, 1, 2]. 
+
+<b>Replacer</b> -- If absent, all values are concerned; whatever shifts off one end is relocated to the other end. If present, then no such relocation occurs; instead, Replacer fills the vacated elements. For example, for NoTimes = 1 and Replacer = 99, the above array becomes [99, 1, 2, 3, 4].
+If Replacer is an array, only its first element is used.
+
+<b>NamedArray</b> -- If this is in fact a temporary array instead (like "aa+1" or "copy(aa, 1, 5)"), no error will be raised, and indeed the temporary array will be revolved somewhere in the bowels of the computer, but you will have no access to the result.
+==================================================================
 //RGB//
 <b>RETURN THE RGB VALUES FOR A NAMED COLOUR</b>
 
@@ -5542,6 +5836,7 @@ If you just want to rotate the contents of one row or one column of a matrix, th
 Use <# blue>rotate(two or more variables)<# black> -- void. Variables in the list must be of the same type (all scalar or all array). If arrays, they must all have the same total size (though their dimensional structure will be ignored and may differ). "rotate(aa, bb, cc)" resets bb to have aa's old value, cc to have bb's old value, aa to have cc's old value.
 
 <u>2.  ROTATE VALUES WITHIN ONE ARRAY</u>
+<# red><b>*** Depreciated. Use 'revolve' or 'revolved' instead. ***</b><# black>
 Use <# blue>rotate(Array [, scalar NoTimes])<# black> -- a void function. The contents of the array are rotated the given number of times. If 'NoTimes' is positive, values move to higher indexes (e.g. if NoTimes is +1, the contents of [0] become the contents of [1]). If negative, downwards. If NoTimes is omitted, it is taken as +1. (If it is present but 0, no rotation occurs.) NoTimes may overflow or underflow the size of Array, as its modulo is used.
 Array structure is unaffected; only the internal data strip is affected. For example, in a 2x3 matrix 'Mx', with NoTimes = 1, data in Mx[0, 2] will be moved to Mx[1, 0], and Mx[1, 2] will be moved to Mx[0, 0].
 
@@ -5563,6 +5858,10 @@ Overflow or underflow is no problem, as the modulo is taken.
 <i>Replacement</i>: If omitted, or if it is an array (any array, but we suggest: "wrap"), wrapping of values will occur; e.g. the row "[1, 2, 3]", rotated once, will become "[3, 1, 2]". If present and scalar, values left empty will be filled with this value. E.g. if Replacement is 99, the row rotated once becomes "[99, 1, 2]".
 <i>StartAt, EndAt</i>: If present, they define a subrange of the row or column which will rotate; the rest of the row or column will remain exactly as before. For example, for row [0, 1, 2, 3, 4, 5, 6], with StartAt = 2 and EndAt = 4, rotating once produces [0, 1, 4, 2, 3, 5, 6] (if wrapped) or [0, 1, 99, 2, 3, 5, 6] (if not wrapped, with Replacement = 99).
 If StartAt is negative it is adjusted to 0. If EndAt is negative or beyond row / column end, it is adjusted to that end. If the pointers cross, simply no rotation will occur.
+
+<u>5.  SWAPPING ROWS OR COLUMNS IN A MATRIX</u>
+See functions "swaprows" and "swapcols".
+
 
 ==================================================================
 //ROOTSTOPOLY -- see POLYNOMIAL
@@ -5755,13 +6054,15 @@ The functions <b>scaleoverx/y/z(.)</b> have exactly two arguments - the graph id
 Suppose that the naturally generated scale numbers were "1, 2, 3, 4, 5". You could alter this as follows:
 \t<# blue>scaleoverx(graphID, "cat,dog,rat,hog,bat"); <# magenta>// The scale tags will be: "cat, dog, rat, hog, bat".
 <# black>If too few new tags are supplied, naturally generated numbers make up the rest:
-\t<# blue>scaleoverx(graphID, "cat,dog,rat "); <# magenta>// The scale tags will be: "cat, dog, rat, 4, 5".
+\t<# blue>scaleoverx(graphID, "cat,dog,rat"); <# magenta>// The scale tags will be: "cat, dog, rat, 4, 5".
 <# black>If too many new tags are supplied, excess tags will be ignored:
 \t<# blue>scaleoverx(graphID, "cat,dog,rat,hog,bat,sat,mat,hat"); <# magenta>// The scale tags will be: "cat, dog, rat, hog, bat".
 <# black>Empty tags are permitted. For example you could blank all five scaling tags with:
 \t<# blue>scaleoverx(graphID, ",,,,");
 <# black>An easier shorthand for blanking ALL scaling tags is to supply as argument a single '#' (no blanks):
 \t<# blue>scaleoverx(graphID, "#");
+<# black>If you want to overwrite only some of the machine-generated values, you can use "@" as the code for not overwriting. For example, if machine scale values were "0, 10, 20, 30, 40", and you did <# blue>scaleoverx(g, 'foo,@,@,@,bar')<# black>, the displayed values would be "foo  10  20  30  bar". But be warned - a space on either side of the "@" would negate this: <# blue>scaleoverx(g, "foo,@ ,bar)<# black> would produce "foo  @   bar".
+
 <# black><i>3D Case:</i>
 The 3D graph does not have strings against hairlines; instead there is a summary of the scales printed to the right of the graph; for each axis there are 3 values, "From: ...", "To ..." and "Step ...". These are calculated internally, but you can overwrite the internal values with these functions. However the array argument must have <i>exactly three values</i> or it will be ignored.
 
@@ -6037,24 +6338,28 @@ footer(g, "\tCurve colours correspond to the following indexes:  ", description)
 
 ================================================================
 //SIGN//
-Problem: You have an array Arr, and wish to have a matching array of tags, the tags indicating whether entries in Arr are postive, zero or negative. The function to use is...
+Problem: You have an array Arr, and wish to get a copy of Arr where new values are substituted for original zero and/or positive and/or negative values.
 
-<b>sign</b>(<# blue>scalar / array Values [, scalar ReturnForZero [, scalar ReturnForPositive [, scalar ReturnForNegative [, scalar VirtualZero ] ] ] ]<# black>):
+<b>sign</b>(<# blue>scalar / array Values [, array/scalar ReturnForZero [, array/scalar ReturnForPositive [, array/scalar ReturnForNegative [, scalar VirtualZero ] ] ] ]<# black>):
 The function's return will be of the same type and structure as Values.
 Suppose we call the function's return "Result".
-If there are no more arguments, then Result[i] will hold +1 if Values[i] is positive, 0 if Values[i] is exactly zero, and -1 if Values[i] is negative.
-The next three arguments will alter these defaults of +1, 0 and -1 to any other values you wish.
+If there is <i>only one argument</i>, then Result[i] will hold +1 if Values[i] is positive, 0 if Values[i] is exactly zero, and -1 if Values[i] is negative.
+The next three arguments, if scalar, will alter these defaults of +1, 0 and -1 to any other values you choose.
+If any of these arguments is an array - ANY array - then values in that category will be copied as is, without replacement.
 <i>VirtualZero</i>:  If Arr has been derived by division (and some other operations), then it is quite possible that where there should logically be a zero there is a very tiny positive or negative value. To negate this, set VirtualZero to some value well below any you anticipate in your array (like 1e-10). Then any Values[i] which has an absolute value ≤ VirtualZero will be treated as zero.
 
 <u>Examples</u>
 	<# blue>aa = data(-2, -0.1, 0, 0.1, 2);
-	bb0 = sign(aa);  writeln(bb0);  <# magenta>//  --> [ -1, -1, 0, 1, 1 ]<# blue>
-	bb1 = sign(aa, 99);  writeln(bb1);  <# magenta>//  --> [ -1, -1, 99, 1, 1 ]<# blue>
-	bb2 = sign(aa, 100, 101, 99);  writeln(bb2);  <# magenta>//  --> [ 99, 99, 100, 101, 101 ]<# blue>
-	<# magenta>//  Illustrating VirtualZero:<# blue>
-	bb3 = sign(aa, 0, 1, -1, 0.099);  writeln(bb3);  <# magenta>//  --> [ -1, -1, 0, 1, 1 ]<# blue>
-	bb4 = sign(aa, 0, 1, -1, 0.1);  writeln(bb4);  <# magenta>//  --> [ -1, 0, 0, 0, 1 ]<# blue>
-	bb5 = sign(aa, 0, 1, -1, 0.101);  writeln(bb5);  <# magenta>//  --> [ -1, 0, 0, 0, 1 ]<# black>
+	bb0 = sign(aa);				writeln(bb0);  <# magenta>//  --> [ -1, -1, 0, 1, 1 ]<# blue>
+	bb1 = sign(aa, 99);				writeln(bb1);  <# magenta>//  --> [ -1, -1, 99, 1, 1 ]<# blue>
+	bb2 = sign(aa, 100, 101, 99);		writeln(bb2);  <# magenta>//  --> [ 99, 99, 100, 101, 101 ]<# blue>
+	bb3 = sign(aa, 100, "foo", 99);	writeln(bb3);  <# magenta>//  --> [ 99, 99, 100, 0.1, 2 ]<# blue>
+	bb4 = sign(aa, 100, 101, "foo");	writeln(bb4);  <# magenta>//  --> [ -2, -0.1, 100, 101, 101 ]
+	//  Illustrating VirtualZero:<# blue>
+	bb5 = sign(aa, 0, 1, -1, 0.099);	writeln(bb5);  <# magenta>//  --> [ -1, -1, 0, 1, 1 ]<# blue>
+	bb6 = sign(aa, 0, 1, -1, 0.1);		writeln(bb6);  <# magenta>//  --> [ -1, 0, 0, 0, 1 ]<# blue>
+	bb7 = sign(aa, "bar", 1, -1, 0.1);	writeln(bb7);  <# magenta>//  --> [ -1, -0.1, 0, 0.1, 1 ]<# blue>
+	bb8 = sign(aa, 0, 1, -1, 0.101);	writeln(bb8);  <# magenta>//  --> [ -1, 0, 0, 0, 1 ]<# black>
 
 ================================================================
 //SIN -- see TRIGONOMETRY
@@ -6123,16 +6428,6 @@ Try the following with different values of N, and with both methods. (Runge-Kutt
 	function YY(XX)
 	{	return (-1 / (XX + 1));
 	}
-
-
-
-
-
-
-
-
-
-
 
 ================================================================
 //SOLVEEXP//
@@ -6214,7 +6509,39 @@ There are two ways of doing this using intrinsic functions:
 (2) Use an array as a stack. For details, enter <B>push</B> into the Assignments Window and then key F1.
 ================================================================
 //STARTTIMER -- see TIMER
-//STATISTICS -- see MOMENTS
+============================================================
+//STATISTICS//
+//MEAN//
+//MOMENTS//
+//VARIANCE//
+//KURTOSIS//
+//EXPECT_SD//
+<just c><b>STATISTICS FUNCTIONS</b>
+<just l>
+... Well, there's not that many of these at present. But here is what we have:
+
+<bullet><i>For a single array:</i>   Calculation of moments, using function <b>moments(.)</b>. This includes calculation of the mean and variance and standard deviation (the first two moments), and optionally kurtosis (as the 3rd. moment).
+<bullet><i>For a pair of arrays, representing a distribution:   <b>expect_sd</b>, which - as it says on the tin - provides the expectation value and the standard deviation for the distribution.
+
+The details...
+
+<B>moments</B>(<# blue>DataArray [, WithKurtosis]<# black>) -- Returns an array of size 5 (no kurtosis) or 6 (with kurtosis); element [0] is the mean of the data in DataArray; element [1] is the standard deviation and element [2] is the variance, calculated in the statistician's way by dividing the sum of the squares by (size of DataArray)-1; elements [3] and [4] are the same, but using a divisor of just DataArray size. If WithKurtosis is present and 'true' (i.e. anything but 0), [5] is the kurtosis, using the divisor DataArray size.
+
+The structure, if any, of the array is ignored.
+
+DataArray must have at least 2 elements, or an error is raised.
+
+
+<b>expect_sd</b>(<# blue>array XX,  array YY<# black>)   -- In histogram terms, XX represents the bins, and YY the bin contents. The return is an array of size 2:  [ expectation value of X,  standard deviation of X ]. Obviously the two arrays must have the same length (structure ignored).
+
+
+
+
+
+============================================================
+
+
+
 ============================================================
 //STR//
 //STRINGTOVALUE//
@@ -6266,6 +6593,9 @@ The code letter is always case-insensitive; only the upper case form is listed h
 'P'	x 100, add '%'.  2 digits forced after the decimal point.
 'Pβ'	x 100, add '%'.  β digits forced after the decimal point.
 
+'Dβ'	Value will first be converted to an integer, and then printed with at least β digits. For 'D3', 0 --> 000; 1 --> 001; 12345 stays as is.
+		(Unlike all the other format strings here, this one is preprocessed by MonoMaths, as it only works with NET/Mono type int.)
+
 'R' – 'round trip' specifier (No 'Rβ' form.). A way of getting the most accurate string representation of a number with maximal digits. A double value will normally convert to a string in C# with no more than 15 digits precision. With this specifier, the string is tested with a back-conversion to the value; if this does not return the same value, then a new string is created with 17 digits of precision. (That value may be slightly different to the input value due to numerical handling errors, as in the example below.)
 \t<# blue>a = 0.1234567890123456;  <# magenta>//16 decimal digits
 \t<# blue>aa = str(a);		<# magenta>// returns 0.123456789012346 -- 15 decimal digits.
@@ -6308,6 +6638,22 @@ In the 2-arg. version, if the returned array would logically be empty (from peck
 ================================================================
 //SWAP -- see ROTATE
 ================================================================
+//SWAPROWS//
+//SWAPCOLS//
+<just c><b>SWAP ROWS OR COLUMNS OF A MATRIX</b>
+<just l>
+The functions for this are VOID:
+
+<B>swaprows</B>(<# blue>NAMED matrix Mx,   scalar Row1,   scalar Row2<# black>)
+<B>swapcols</B>(<# blue>NAMED matrix Mx,   scalar Column1,   scalar Column2<# black>)
+
+Unlike most functions dealing with matrices, these two functions are VOID; they alter the first argument directly.
+
+The functions crash if the first argument is not a matrix or if a row / column index is out of range. Normally that would be the end of your program; but if, perchance, you have encapsulated the function in an "errortrap" block of code, then the program will continue. In this event, matrix Mx will not have been altered, as alteration does not go ahead inside the function unless and until all possible errors have been eliminated.
+
+	
+
+================================================================
 //SWING//
 <B>swing</B>(<# blue>2, 4 or 6 args., either all scalar or all equal-length arrays<# black>) -- returns angle(s) of rotation. The following explanation is in terms of scalars; the same applies for the ith. values of all array arguments.
 
@@ -6323,9 +6669,9 @@ In the 2-arg. version, if the returned array would logically be empty (from peck
 You have a table, which is in the form either of a matrix (row 0 being values to look up, row 1 being corresponding values to return) or of two simple arrays (the first has lookup values, the second has values to be returned). The function <b>readtable</b> allows you to present input values to this table and to return corresponding table outputs.
 
 The function is:
-	<B>readtable</B>(<# blue>matrix <b>Table</b>,  scalar / array <b>InputValues</b>,  array <b>LookupRule</b> [, scalar <b>StartPtr</b> ]<# black>)
+	<B>readtable</B>(<# blue>matrix <b>Table</b>,  scalar / array <b>InputValues</b>,  array <b>LookupRule</b> [, scalar <b>StartPtr</b>  [, scalar <b>ErrorCode</b> ] ]<# black>)
 OR - splitting the table up into two separate list arrays -
-	<B>readtable</B>(<# blue>array <b>InRow</b>,  array <b>OutRow</b>,  scalar / array <b>InputValues</b>,  array <b>LookupRule</b> [, scalar <b>StartPtr</b> ]<# black>)
+	<B>readtable</B>(<# blue>array <b>InRow</b>,  array <b>OutRow</b>,  scalar / array <b>InputValues</b>,  array <b>LookupRule</b> [, scalar <b>StartPtr</b> [, scalar <b>ErrorCode</b> ] ]<# black>)
 
 The function RETURNS a structure of the same type as InputValues.
 
@@ -6334,21 +6680,24 @@ ARGUMENTS:
 <bullet><b>InRow, OutRow</b> -- As in the second version of the function; the two arrays must have equal length, at least of length 2.
 <bullet><b>InputValues</b> -- Need not be sorted, EXCEPT in the case of a negative StartPtr - see later.
 <bullet><b>LookupRule</b> -- Three allowed values:
-<bullet 50,➯>"=" - An input value must exactly match an InRow value, or else the error code MINREAL is returned for that  value.
+<bullet 50,➯>"=" - An input value must exactly match an InRow value, or else the error code MINREAL (or substitute - see arg. "ErrorCode") is returned for that  value.
 <bullet 50,➯>"~" - The nearest InRow value to the input value is found, and the corresponding OutRow value is returned. If the input value is exactly halfway between, say, InRow[i] and InRow[i+1], then InRow[i] will be selected, and OutRow[i] will be returned.
 <bullet 50,➯>"L" - Linear interpolation occurs. Suppose the input value is 1/3 of the way between InRow[i] and OutRow[i+1]; then the output value will be 1/3 of the way between OutRow[i] and OutRow[i+1].
 <bullet 30,>If input values are outside of the range in InRow, extrapolation occurs on the same basis.
 <bullet><b>StartPtr</b> -- If present, causes the function to ignore all elements of InRow earlier than InRow[StartPtr]. It is an error to set this to beyond the end of the table, or - in the case of LookupRule "L" - to beyond the last two elements of the table.
 <bullet 30,><i>Special case:</i> Where the table is large and there are many input values, it saves a lot of time if (a) InputValues is sorted (duplicates allowed), and (b) you set StartPtr to any negative value. In this case, each successive search will start in InRow where the last search finished, rather than going back to InRow[0] each time. NB! If, in this situation, InputValues is not sorted, "garbage-in-garbage-out" will apply to your results.
 <bullet 30,><font same, 10><# lightslategrey>Re the saving of time: The following experiment was done: InRow was set to the arithmetic series [1, 2, ..., 1000], and InputValues was set to the same. (OutRow was irrelevant - I just set it to InRow + 1000.) In the first run, no StartPtr was used; in the second, StartPtr was set to -1. For all three values of LookupRule, the first run took 40 times longer than the second run. When repeated with all 1000 values of InValue set to 1000, the first run took 80+ times longer than the second run.<# black></font> 
+<bullet><b>ErrorCode</b> -- Only useful for LookupRule = "=", in which case this scalar value is returned for unmatched input values.
+
 
 EXAMPLES:
 	<# blue>InRow = data(10, 20, 30, 40);
 	OutRow = data(100, 200, 300, 400);
 	InValues = data(-10, 10, 13, 15, 20, 60);
 	ans1 = readtable(InRow, OutRow, InValues, "="); <# magenta>// ans1 = [  MINREAL, 100, MINREAL,  MINREAL,  200,  MINREAL ];<# blue>
-	ans2 = readtable(InRow, OutRow, InValues, "~"); <# magenta>// ans1 = [  100, 100, 100, 100, 200, 400 ] <# blue>
-	ans3 = readtable(InRow, OutRow, InValues, "L");  <# magenta>// ans1 = [  -100, 100, 130, 150, 200, 600 ] <# blue>
+	ans2 = readtable(InRow, OutRow, InValues, "=", 0, 999); <# magenta>// ans1 = [  999, 100, 999,  999,  200,  999 ];<# blue>
+	ans3 = readtable(InRow, OutRow, InValues, "~"); <# magenta>// ans1 = [  100, 100, 100, 100, 200, 400 ] <# blue>
+	ans4 = readtable(InRow, OutRow, InValues, "L");  <# magenta>// ans1 = [  -100, 100, 130, 150, 200, 600 ] <# blue>
 
 See also functions 'placement' and 'interpolate'.
 ============================================================
@@ -6551,13 +6900,17 @@ The first argument may be any array of any structure, assigned or not. For the r
 the last incremented value, so that the returned value minus StartValue equals the number of named variables.
 
 	<# blue>n = sequence(5, a, b, c);  <# magenta>// This defines 3 new scalars, giving them values a=5, b=6, c=7. The return is 8.<# black>
+
+
+You may also be interested in function <b>enrol(.)</b>, which allows you to define and assign variables (scalar only) from a string containing their names.
+
 ============================================================
 //UPSAMPLE  --  see  SAMPLING
 //UNBIN -- see HEX
 //UNHEX -- see HEX
 //removeplot  -- see KILLGRAPHS
 //VALUETOSTRING -- see STR
-//VARIANCE -- see MOMENTS
+//VARIANCE -- see STATISTICS
 ==================================================================
 //VECDIRNS//
 <B>vecdirns</B>(<# blue>array PointsGrid, matrix Angles, scalar OR matrix ArrowLength<# black>) -- Used in the displaying of vector directions in a field. Recall that one of the options of 'plot(.)' is line type, and one of the options of line type is 'A', which causes only alternate pairs of points along a curve to be joined, giving a dashed effect; it also suppresses the first point, so that the second point becomes something like an arrow head (though the 'arrow' actually looks more like a sperm). You can provide the data for such a graph using this function. 
@@ -6591,9 +6944,9 @@ Here is an <B>example</B> of use. For simplicity, we consider a radial field, ce
 \t<# magenta>// Develop the matrix which holds coords. of arrow starts and ends:
 \t<# blue>mx = vecdirns(ptgrid, Angles, arrowlength);
 \t<# magenta>// Plot vectors:
-\t<# blue>grid(Xmin, Xmax, Xintvls, Ymin, Ymax, Yintvls);
 \t<# blue>p = plot(mx[][1], mx[][0] ,  '.', data(0,5), 'red',   '_ ', 1, 'blue', data(0,1),  data(0,1) ); // arrows have blue shafts, red heads.
 \t<# blue>g = graph(p);
+\t<# blue>grid(g, Xmin, Xmax, Xintvls, Ymin, Ymax, Yintvls);
 \t<# blue>graphresize(g, 500,500); <# magenta>// make a square graph, so the field looks symmetrical.
 ============================================================
 //WINDOW//
@@ -6602,7 +6955,7 @@ Here is an <B>example</B> of use. For simplicity, we consider a radial field, ce
 
 (Be particularly careful about overwriting the text of a program currently running. It will not affect the actual program run, but means that what you see is not what is happening; and also if you operate menu item 'File | Save' you will overwrite your program with whatever else you put in the Assignments Window.)
 
-<b>window</b>(<# blue>array WhichWindow, array Action [, array TheText, array / scalar Where [, bool Formatted OR scalar NoCharsToDelete ]]<# black>) -- operations on the Assignments Window and the Results Window during a program run.
+<b>window</b>(<# blue>array WhichWindow, array Action [, array TheText, array / scalar Where [, bool Formatted OR scalar NoCharsToDelete [, bool SelectAddedText ]]]<# black>) -- operations on the Assignments Window and the Results Window during a program run.
 
 <i>WhichWindow:</i>  The first letter must be one of: 'A', 'a' (Assignments Window),  'R', 'r' (Results Window).
 
@@ -6613,11 +6966,14 @@ For Action 'C', 'F' and 'R', only the first two arguments are required or access
 For Action 'M', the third argument 'TheText' must be present, and will be "+" (to turn markup tags usage on), '-' (to turn it off), '?' (to leave it alone - done where you just want to know the current status). For all three, the function is NONVOID, returning "+" or "-" to indicate status after the action. NB - can only be used with WhichWindow = 'A'. 
 
 For Action 'W', 'TheText' is what is to be written to the window.
-'Where' must be one of: "<# blue>fill<# black>" = replace any current text with this text; "<# blue>cursor<# black>" = insert text at current cursor position; "<# blue>start<# black>" = insert text at the start of existing text;  "<# blue>append<# black>" = append text to the end of existing text;  <# blue>numerals<# black> (e.g. the scalar 36, or its string form "36") = start inserting at the specific character position in the existing text. Any other value aborts the method. 
+
+<i>Where:</i> Must be one of: "<# blue>fill<# black>" = replace any current text with this text; "<# blue>cursor<# black>" = insert text at current cursor position (overwriting any selected text); "<# blue>start<# black>" = insert text at the start of existing text;  "<# blue>append<# black>" = append text to the end of existing text;  <# blue>numerals<# black> (e.g. the scalar 36, or its string form "36") = start inserting at the specific character position in the existing text. Any other value aborts the method. 
 'Formatted:'  If present and TRUE, then formatting tags are handled (enter 'format' into the Assignments Window and key F1, for tag descriptions).
 The function is VOID.
 
 For Action 'D', all 5 arguments must be present, though 'TheText' is ignored (and so may be scalar). 'Where' must be an integer (either scalar, or as the string form of the integer). The final argument tells how many characters to delete, and must be at least 1. The function is VOID.
+
+<i>SelectAddedText:</i>  For Action 'W', the newly written text will be selected after the operation if this argument is present and is TRUE. Ignored for all other values of Action.
 
 <i>Errors</i>  in arguments don't crash the program; simply nothing happens, AND scalar 0 is returned - important to know, if you were expecting an array back.
 
@@ -6625,6 +6981,9 @@ For Action 'D', all 5 arguments must be present, though 'TheText' is ignored (an
 <b>window_find(</b>(<# blue>variable SoughtText<# black>) -- invokes the Search dialog box (exactly as with main menu item "Search | Find"). The position of the cursor is relevant. Works only for the Assignments Window. If 'SoughtText' is scalar, or if its first value is not a valid unicode \> 0, the dialog box opens with the 'search for:' text box empty. Otherwise SoughtText goes there as the default text.
 
 <b>window_find(</b>(<# blue>char array SoughtText, bool MatchCase, bool WholeWord, bool FromCursorDown, bool MarkAll<# black>) -- carries out a search on Assignments Window text as above, but bypasses the dialog box. (However if any arguments are missing, or if 'SoughtText' is anything but valid text, the Search dialog box is invoked and all the other arguments are ignored.) MatchCase and WholeWord are obvious. If FromCursorDown is false, search starts from the cursor; otherwise from the start of window text. If MarkAll is true, all values are marked with background colouring (removed by keying 'ESC'). Otherwise the next find only is marked (with cursor placed there).
+
+
+If you just want to <b>read text at the cursor</b>, selected or not, use function <# blue>cursordata(.)<# black>.
 
 ============================================================
 //WRITE//
