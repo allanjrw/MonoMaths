@@ -63,9 +63,6 @@
     <Reference Include="System.Windows.Forms" />
     <Reference Include="Mono.Cairo" />
     <Reference Include="System.Numerics" />
-    <Reference Include="FuncSet">
-      <HintPath>..\JonoLib\FuncSet\FuncSet\bin\Debug\FuncSet.dll</HintPath>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="gtk-gui\gui.stetic">
