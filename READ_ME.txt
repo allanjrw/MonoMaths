@@ -14,8 +14,8 @@ As the application was developed for my personal use it has some idiosyncrasies 
 There are copious "Help" notes available from within the application at run time, both as texts from a menu and as context-sensitive information. If you want to read this information separately without running the program, you will find it in two lightly-formatted (but completely readable) text files supplied in folder "For_Working_Directory":  "Help.txt" and "Hints.txt".  The first starts with an introduction to the language and its syntax, which may be helpful up front. 
 
 INSTALLATION
-All the necessary C# source and project files are included, ready for compilation. It would also be possible to directly use the compiled Mono program "MonoMaths.exe" (found in "MonoMaths Code/MonoMaths/bin/Debug/"). Either way, the following folder arrangements are recommended for proper functioning:
-*  On your computer, set apart a working directory for MonoMaths, then transfer to it all of the files supplied here in "For_Working_Directory". Place the compiled program "MonoMaths.exe" into this new working directory.
+All the necessary C# source and project files are included, ready for compilation. It would also be possible to directly use the compiled Mono program "MonoMaths.exe" (found in "MonoMaths/MonoMaths/bin/Debug/"). Either way, the following folder arrangements are recommended for proper functioning:
+*  On your computer, set apart a working directory in your "home" folder for MonoMaths, then transfer to it all of the files supplied here in "For_Working_Directory". Place the compiled program "MonoMaths.exe" into this new working directory.
 *  Run the application using the instruction (in a terminal, or a launchpad): "mono  My_working_directory/MonoMaths.exe".
 *  Once the IDE is displayed, choose menu item "Help | Overview" to get some most basic understanding of the application.
 
